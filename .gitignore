@@ -26,3 +26,11 @@ build/
 *.log
 *.sqlite
 *.db
+
+# Raw anatomy downloads (only converted files in public/data/ are committed)
+data-raw/
+
+# Test output
+test-results/
+playwright-report/
+coverage/

@@ -1,6 +1,6 @@
-# Project: [NAME]
+# Project: Spine Fluoro Trainer (working title)
 
-[One or two sentences: what this project is and who it's for.]
+A browser-based simulator for physicians training in fluoroscopy-guided spine injections. Learners practise reading fluoroscopic images, positioning a virtual C-arm, and steering a realistic needle. It works on laptops and touch tablets.
 
 ## About the owner
 I'm tech-savvy but not a programmer. Explain choices in plain language, avoid jargon, and tell me exactly what to run or click when I need to do something myself.
@@ -16,15 +16,21 @@ I'm tech-savvy but not a programmer. Explain choices in plain language, avoid ja
 If my request conflicts with these documents, point it out and ask before proceeding.
 
 ## Tech stack
-- Language/framework: [e.g. Python 3.12 + FastAPI]
-- Database/storage: [e.g. SQLite]
-- Hosting/deployment: [e.g. none yet / Vercel]
+- Language/framework: TypeScript + Vite (static website), Three.js on WebGL2 for graphics and the X-ray (DRR) shader
+- Tests: Vitest (unit), Playwright 1.63.0 with Chromium (screens, desktop + touch-tablet set-ups)
+- Lint/types: ESLint + `tsc --noEmit`
+- Database/storage: none — anatomy files in `public/data/`, learner history in the browser's local storage
+- Hosting/deployment: none yet (free static hosting later, set up by the owner — loops never deploy)
 
 ## Commands
-- Install: `[command]`
-- Run locally: `[command]`
-- Run all tests: `[command]`
-- Lint / type check (if any): `[command]`
+- Install: `npm install`
+- Run locally: `npm run dev` (then open http://localhost:5173)
+- Unit tests: `npm test`
+- Screen tests: `npm run test:e2e`
+- Lint + type check: `npm run lint` (type check alone: `npm run typecheck`)
+- Everything (lint, types, unit, screen tests) — run before calling anything done: `npm run check`
+- Production build: `npm run build`
+- Convert anatomy (interactive sessions only): `npm run anatomy:convert -- <input-folder> <output-folder>`
 
 ## Two ways of working
 - **Interactive session (with me):** planning, reviews, bugs, decisions. Plan before coding and wait for my OK on anything bigger than a small fix.
@@ -50,4 +56,10 @@ If my request conflicts with these documents, point it out and ask before procee
 
 ## Project-specific rules and lessons learned
 <!-- Promoted from the "Lessons" sections of ralph/progress/*.md after a loop's work is merged. Loop rounds don't edit this file. -->
-- [none yet]
+- Never run `playwright install` (or `npx playwright install`) in cloud sessions — Chromium for Playwright 1.63.0 is pre-installed; keep `@playwright/test` pinned to `1.63.0`.
+- Tests use the synthetic phantom (`src/core/phantom.ts`), never the real CT files.
+- Downloading or converting the real CT dataset happens only in interactive sessions with the owner. Loops use only the committed files in `public/data/`. Raw downloads go in `data-raw/` (git-ignored).
+- Clinical data files (procedure cases, needle `params.json`, `tissues.json`, quiz bank) stay `draft` / `reviewedByOwner: false`. Only the owner marks them reviewed.
+- Never copy text or images from textbooks into the app.
+- Every screen test must pass in both Playwright set-ups (`desktop` and `tablet`).
+- Only the app zone edits `src/app/main.ts`. Changes to `src/core/` are shared-file changes (see `docs/ARCHITECTURE.md`).
