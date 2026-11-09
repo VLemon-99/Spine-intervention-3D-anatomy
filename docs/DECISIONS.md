@@ -2,6 +2,15 @@
 
 > One entry per meaningful choice, newest at the top. This stops future sessions and loop rounds from quietly undoing past decisions. Loop rounds don't edit this file — they record proposals in their progress log, and an interactive session adds them here after review.
 
+## 2026-11-09 — Owner answers to kickoff open questions
+- **Decision:**
+  - The cervical, thoracic and lumbosacral regions may come from **different anonymous people**.
+  - Lumbar TFESI is offered with **both** approaches in v1: subpedicular ("safe triangle") and infraneural (Kambin's triangle). Each approach is a separate procedure file.
+  - When the needle is in an artery, aspiration returns blood with a **50%** probability, to teach that negative aspiration doesn't rule out intra-arterial placement.
+- **Why:** Whole-spine CTs that include the SI joints are rare, and each region is viewed on its own anyway. Both TFESI approaches are in current practice and worth training. 50% makes the teaching point clearly.
+- **Alternatives considered:** One person's whole-spine CT (hard to find, lower quality); safe triangle only; always-positive arterial aspiration (teaches a false sense of safety).
+- **Revisit if:** A good whole-spine CT becomes available, or the owner wants a different teaching emphasis.
+
 ## 2026-11-09 — Pin Playwright to the cloud's pre-installed version
 - **Decision:** `@playwright/test` is pinned to **1.63.0**, and loops never run `playwright install`.
 - **Why:** Cloud sessions come with Chromium for Playwright 1.63.0 already installed. A different version would try to download its own browser, which is slow or blocked.

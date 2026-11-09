@@ -65,7 +65,7 @@ Acceptance criteria:
   - every foramen has nerve-root voxels on both sides;
   - the midline back-to-front order from F0.4 holds;
   - joint-space voxels lie between two different bones.
-- [ ] F1.5 The converter writes `public/data/manifest.json` listing each region (`cervical` C1–T1, `thoracic` T1–L1, `lumbosacral` L1–sacrum including both SI joints) with its files, voxel spacing, source dataset name, licence and attribution text. It also writes a landmarks file per region with, for each vertebral level: the body centre, pedicle centres, the inferior endplate's centre and tilt direction, and the foramen centres. A unit test validates the manifest and landmark files against their schema, and checks each region's files total 25 MB or less.
+- [ ] F1.5 The converter writes `public/data/manifest.json` listing each region (`cervical` C1–T1, `thoracic` T1–L1, `lumbosacral` L1–sacrum including both SI joints) with its files, voxel spacing, source dataset name, licence and attribution text. It also writes a landmarks file per region with, for each vertebral level: the body centre, pedicle centres, the superior and inferior endplates' centres and tilt directions, the superior articular process tips, and the foramen centres. A unit test validates the manifest and landmark files against their schema, and checks each region's files total 25 MB or less.
 - [ ] F1.6 `loadRegion(name)` loads a region in the browser and returns a volume matching the shared `Volume` type. Screen test: choosing a region from the region picker renders it, and `window.__sim` reports the loaded region name and its size.
 - [ ] F1.7 (needs real data, done with the owner) The three real regions are converted and committed. Tests: the manifest lists all three, every file exists, and at every landmark "body centre" the label is bone and the level matches the landmark's level.
 
@@ -193,7 +193,8 @@ Guided cases with goals and a score. All clinical rules live in data files draft
 
 Acceptance criteria:
 - [ ] F10.1 Procedure files in `src/procedures/cases/` exist for:
-  - **lumbar transforaminal ESI** (subpedicular / "safe triangle" approach);
+  - **lumbar transforaminal ESI, subpedicular ("safe triangle") approach**;
+  - **lumbar transforaminal ESI, infraneural (Kambin's triangle) approach**;
   - **lumbar medial branch block**;
   - **SI joint injection**;
   - **caudal ESI**;
@@ -264,8 +265,6 @@ Loops must not build these.
 
 ## Open questions
 - **App name:** "Spine Fluoro Trainer" is a working title. Rename any time.
-- **Which CT scan(s):** before F1.7 I'll shortlist candidate scans from the TotalSegmentator dataset (CC BY 4.0), with VerSe as a fallback, and the owner picks. Is it acceptable if the cervical, thoracic and lumbosacral regions come from different (anonymous) people, since whole-spine scans that include the SI joints are rare?
-- **Lumbar TFESI approach:** v1 uses the subpedicular ("safe triangle") approach. Should the infraneural (Kambin's triangle) approach be added later?
+- **Which CT scan(s):** before F1.7 I'll shortlist candidate scans from the TotalSegmentator dataset (CC BY 4.0), with VerSe as a fallback, and the owner picks. (Answered: the regions may come from different anonymous people.)
 - **Owner review sessions** are needed for: needle tuning (`src/needle/params.json`), tissue resistances, procedure rule files, quiz explanations, and the modelled soft-tissue shapes.
-- **Default arterial aspiration probability:** 50% is a placeholder. What does the owner want to teach?
 - **Real-tablet performance:** to be checked by the owner on an actual iPad once F2 and F3 are merged.

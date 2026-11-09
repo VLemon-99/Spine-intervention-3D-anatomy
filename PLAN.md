@@ -29,7 +29,7 @@
 
 ## Waiting on me
 <!-- Blocked stories, open questions, pull requests to review. -->
-- Open questions in `docs/SPEC.md` → "Open questions": app name, choosing the CT scan(s), whether mixing regions from different people is acceptable, the TFESI approach, the arterial aspiration probability.
+- Open questions in `docs/SPEC.md` → "Open questions": app name, choosing the CT scan(s) (before F1.7).
 - Next step: run Prompt 2 (plan stories) in a fresh session — suggested: "Only plan feature F0" first.
 
 ## Handoff note (interactive sessions)
