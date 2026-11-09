@@ -1,6 +1,6 @@
 // Renderer (DRR, display, fluoro panel) — F2, F7.
 // mount() builds this zone's panel (fluoro-panel) with the fluoro canvas.
-import { bus } from '../core/store';
+import { bus, store } from '../core/store';
 import { createFluoroCanvas } from './fluoroCanvas';
 
 export function mount(element: HTMLElement): void {
@@ -23,5 +23,5 @@ export function mount(element: HTMLElement): void {
   Object.assign(panel.style, { display: 'flex', flexDirection: 'column' });
   panel.append(marker, heading, imageArea);
   element.append(panel);
-  createFluoroCanvas(imageArea, bus);
+  createFluoroCanvas(imageArea, store, bus);
 }

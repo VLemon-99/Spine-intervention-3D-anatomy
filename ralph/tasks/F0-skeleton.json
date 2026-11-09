@@ -379,9 +379,9 @@
         "F0-S8",
         "F0-S13"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-09. src/render/drrGpu.ts: Data3DTexture (R8, nearest, unpackAlignment 1) + GLSL3 ShaderMaterial on a full-screen quad; rays built from createProjection(pose) exactly like geometry.ts; 0.5 mm march; dark (0.1) if any intensity > 0, else light (0.9). Assumes identity volume orientation (true for the phantom). Screen tests set the pose through the dev server's store module (tests/fixtures/simPage.ts setPose) because C-arm controls come in F3. The four corner rays miss the phantom's box entirely at the default pose (≈195 mm field vs 95 mm phantom), so 'only air' holds trivially; the unit test also checks the centre ray hits tissue so the sampler is proven to work."
     },
     {
       "id": "F0-S15",

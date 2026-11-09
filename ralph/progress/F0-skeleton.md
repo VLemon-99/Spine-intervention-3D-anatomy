@@ -13,6 +13,10 @@
 - Vitest sets NODE_ENV=test, so Vite's build() called from a unit test builds with import.meta.env.DEV = true unless process.env.NODE_ENV is set to 'production' around the call (see tests/core/testHook.build.test.ts).
 - Screen tests read state with `await page.waitForFunction(() => 'getState' in (window.__sim ?? {}))` first: the hook is installed by an async dynamic import.
 - Set-up-specific screen tests: `test.skip(({ hasTouch }) => hasTouch, 'desktop set-up only')` inside a describe (the skip callback gets fixtures, not testInfo).
+- Three.js ShaderMaterial with glslVersion GLSL3 does NOT define gl_FragColor: declare `layout(location = 0) out highp vec4 outColor;` and write to it.
+- Data3DTexture of 8-bit data with a width not divisible by 4 needs `texture.unpackAlignment = 1`.
+- Screen tests can set store state before UI controls exist with tests/fixtures/simPage.ts `setPose(page, {...})` (imports /src/core/store.ts from the dev server, same module instance as the app). `takeImage(page)` and `getSimState(page)` live there too.
+- To see browser console errors (e.g. shader compile logs), a throwaway spec with `page.on('console', ...)` works; delete it afterwards.
 
 ## Rounds
 <!--
@@ -100,3 +104,9 @@
 - Files touched: src/render/fluoroCanvas.ts, src/render/index.ts, tests/fixtures/readCanvas.ts, tests/e2e/render/canvas.spec.ts, ralph/tasks/F0-skeleton.json, ralph/progress/F0-skeleton.md
 - Test result: verify passed (6/6). npm run check passed (unit 74/74, screen 34 passed, 6 skipped); build OK with a >500 kB chunk-size warning from Three.js.
 - Next round should know: reading pixels through drawImage into a 2D canvas works on SwiftShader in both set-ups; row 0 of readCanvas is the TOP of the image (the browser handles WebGL's bottom-up rows). So in the shader, image row = 512 − gl_FragCoord.y (fragment centres are at .5). Chunk-size warning could be addressed later by an interactive session (e.g. build.chunkSizeWarningLimit, a shared file).
+
+## Round — 2026-11-09 07:31 — F0-S14 — done
+- What I did: Added src/render/drrGpu.ts (volume intensity as a 3D texture; fragment shader marches each pixel's ray, built from createProjection like geometry.ts, through the volume box; dark if it hits any non-air voxel). fluoroCanvas now renders it on each exposure at lastImagePose (flat light fill if no volume). Added tests/fixtures/simPage.ts (getSimState, setPose, takeImage). Tests first: tests/render/corners.test.ts and tests/e2e/render/outline.spec.ts (default pose; oblique +30°/tilt +15°).
+- Files touched: src/render/drrGpu.ts, src/render/fluoroCanvas.ts, src/render/index.ts, tests/fixtures/simPage.ts, tests/render/corners.test.ts, tests/e2e/render/outline.spec.ts, ralph/tasks/F0-skeleton.json, ralph/progress/F0-skeleton.md
+- Test result: verify passed (unit 1/1; outline 4/4). npm run check passed (unit 75/75, screen 38 passed, 6 skipped); build OK.
+- Next round should know: first shader attempt failed to compile (gl_FragColor under GLSL3, see Lessons). In the unit test, my own extra check that corner rays pass through the volume was wrong (they miss its box), so I replaced it with a centre-ray sanity check; the story's criterion itself is unchanged. For F0-S15, replace the hit/no-hit loop with summed absorption and grey = exp(-total).
