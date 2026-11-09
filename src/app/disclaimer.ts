@@ -51,7 +51,15 @@ export function showDisclaimer(parent: HTMLElement, onAccept?: () => void): void
   button.textContent = 'I understand';
   Object.assign(button.style, { minWidth: '160px', minHeight: '48px', fontSize: '18px', cursor: 'pointer' });
 
+  // Everything else in `parent` is made inert while the disclaimer is shown,
+  // so the keyboard (Tab, Enter, space) cannot reach the app behind it either.
+  const madeInert = [...parent.children].filter(
+    (child): child is HTMLElement => child instanceof HTMLElement && !child.inert,
+  );
+  for (const child of madeInert) child.inert = true;
+
   button.addEventListener('click', () => {
+    for (const child of madeInert) child.inert = false;
     overlay.remove();
     document.documentElement.removeAttribute(ATTRIBUTE);
     onAccept?.();
