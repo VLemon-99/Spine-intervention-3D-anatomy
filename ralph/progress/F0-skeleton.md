@@ -35,3 +35,9 @@
 - Files touched: package.json, package-lock.json, tsconfig.json, tools/anatomy/convert.ts, tests/anatomy/convert-cli.test.ts, tests/core/project-config.test.ts, ralph/tasks/F0-skeleton.json, ralph/progress/F0-skeleton.md
 - Test result: verify passed (npm install; convert-cli + project-config 10/10; lint OK). npm run check passed (unit 10/10, screen 4/4); build OK.
 - Next round should know: the convert script sets process.exitCode instead of calling process.exit, so F1 can make main() async without losing output.
+
+## Round — 2026-11-09 07:09 — F0-S4 — done
+- What I did: Created src/core/labels.ts (TISSUE ids 0–13 with display names, isBone, LEVEL_CODES C1…ilium with LEVEL_IDS 1–26, NO_LEVEL = 0, levelCodeFromId, SIDES) and src/core/types.ts (Vec3, Sided, Volume, Endplate, LevelLandmarks, Landmarks, Mode, CArmPose, NeedleState, TissueEventType, ContrastCompartment, TissueEvent, ProcedureAttemptRecord/QuizAttemptRecord → AttemptRecord), with the coordinate/unit conventions in comments. Tests first: tests/core/labels.test.ts and tests/core/types.test.ts (examples of every type, '@ts-expect-error' for a bad Mode, a bad TissueEvent type and a quiz record with shots).
+- Files touched: src/core/labels.ts, src/core/types.ts, tests/core/labels.test.ts, tests/core/types.test.ts, ralph/tasks/F0-skeleton.json, ralph/progress/F0-skeleton.md
+- Test result: verify passed (labels + types 8/8; typecheck OK). npm run check passed (unit 18/18, screen 4/4).
+- Next round should know: Volume voxel index = i + size.x * (j + size.y * k); origin is the centre of voxel (0,0,0); orientation gives the patient direction of the i, j, k axes. Table offsets map leftRight→x, height→y, headFoot→z (patient moves by the offset relative to the isocentre). See the story notes for review points in types.ts.

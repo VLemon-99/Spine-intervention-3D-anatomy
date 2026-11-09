@@ -108,9 +108,9 @@
       "dependsOn": [
         "F0-S1"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-09. Choices for the owner/reviewer to check in types.ts: points are {x,y,z} objects (Vec3); level codes in Landmarks/TissueEvent are strings ('L4'), with numeric ids only in the level volume (LEVEL_IDS: C1=1 … L5=24, sacrum=25, ilium=26); table offsets: tableLeftRight along x (+ = patient's left), tableHeadFoot along z (+ = head), tableHeight along y (+ = up/posterior) — F0-S8 should follow this; NeedleState.hubAngles is {pitch, yaw} relative to the down-the-beam start direction; bevelAngle is the hub notch clock angle (0 = 12 o'clock); AttemptRecord is a union: quiz records cannot carry procedureId/shots/fluoroTimeSeconds; unsafe is on both kinds; TissueEvent.compartment uses ContrastCompartment (epidural, intrathecal, intraArticular, softTissue, intravascular)."
     },
     {
       "id": "F0-S5",
