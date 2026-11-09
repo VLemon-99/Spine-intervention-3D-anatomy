@@ -36,7 +36,7 @@ The 3D view only reads the store; it never changes it.
 - **Units:** mm and degrees in all public functions; radians only inside maths code.
 - **Determinism:** anything random takes a seed from `src/core/random.ts`.
 - **Clinical data files** (`params.json`, `tissues.json`, case files, quiz bank) carry a `status` or `reviewedByOwner` field. Loops write `draft` or `false`; only the owner changes them.
-- **UI:** each zone exports `mount(element)` from its `index.ts` and builds its own panel. Only the app zone edits `src/app/main.ts`. Interactive elements get `data-testid` attributes.
+- **UI:** each zone except `core` exports `mount(element)` from its `index.ts` and builds its own panel. Only the app zone edits `src/app/main.ts`. Interactive elements get `data-testid` attributes.
 - **Test hook:** `window.__sim` is created in `src/core/testHook.ts` only when `import.meta.env.DEV` or test mode is on. Zones register read-only getters for their state through it.
 
 ## Work zones (for parallel loops)
