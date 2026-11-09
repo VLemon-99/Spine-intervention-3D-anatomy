@@ -353,9 +353,9 @@
         "F0-S10",
         "F0-S12"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-09. src/render/fluoroCanvas.ts: Three.js WebGLRenderer with preserveDrawingBuffer on a 512×512 canvas (fluoro-canvas); black until the first exposure, flat grey fill on each 'exposure'. tests/fixtures/readCanvas.ts copies the canvas into a 2D canvas and returns mean-RGB grey values; (x, y) are geometry.ts pixel positions (y from the top). The production build now warns that the bundle is over 500 kB (Three.js); the build still passes."
     },
     {
       "id": "F0-S14",

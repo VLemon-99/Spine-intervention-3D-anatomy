@@ -94,3 +94,9 @@
 - Files touched: src/carm/shot.ts, src/carm/index.ts, tests/carm/shot.test.ts, tests/e2e/carm/shot.spec.ts, ralph/tasks/F0-skeleton.json, ralph/progress/F0-skeleton.md
 - Test result: verify passed (carm unit 4/4; shot screen tests 6 passed, 6 skipped by design). npm run check passed (unit 74/74, screen 28 passed, 6 skipped); build OK.
 - Next round should know: to take an image in a screen test, press Space (desktop) or tap shot-button (tablet) after acceptDisclaimer(); the 'exposure' event fires after the store is updated.
+
+## Round — 2026-11-09 07:27 — F0-S13 — done
+- What I did: Added src/render/fluoroCanvas.ts (512×512 WebGL2 canvas via Three.js WebGLRenderer, preserveDrawingBuffer, black until the first exposure, flat grey fill per 'exposure' event; returns null instead of crashing if WebGL fails) and put it in the fluoro panel. Added the shared helper tests/fixtures/readCanvas.ts. Screen tests first: tests/e2e/render/canvas.spec.ts (3 × 2 set-ups).
+- Files touched: src/render/fluoroCanvas.ts, src/render/index.ts, tests/fixtures/readCanvas.ts, tests/e2e/render/canvas.spec.ts, ralph/tasks/F0-skeleton.json, ralph/progress/F0-skeleton.md
+- Test result: verify passed (6/6). npm run check passed (unit 74/74, screen 34 passed, 6 skipped); build OK with a >500 kB chunk-size warning from Three.js.
+- Next round should know: reading pixels through drawImage into a 2D canvas works on SwiftShader in both set-ups; row 0 of readCanvas is the TOP of the image (the browser handles WebGL's bottom-up rows). So in the shader, image row = 512 − gl_FragCoord.y (fragment centres are at .5). Chunk-size warning could be addressed later by an interactive session (e.g. build.chunkSizeWarningLimit, a shared file).
