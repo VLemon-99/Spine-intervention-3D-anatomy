@@ -6,7 +6,7 @@
 
 | Feature | Task file | Zone(s) | Depends on | Status | Branch | Notes |
 |---|---|---|---|---|---|---|
-| F0 — Walking skeleton | `ralph/tasks/F0-skeleton.json` | all (sets up shared files) | — | not planned | `ralph/F0-skeleton` | Must be merged before anything else |
+| F0 — Walking skeleton | `ralph/tasks/F0-skeleton.json` | all (sets up shared files) | — | planned | `ralph/F0-skeleton` | Must be merged before anything else. 13 stories; round limit 20 |
 | F1 — Anatomy data | `ralph/tasks/F1-anatomy.json` | anatomy | F0 | not planned | `ralph/F1-anatomy` | F1.7 (real CT) is an interactive session with the owner |
 | F2 — Fluoro renderer | `ralph/tasks/F2-renderer.json` | render | F0 | not planned | `ralph/F2-renderer` | |
 | F3 — C-arm, table & exposure | `ralph/tasks/F3-carm.json` | carm | F0 | not planned | `ralph/F3-carm` | |
@@ -24,14 +24,14 @@
 
 ## Can run in parallel right now
 <!-- Features whose zones don't overlap and whose dependencies are merged. See docs/ARCHITECTURE.md → Work zones. -->
-- Nothing yet. F0 must be planned, looped and merged first.
+- Nothing yet. F0 is planned and must be looped and merged first, on its own (it creates every shared file).
 - After F0 is merged: F1, F2, F3, F4, F8 and F12 (all different zones, all only depend on F0).
 
 ## Waiting on me
 <!-- Blocked stories, open questions, pull requests to review. -->
 - Open questions in `docs/SPEC.md` → "Open questions": app name, choosing the CT scan(s) (before F1.7).
-- Next step: run Prompt 2 (plan stories) in a fresh session — suggested: "Only plan feature F0" first.
+- Next step: check the F0 stories with Prompt 3 in a fresh session, then run the F0 loop (Prompt 4, round limit 20).
 
 ## Handoff note (interactive sessions)
 <!-- Where we stopped, anything half-finished, what the next session should check first. -->
-2026-11-09 kickoff: interview done, and these are written: SPEC (F0–F12), ARCHITECTURE (zones + shared files), DECISIONS (stack, anatomy, no-login, desktop+tablet, Playwright pin, clinical review), CLAUDE.md (stack + commands) and the `.claude/settings.json` allow list. No application code exists yet. The npm scripts named in CLAUDE.md (`dev`, `test`, `test:e2e`, `lint`, `typecheck`, `check`, `build`, `anatomy:convert`) must be created by F0, except `anatomy:convert`, which comes with F1.
+2026-11-09 kickoff: interview done, and these are written: SPEC (F0–F12), ARCHITECTURE (zones + shared files), DECISIONS (stack, anatomy, no-login, desktop+tablet, Playwright pin, clinical review), CLAUDE.md (stack + commands) and the `.claude/settings.json` allow list. No application code exists yet. The npm scripts named in CLAUDE.md (`dev`, `test`, `test:e2e`, `lint`, `typecheck`, `check`, `build`, `anatomy:convert`) must be created by F0. `anatomy:convert` is a placeholder in F0 (F0.10, owner decision 2026-11-09); F1 builds the real converter behind it.

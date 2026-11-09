@@ -49,10 +49,11 @@ Acceptance criteria:
   - projecting then unprojecting returns a ray passing within 0.1 mm of the original point;
   - pose (0°, 0°) is a straight AP beam for a prone patient (source under the table, detector above the back);
   - oblique +90° is a lateral beam.
-- [ ] F0.6 Pressing the spacebar or tapping the "Take image" button renders a DRR of the phantom in the fluoro panel. Bone is shown dark and air light. The canvas pixel at the projected centre of the phantom's vertebra block is darker than the pixel in an image corner (air) by at least 50 grey levels out of 255.
+- [ ] F0.6 Pressing the spacebar or tapping the on-screen **Shot** button (the same button as in F3.3) renders a DRR of the phantom in the fluoro panel. Bone is shown dark and air light. The canvas pixel at the projected centre of the phantom's vertebra block is darker than the pixel in an image corner (air) by at least 50 grey levels out of 255.
 - [ ] F0.7 `window.__sim.getState()` returns the C-arm pose, the shot count and the last image's pose in `npm run dev` and in test runs. After `npm run build`, no built file contains the text `__sim`.
-- [ ] F0.8 Every work-zone folder in `docs/ARCHITECTURE.md` exists with an `index.ts` that exports a `mount(element)` function (it may render a placeholder) and one passing placeholder test. `src/app/main.ts` mounts all of them.
+- [ ] F0.8 Every work-zone folder in `docs/ARCHITECTURE.md` except `core` (shared contracts, no screen) exists with an `index.ts` that exports a `mount(element)` function (it may render a placeholder) and one passing placeholder test. `src/app/main.ts` mounts all of them.
 - [ ] F0.9 `npm run check` runs lint, type check, unit tests and screen tests, in both the desktop and tablet set-ups, and passes.
+- [ ] F0.10 `npm run anatomy:convert` exists (run through `tsx`) and points at `tools/anatomy/convert.ts`. In F0 that file is a placeholder: run with no arguments, it prints a usage line containing `<input-folder> <output-folder>` and exits with an error code (unit test). F1 builds the real converter behind it, so F1 never needs to change `package.json`.
 
 ### F1 — Anatomy data (zone: anatomy)
 Turns a public, anonymised CT scan and its segmentation masks into small files the browser can load. Adds the soft-tissue structures that CT segmentations don't provide, as approximate modelled shapes. Downloading the real CT happens in an interactive session (it needs network access). Loops build and test the converter on small generated test files.

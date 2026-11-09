@@ -2,6 +2,16 @@
 
 > One entry per meaningful choice, newest at the top. This stops future sessions and loop rounds from quietly undoing past decisions. Loop rounds don't edit this file — they record proposals in their progress log, and an interactive session adds them here after review.
 
+## 2026-11-09 — F0 planning answers
+- **Decision:**
+  - F0 adds the `npm run anatomy:convert` command now (with `tsx`, a small dev tool that runs TypeScript files in Node) and a placeholder converter. F1 fills in the converter.
+  - The on-screen button that takes an image is called **Shot** everywhere (F0.6 and F3.3 are the same button).
+  - `core` has no `mount()` function: it holds shared contracts and has no screen.
+  - The C-arm geometry uses typical mobile C-arm distances and detector size, not a specific machine.
+- **Why:** Adding the command in F0 keeps `package.json` (a shared file) out of F1, so F1 can run in parallel with other features. One name for one button avoids two buttons doing the same thing. A do-nothing `mount()` in core would be clutter. Typical values are good enough for training, and they're named settings that are easy to change later.
+- **Alternatives considered:** F1 adds the command (would block parallel loops); keeping "Take image" as the name; a placeholder `mount()` in core; matching one specific C-arm model.
+- **Revisit if:** A specific C-arm model should be matched, or `tsx` causes problems (Node's built-in TypeScript support could replace it).
+
 ## 2026-11-09 — Owner answers to kickoff open questions
 - **Decision:**
   - The cervical, thoracic and lumbosacral regions may come from **different anonymous people**.
