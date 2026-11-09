@@ -53,3 +53,9 @@
 - Files touched: src/core/phantom.ts, tests/core/phantom.test.ts, tests/core/phantomHelpers.ts, ralph/tasks/F0-skeleton.json, ralph/progress/F0-skeleton.md
 - Test result: verify passed (phantom 8/8). npm run check passed (unit 39/39, screen 4/4).
 - Next round should know: Block centres (0, −12, ±14); foramen centres (±13, 5, 0); L4 superior articular process tips sit at the top of the upper pillars (±15, 18, 26), L5's at (±15, 18, −1); pedicle box centres (±11, 7, ±17). Endplates: upper body z 4…24, lower −24…−4. tests/core/phantomHelpers.ts has voxelIndexAt / voxelCentre / forEachVoxelNear for S7.
+
+## Round — 2026-11-09 07:14 — F0-S7 — done
+- What I did: Extended src/core/phantom.ts: 8-bit intensity per tissue (INTENSITY_BY_LABEL), a levels volume (bone at z > 0 = L4, z < 0 = L5, everything else 0), and createPhantomLandmarks() returning Landmarks for region 'phantom' with L4 and L5 entries (body, pedicle, endplate centres + unit normals, superior articular process tips; foramen centres under L4 equal to PHANTOM_TEST_POINTS.foramenCentres). Tests first: 9 new tests in tests/core/phantom.test.ts.
+- Files touched: src/core/phantom.ts, tests/core/phantom.test.ts, ralph/tasks/F0-skeleton.json, ralph/progress/F0-skeleton.md
+- Test result: verify passed (phantom 17/17, typecheck OK). npm run check passed (unit 48/48, screen 4/4).
+- Next round should know: createPhantom() takes ~0.2 s; call it once per test file. For the DRR (F0-S15), intensity 0 = air, so absorption from intensity alone keeps air fully bright.

@@ -33,9 +33,12 @@
 //   cylinders along x, 5 ≤ |x| ≤ 26, round (y 5, z 0), radius 2.
 // - Artery: cylinder along z round (x 8, y −28), radius 3.5, |z| ≤ 40.
 // - Vein:   cylinder along z round (x −9, y −28), radius 4, |z| ≤ 40.
+//
+// Intensity: one 8-bit value per tissue (INTENSITY_BY_LABEL). Levels: the
+// upper block's bone is L4, the lower block's L5. Landmarks: createPhantomLandmarks().
 
-import { TISSUE } from './labels';
-import type { Vec3, Volume } from './types';
+import { LEVEL_IDS, NO_LEVEL, TISSUE, isBone } from './labels';
+import type { Landmarks, LevelLandmarks, Vec3, Volume } from './types';
 
 /** Number of voxels along each axis. */
 export const PHANTOM_SIZE = 95;
@@ -123,6 +126,27 @@ function labelAtPoint(p: Vec3): number {
   return TISSUE.muscle;
 }
 
+/**
+ * 8-bit intensity per tissue label: denser tissue is higher. Bone is densest,
+ * air is 0, soft tissues sit in between (roughly following CT density).
+ */
+const INTENSITY_BY_LABEL: Readonly<Record<number, number>> = {
+  [TISSUE.air]: 0,
+  [TISSUE.skinFat]: 70,
+  [TISSUE.muscle]: 90,
+  [TISSUE.corticalBone]: 230,
+  [TISSUE.cancellousBone]: 170,
+  [TISSUE.disc]: 95,
+  [TISSUE.ligamentumFlavum]: 95,
+  [TISSUE.epiduralSpace]: 75,
+  [TISSUE.thecalSac]: 85,
+  [TISSUE.spinalCord]: 90,
+  [TISSUE.nerveRoot]: 90,
+  [TISSUE.artery]: 100,
+  [TISSUE.vein]: 95,
+  [TISSUE.jointSpace]: 85,
+};
+
 /** Generate the phantom. Deterministic: every call gives an identical volume. */
 export function createPhantom(): Volume {
   const n = PHANTOM_SIZE;
@@ -130,10 +154,18 @@ export function createPhantom(): Volume {
   const half = ((n - 1) / 2) * s;
   const origin: Vec3 = { x: -half, y: -half, z: -half };
   const labels = new Uint8Array(n * n * n);
+  const intensity = new Uint8Array(n * n * n);
+  const levels = new Uint8Array(n * n * n);
   for (let k = 0; k < n; k++) {
+    const z = origin.z + k * s;
     for (let j = 0; j < n; j++) {
       for (let i = 0; i < n; i++) {
-        labels[i + n * (j + n * k)] = labelAtPoint({ x: origin.x + i * s, y: origin.y + j * s, z: origin.z + k * s });
+        const index = i + n * (j + n * k);
+        const label = labelAtPoint({ x: origin.x + i * s, y: origin.y + j * s, z });
+        labels[index] = label;
+        intensity[index] = INTENSITY_BY_LABEL[label] ?? 0;
+        // Upper block (z > 0) is L4, lower block (z < 0) is L5; no other voxel has a level.
+        levels[index] = isBone(label) ? (z > 0 ? LEVEL_IDS.L4 : LEVEL_IDS.L5) : NO_LEVEL;
       }
     }
   }
@@ -147,8 +179,44 @@ export function createPhantom(): Volume {
       { x: 0, y: 1, z: 0 },
       { x: 0, y: 0, z: 1 },
     ],
-    // Intensity is filled in F0-S7; all zero for now.
-    intensity: new Uint8Array(n * n * n),
+    intensity,
     labels,
+    levels,
   };
+}
+
+/** Landmarks of one block; zSign +1 = upper block (L4), −1 = lower block (L5). */
+function blockLandmarks(zSign: 1 | -1): LevelLandmarks {
+  const up = zSign > 0;
+  return {
+    level: up ? 'L4' : 'L5',
+    bodyCentre: { ...PHANTOM_TEST_POINTS.blockCentres[up ? 'upper' : 'lower'] },
+    // Centres of the pedicle boxes.
+    pedicleCentre: {
+      left: { x: 11, y: 7, z: 17 * zSign },
+      right: { x: -11, y: 7, z: 17 * zSign },
+    },
+    // Top and bottom faces of the body box; normals point away from the body.
+    superiorEndplate: { centre: { x: 0, y: -12, z: up ? 24 : -4 }, normal: { x: 0, y: 0, z: 1 } },
+    inferiorEndplate: { centre: { x: 0, y: -12, z: up ? 4 : -24 }, normal: { x: 0, y: 0, z: -1 } },
+    // Tops of the articular pillars.
+    superiorArticularProcessTip: {
+      left: { x: 15, y: 18, z: up ? 26 : -1 },
+      right: { x: -15, y: 18, z: up ? 26 : -1 },
+    },
+    // The foramen between the blocks is listed under the level above it (L4).
+    ...(up
+      ? {
+          foramenCentre: {
+            left: { ...PHANTOM_TEST_POINTS.foramenCentres.left },
+            right: { ...PHANTOM_TEST_POINTS.foramenCentres.right },
+          },
+        }
+      : {}),
+  };
+}
+
+/** The phantom's landmarks, in the same format as the real regions. Deterministic. */
+export function createPhantomLandmarks(): Landmarks {
+  return { region: 'phantom', levels: [blockLandmarks(1), blockLandmarks(-1)] };
 }

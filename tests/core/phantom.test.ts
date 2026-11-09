@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { TISSUE, TISSUE_LABELS, isBone } from '../../src/core/labels';
-import { PHANTOM_TEST_POINTS, createPhantom } from '../../src/core/phantom';
+import { LEVEL_IDS, NO_LEVEL, TISSUE, TISSUE_LABELS, isBone } from '../../src/core/labels';
+import { PHANTOM_TEST_POINTS, createPhantom, createPhantomLandmarks } from '../../src/core/phantom';
+import type { Landmarks, Vec3 } from '../../src/core/types';
 import { forEachVoxelNear, voxelCentre, voxelIndexAt } from './phantomHelpers';
 
 const phantom = createPhantom();
@@ -113,5 +114,94 @@ describe('synthetic phantom: layout and labels', () => {
     expect(again.origin).toEqual(phantom.origin);
     expect(Buffer.from(again.labels).equals(Buffer.from(phantom.labels))).toBe(true);
     expect(Buffer.from(again.intensity).equals(Buffer.from(phantom.intensity))).toBe(true);
+  });
+});
+
+describe('synthetic phantom: intensity, levels and landmarks', () => {
+  const levels = phantom.levels;
+  const landmarks: Landmarks = createPhantomLandmarks();
+  const levelAt = (p: Vec3): number => levels?.[voxelIndexAt(phantom, p)] ?? -1;
+
+  it('makes bone brighter on average than muscle, and muscle brighter than air', () => {
+    const sum = { bone: 0, muscle: 0, air: 0 };
+    const count = { bone: 0, muscle: 0, air: 0 };
+    phantom.labels.forEach((label, index) => {
+      const value = phantom.intensity[index] ?? 0;
+      const group = isBone(label) ? 'bone' : label === TISSUE.muscle ? 'muscle' : label === TISSUE.air ? 'air' : null;
+      if (!group) return;
+      sum[group] += value;
+      count[group]++;
+    });
+    const mean = (g: keyof typeof sum): number => sum[g] / count[g];
+    expect(mean('bone')).toBeGreaterThan(mean('muscle'));
+    expect(mean('muscle')).toBeGreaterThan(mean('air'));
+  });
+
+  it('gives every bone voxel a level and no other voxel one', () => {
+    expect(levels).toBeDefined();
+    expect(levels?.length).toBe(phantom.labels.length);
+    phantom.labels.forEach((label, index) => {
+      const level = levels?.[index] ?? NO_LEVEL;
+      if (isBone(label) !== (level !== NO_LEVEL)) throw new Error(`voxel ${index}: label ${label}, level ${level}`);
+    });
+  });
+
+  it('gives each block centre its level (L4 upper, L5 lower)', () => {
+    expect(levelAt(PHANTOM_TEST_POINTS.blockCentres.upper)).toBe(LEVEL_IDS.L4);
+    expect(levelAt(PHANTOM_TEST_POINTS.blockCentres.lower)).toBe(LEVEL_IDS.L5);
+  });
+
+  it('has landmarks for region "phantom" with entries for L4 and L5', () => {
+    expect(landmarks.region).toBe('phantom');
+    expect(landmarks.levels.map((l) => l.level).sort()).toEqual(['L4', 'L5']);
+  });
+
+  it('has bone of the right level at every body centre and pedicle centre', () => {
+    for (const entry of landmarks.levels) {
+      for (const p of [entry.bodyCentre, entry.pedicleCentre.left, entry.pedicleCentre.right]) {
+        expect(isBone(labelAt(p)), `${entry.level} ${JSON.stringify(p)}`).toBe(true);
+        expect(levelAt(p)).toBe(LEVEL_IDS[entry.level]);
+      }
+    }
+  });
+
+  it('lists the foramen centres under L4, equal to the test points, and not in bone', () => {
+    const l4 = landmarks.levels.find((l) => l.level === 'L4');
+    expect(l4?.foramenCentre?.left).toEqual(PHANTOM_TEST_POINTS.foramenCentres.left);
+    expect(l4?.foramenCentre?.right).toEqual(PHANTOM_TEST_POINTS.foramenCentres.right);
+    for (const p of [l4?.foramenCentre?.left, l4?.foramenCentre?.right]) {
+      expect(p).toBeDefined();
+      if (p) expect(isBone(labelAt(p))).toBe(false);
+    }
+  });
+
+  it('has unit endplate tilt directions, with the superior endplate above the inferior one', () => {
+    for (const entry of landmarks.levels) {
+      for (const plate of [entry.superiorEndplate, entry.inferiorEndplate]) {
+        expect(Math.abs(Math.hypot(plate.normal.x, plate.normal.y, plate.normal.z) - 1)).toBeLessThan(0.001);
+      }
+      expect(entry.superiorEndplate.centre.z).toBeGreaterThan(entry.inferiorEndplate.centre.z);
+    }
+  });
+
+  it('fills every landmark field with finite numbers', () => {
+    for (const entry of landmarks.levels) {
+      const points = [
+        entry.bodyCentre,
+        entry.pedicleCentre.left,
+        entry.pedicleCentre.right,
+        entry.superiorEndplate.centre,
+        entry.inferiorEndplate.centre,
+        entry.superiorArticularProcessTip.left,
+        entry.superiorArticularProcessTip.right,
+      ];
+      for (const p of points) for (const v of [p.x, p.y, p.z]) expect(Number.isFinite(v)).toBe(true);
+    }
+  });
+
+  it('is deterministic: two calls give identical levels and landmarks', () => {
+    const again = createPhantom();
+    expect(again.levels && levels && Buffer.from(again.levels).equals(Buffer.from(levels))).toBe(true);
+    expect(createPhantomLandmarks()).toEqual(landmarks);
   });
 });

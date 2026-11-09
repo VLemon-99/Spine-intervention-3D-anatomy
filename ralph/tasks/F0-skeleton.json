@@ -194,9 +194,9 @@
       "dependsOn": [
         "F0-S6"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-09. Intensity is one 8-bit value per tissue (air 0, skin/fat 70, muscle 90, cancellous 170, cortical 230, others 75–100). Landmarks come from createPhantomLandmarks(); endplate normals point away from the body (superior +z, inferior −z)."
     },
     {
       "id": "F0-S8",
