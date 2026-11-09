@@ -9,6 +9,8 @@
 - `tsconfig.json` includes `src`, `tests` and `*.config.ts`; anything new outside those (e.g. `tools/`, `playwright.config.ts` is covered by `*.config.ts`) must be added to `include` to be type-checked.
 - Running `npm run dev` in the background from a loop round was denied by the sandbox permissions; screen tests should start the dev server through Playwright's `webServer` instead.
 
+- Screen tests: use `tests/fixtures/acceptDisclaimer.ts` (`await acceptDisclaimer(page)`) after `page.goto('/')`; it clicks on desktop and taps on tablet (`test.info().project.use.hasTouch`).
+
 ## Rounds
 <!--
 ## Round — YYYY-MM-DD HH:MM — F1-S1 — done | failed | blocked
@@ -65,3 +67,9 @@
 - Files touched: src/core/geometry.ts, tests/core/geometry.test.ts, ralph/tasks/F0-skeleton.json, ralph/progress/F0-skeleton.md
 - Test result: verify passed (geometry 8/8). npm run check passed (unit 56/56, screen 4/4).
 - Next round should know: pixel (i, j) has its centre at (i + 0.5, j + 0.5); the image centre (256, 256) is a pixel corner. For the shader (F0-S14), a pixel's ray is unproject({x: i + 0.5, y: j + 0.5}); in WebGL gl_FragCoord.y counts from the bottom, so row j = 511 − floor(gl_FragCoord.y) unless the canvas is read back flipped.
+
+## Round — 2026-11-09 07:18 — F0-S9 — done
+- What I did: Added src/app/disclaimer.ts: showDisclaimer(parent) builds a full-viewport fixed overlay (test ids disclaimer, disclaimer-accept) with 'For training only — not for clinical use.' and an 'I understand' button; while shown, <html data-disclaimer="shown"> is set and isDisclaimerShown() returns true. main.ts now shows it on every load. Added the shared helper tests/fixtures/acceptDisclaimer.ts. Screen tests first: tests/e2e/app/disclaimer.spec.ts (4 tests × 2 set-ups).
+- Files touched: src/app/disclaimer.ts, src/app/main.ts, tests/fixtures/acceptDisclaimer.ts, tests/e2e/app/disclaimer.spec.ts, ralph/tasks/F0-skeleton.json, ralph/progress/F0-skeleton.md
+- Test result: verify passed (8/8 screen tests). npm run check passed (unit 56/56, screen 12/12); build OK.
+- Next round should know: the overlay has z-index 1000 and is appended to document.body; panels mounted into #app stay underneath it, so clicks land on the overlay while it is shown.

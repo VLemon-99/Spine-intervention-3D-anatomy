@@ -246,9 +246,9 @@
       "dependsOn": [
         "F0-S2"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-09. Other zones check the disclaimer with isDisclaimerShown() from src/app/disclaimer.ts, or the attribute data-disclaimer=\"shown\" on <html> (no import needed). Disclaimer wording is drafted; the owner may want to review it."
     },
     {
       "id": "F0-S10",
