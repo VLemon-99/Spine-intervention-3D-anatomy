@@ -73,3 +73,9 @@
 - Files touched: src/app/disclaimer.ts, src/app/main.ts, tests/fixtures/acceptDisclaimer.ts, tests/e2e/app/disclaimer.spec.ts, ralph/tasks/F0-skeleton.json, ralph/progress/F0-skeleton.md
 - Test result: verify passed (8/8 screen tests). npm run check passed (unit 56/56, screen 12/12); build OK.
 - Next round should know: the overlay has z-index 1000 and is appended to document.body; panels mounted into #app stay underneath it, so clicks land on the overlay while it is shown.
+
+## Round — 2026-11-09 07:21 — F0-S10 — done
+- What I did: Created src/<zone>/index.ts with mount(element) for all 10 zones. app builds the 2×2 layout (getLayout() returns the slots); render/carm/needle/view3d each build their panel (fluoro-panel, carm-panel, needle-panel, view3d-panel) with a hidden zone-<name> marker; anatomy/sim/contrast/procedures/quiz add only a hidden marker. main.ts puts createPhantom() + createPhantomLandmarks() in the store, mounts all zones, then shows the disclaimer. Tests first: one placeholder unit test per zone (tests/<zone>/index.test.ts) and tests/e2e/app/panels.spec.ts.
+- Files touched: src/{app,anatomy,render,carm,needle,sim,view3d,contrast,procedures,quiz}/index.ts, src/app/main.ts, tests/{same 10 zones}/index.test.ts, tests/e2e/app/panels.spec.ts, ralph/tasks/F0-skeleton.json, ralph/progress/F0-skeleton.md
+- Test result: verify passed (vitest 66/66; panels 6/6). npm run check passed (unit 66/66, screen 18/18); build OK.
+- Next round should know: each panel is a <section class="panel"> inside a grid slot; add zone content by appending to the panel element created in that zone's mount(). The phantom is generated on page load (~0.2 s).

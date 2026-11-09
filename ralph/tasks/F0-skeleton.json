@@ -274,9 +274,9 @@
         "F0-S7",
         "F0-S9"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-09. Layout: src/app/index.ts mount() builds a 2×2 grid of slots (fluoro, carm, needle, view3d) plus a hidden slot for zones without a panel; main.ts hands each slot to its zone's mount(). Panels are covered by the disclaimer overlay until accepted. F12.3 owns the real layout (portrait stacking, 44 px targets)."
     },
     {
       "id": "F0-S11",
