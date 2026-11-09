@@ -59,3 +59,9 @@
 - Files touched: src/core/phantom.ts, tests/core/phantom.test.ts, ralph/tasks/F0-skeleton.json, ralph/progress/F0-skeleton.md
 - Test result: verify passed (phantom 17/17, typecheck OK). npm run check passed (unit 48/48, screen 4/4).
 - Next round should know: createPhantom() takes ~0.2 s; call it once per test file. For the DRR (F0-S15), intensity 0 = air, so absorption from intensity alone keeps air fully bright.
+
+## Round — 2026-11-09 07:16 — F0-S8 — done
+- What I did: Created src/core/geometry.ts: createProjection(pose) returns source, detector centre, beam direction, detector right/up axes, isocentre (= −table offsets in patient coordinates), pixel size, and project(point) → pixel / unproject(pixel) → ray, all in patient coordinates. Rotation = tilt about x (cranial +), then oblique about z (right +). Named constants for typical mobile C-arm distances. Tests first: tests/core/geometry.test.ts (63 poses incl. table offsets for the isocentre check; 10 poses × 50 seeded points for the round trip; AP, lateral, ±25° oblique, ±20° tilt; image orientation).
+- Files touched: src/core/geometry.ts, tests/core/geometry.test.ts, ralph/tasks/F0-skeleton.json, ralph/progress/F0-skeleton.md
+- Test result: verify passed (geometry 8/8). npm run check passed (unit 56/56, screen 4/4).
+- Next round should know: pixel (i, j) has its centre at (i + 0.5, j + 0.5); the image centre (256, 256) is a pixel corner. For the shader (F0-S14), a pixel's ray is unproject({x: i + 0.5, y: j + 0.5}); in WebGL gl_FragCoord.y counts from the bottom, so row j = 511 − floor(gl_FragCoord.y) unless the canvas is read back flipped.

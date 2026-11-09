@@ -223,9 +223,9 @@
         "F0-S5",
         "F0-S6"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-09. Constants: source-to-detector 1000 mm, source-to-isocentre 650 mm, 300 mm square detector, 512×512 image (≈195 mm field at the isocentre). Image orientation choice for owner review: at pose (0°, 0°) image up = head and image right = patient's right (seen from behind the prone patient's back, from the detector side); display flips are F2.7. Tilt is applied before oblique."
     },
     {
       "id": "F0-S9",
