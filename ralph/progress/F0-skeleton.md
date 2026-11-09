@@ -110,3 +110,9 @@
 - Files touched: src/render/drrGpu.ts, src/render/fluoroCanvas.ts, src/render/index.ts, tests/fixtures/simPage.ts, tests/render/corners.test.ts, tests/e2e/render/outline.spec.ts, ralph/tasks/F0-skeleton.json, ralph/progress/F0-skeleton.md
 - Test result: verify passed (unit 1/1; outline 4/4). npm run check passed (unit 75/75, screen 38 passed, 6 skipped); build OK.
 - Next round should know: first shader attempt failed to compile (gl_FragColor under GLSL3, see Lessons). In the unit test, my own extra check that corner rays pass through the volume was wrong (they miss its box), so I replaced it with a centre-ray sanity check; the story's criterion itself is unchanged. For F0-S15, replace the hit/no-hit loop with summed absorption and grey = exp(-total).
+
+## Round — 2026-11-09 07:33 — F0-S15 — done
+- What I did: Replaced the outline in src/render/drrGpu.ts with the absorption law: total = Σ intensity/255 × ABSORPTION_PER_MM (0.025) × step along the ray, grey = e^(−total). Screen tests first: tests/e2e/render/drr.spec.ts (block centre ≥ 50 darker than a corner, with the spacebar on desktop and a tap on Shot on the tablet; block darker than a soft-tissue-only point, whose ray the test checks crosses muscle and no bone).
+- Files touched: src/render/drrGpu.ts, tests/e2e/render/drr.spec.ts, ralph/tasks/F0-skeleton.json, ralph/progress/F0-skeleton.md
+- Test result: verify passed (drr 4/4; npm run check: unit 75/75, screen 42 passed, 6 skipped); build OK.
+- Next round should know: all 15 F0 stories are done. The earlier outline (F0-S14) and canvas (F0-S13) screen tests still pass with the absorption image.

@@ -401,9 +401,9 @@
       "dependsOn": [
         "F0-S14"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-09. Shader sums intensity/255 × ABSORPTION_PER_MM (0.025 per mm) × step along each ray; grey = exp(−total). Bone dark, soft tissue grey, air white (255). ABSORPTION_PER_MM is a display setting in src/render/drrGpu.ts that F2 can tune."
     }
   ]
 }
