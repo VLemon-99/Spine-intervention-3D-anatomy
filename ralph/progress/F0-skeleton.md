@@ -47,3 +47,9 @@
 - Files touched: src/core/store.ts, src/core/random.ts, tests/core/store.test.ts, tests/core/random.test.ts, ralph/tasks/F0-skeleton.json, ralph/progress/F0-skeleton.md
 - Test result: verify passed (13/13). npm run check passed (unit 31/31, screen 4/4).
 - Next round should know: bus.emit('exposure') takes no payload; bus.emit('tissueEvent', event) requires one (type-checked). Store compares fields with Object.is, so always pass new objects/arrays when changing a pose or needle.
+
+## Round — 2026-11-09 07:13 — F0-S6 — done
+- What I did: Created src/core/phantom.ts: createPhantom() builds a deterministic 95×95×95, 1 mm Volume (region 'phantom') from simple boxes and cylinders: two vertebra blocks (body, pedicles, lamina, articular pillars; cortical within 2 mm of a box face, cancellous deeper), a disc, facet joint spaces at z = 0, canal (epidural, thecal sac, cord), ligamentum flavum between the laminae, nerve roots through both foramina, an artery and a vein, muscle, a 4 mm skin/fat layer and an air margin. Exported PHANTOM_TEST_POINTS (block centres, foramen centres, midline line). Tests first: tests/core/phantom.test.ts, with helpers in tests/core/phantomHelpers.ts (not a test file).
+- Files touched: src/core/phantom.ts, tests/core/phantom.test.ts, tests/core/phantomHelpers.ts, ralph/tasks/F0-skeleton.json, ralph/progress/F0-skeleton.md
+- Test result: verify passed (phantom 8/8). npm run check passed (unit 39/39, screen 4/4).
+- Next round should know: Block centres (0, −12, ±14); foramen centres (±13, 5, 0); L4 superior articular process tips sit at the top of the upper pillars (±15, 18, 26), L5's at (±15, 18, −1); pedicle box centres (±11, 7, ±17). Endplates: upper body z 4…24, lower −24…−4. tests/core/phantomHelpers.ts has voxelIndexAt / voxelCentre / forEachVoxelNear for S7.

@@ -163,9 +163,9 @@
       "dependsOn": [
         "F0-S4"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-09. Phantom is 95³ voxels of 1 mm, centred on the origin (voxel centres on whole mm, −47…+47). Upper block (L4) is entirely at z > 0, lower block (L5) at z < 0. Full layout is documented at the top of src/core/phantom.ts. Intensity is all zero until F0-S7."
     },
     {
       "id": "F0-S7",
