@@ -10,6 +10,8 @@
 - Running `npm run dev` in the background from a loop round was denied by the sandbox permissions; screen tests should start the dev server through Playwright's `webServer` instead.
 
 - Screen tests: use `tests/fixtures/acceptDisclaimer.ts` (`await acceptDisclaimer(page)`) after `page.goto('/')`; it clicks on desktop and taps on tablet (`test.info().project.use.hasTouch`).
+- Vitest sets NODE_ENV=test, so Vite's build() called from a unit test builds with import.meta.env.DEV = true unless process.env.NODE_ENV is set to 'production' around the call (see tests/core/testHook.build.test.ts).
+- Screen tests read state with `await page.waitForFunction(() => 'getState' in (window.__sim ?? {}))` first: the hook is installed by an async dynamic import.
 
 ## Rounds
 <!--
@@ -79,3 +81,9 @@
 - Files touched: src/{app,anatomy,render,carm,needle,sim,view3d,contrast,procedures,quiz}/index.ts, src/app/main.ts, tests/{same 10 zones}/index.test.ts, tests/e2e/app/panels.spec.ts, ralph/tasks/F0-skeleton.json, ralph/progress/F0-skeleton.md
 - Test result: verify passed (vitest 66/66; panels 6/6). npm run check passed (unit 66/66, screen 18/18); build OK.
 - Next round should know: each panel is a <section class="panel"> inside a grid slot; add zone content by appending to the panel element created in that zone's mount(). The phantom is generated on page load (~0.2 s).
+
+## Round — 2026-11-09 07:22 — F0-S11 — done
+- What I did: Added src/core/debugRegistry.ts (registerDebugGetter/getDebugGetter; returns early unless import.meta.env.DEV; never contains the hook's name) and src/core/testHook.ts (installTestHook(target, store) puts a Proxy on target.__sim with getState() plus registered getters, all returning structuredClone copies). main.ts loads it via dynamic import inside if (import.meta.env.DEV). Tests first: tests/core/testHook.test.ts (4), tests/core/testHook.build.test.ts (Vite build() into a temp folder, no '__sim' in any file), tests/e2e/app/testHook.spec.ts (2 × 2 set-ups).
+- Files touched: src/core/debugRegistry.ts, src/core/testHook.ts, src/app/main.ts, tests/core/testHook.test.ts, tests/core/testHook.build.test.ts, tests/e2e/app/testHook.spec.ts, ralph/tasks/F0-skeleton.json, ralph/progress/F0-skeleton.md
+- Test result: verify passed (unit 5/5, screen 4/4, build OK, dist has no '__sim'). npm run check passed (unit 71/71, screen 22/22).
+- Next round should know: installTestHook takes `object` as target (typing window directly clashed with the Window type). The first build-test attempt failed because of NODE_ENV=test (see Lessons) — fixed in the test set-up, not by weakening the check.

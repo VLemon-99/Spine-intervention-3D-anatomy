@@ -3,6 +3,7 @@
 // 2. Puts the synthetic phantom and its landmarks in the store as the current
 //    volume (the anatomy loader replaces this in F1).
 // 3. Shows the training disclaimer over everything.
+// 4. In development and test runs only, installs the window.__sim test hook.
 import { mount as mountAnatomy } from '../anatomy/index';
 import { mount as mountCarm } from '../carm/index';
 import { mount as mountContrast } from '../contrast/index';
@@ -34,4 +35,11 @@ if (root) {
   }
 
   showDisclaimer(document.body);
+}
+
+// The bundler drops this branch (and testHook.ts) from the production build.
+if (import.meta.env.DEV) {
+  void import('../core/testHook').then(({ installTestHook }) => {
+    installTestHook(window, store);
+  });
 }

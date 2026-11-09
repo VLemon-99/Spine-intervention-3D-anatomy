@@ -300,9 +300,9 @@
         "F0-S5",
         "F0-S10"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-09. getState() returns { pose, shotCount, lastImagePose, volume: { region, size } | null } as a structuredClone copy. Zones call registerDebugGetter(name, getter) from src/core/debugRegistry.ts; the value appears as window.__sim.<name>() (copied). main.ts installs the hook with a dynamic import inside if (import.meta.env.DEV)."
     },
     {
       "id": "F0-S12",
