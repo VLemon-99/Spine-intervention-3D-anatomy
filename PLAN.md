@@ -6,7 +6,7 @@
 
 | Feature | Task file | Zone(s) | Depends on | Status | Branch | Notes |
 |---|---|---|---|---|---|---|
-| F0 — Walking skeleton | `ralph/tasks/F0-skeleton.json` | all (sets up shared files) | — | not planned | `ralph/F0-skeleton` | Must be merged before anything else |
+| F0 — Walking skeleton | `ralph/tasks/F0-skeleton.json` | all (sets up shared files) | — | planned | `ralph/F0-skeleton` | Must be merged before anything else. 12 stories; round limit 18 |
 | F1 — Anatomy data | `ralph/tasks/F1-anatomy.json` | anatomy | F0 | not planned | `ralph/F1-anatomy` | F1.7 (real CT) is an interactive session with the owner |
 | F2 — Fluoro renderer | `ralph/tasks/F2-renderer.json` | render | F0 | not planned | `ralph/F2-renderer` | |
 | F3 — C-arm, table & exposure | `ralph/tasks/F3-carm.json` | carm | F0 | not planned | `ralph/F3-carm` | |
@@ -24,13 +24,18 @@
 
 ## Can run in parallel right now
 <!-- Features whose zones don't overlap and whose dependencies are merged. See docs/ARCHITECTURE.md → Work zones. -->
-- Nothing yet. F0 must be planned, looped and merged first.
+- Nothing yet. F0 is planned and must be looped and merged first, on its own (it creates every shared file).
 - After F0 is merged: F1, F2, F3, F4, F8 and F12 (all different zones, all only depend on F0).
 
 ## Waiting on me
 <!-- Blocked stories, open questions, pull requests to review. -->
 - Open questions in `docs/SPEC.md` → "Open questions": app name, choosing the CT scan(s) (before F1.7).
-- Next step: run Prompt 2 (plan stories) in a fresh session — suggested: "Only plan feature F0" first.
+- F0 planning questions (2026-11-09), see the planning report:
+  1. `anatomy:convert` npm script: add the entry (and a TypeScript script runner) in F0, so F1 doesn't have to touch `package.json` while other loops run?
+  2. F0.6 "Take image" button vs F3.3 "Shot" button: the same button? F0 builds it in the C-arm panel as "Take image" (test id `take-image`).
+  3. F0.8 says *every* work zone gets `mount()`, including `core`, which has no screen. Planned literally (core gets a do-nothing `mount()`). Keep or drop core from F0.8?
+  4. C-arm distances (source-to-detector, source-to-isocentre, detector size): F0 uses typical mobile C-arm values as named constants. Any specific machine to match?
+- Next step: check the F0 stories with Prompt 3 in a fresh session, then run the F0 loop (Prompt 4, round limit 18).
 
 ## Handoff note (interactive sessions)
 <!-- Where we stopped, anything half-finished, what the next session should check first. -->

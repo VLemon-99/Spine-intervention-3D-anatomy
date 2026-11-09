@@ -1,0 +1,248 @@
+{
+  "feature": "F0",
+  "name": "Walking skeleton",
+  "branch": "ralph/F0-skeleton",
+  "zone": "all",
+  "dependsOnFeatures": [],
+  "stories": [
+    {
+      "id": "F0-S1",
+      "title": "Set up the TypeScript + Vite project with lint, type check and unit tests",
+      "description": "Create the project skeleton: package.json (exact dependency versions), package-lock.json, tsconfig.json (strict), vite.config.ts (dev server on port 5173 with strictPort), eslint.config.js (flat config with typescript-eslint), vitest.config.ts (unit tests are tests/**/*.test.ts; tests/e2e/ is excluded), index.html with the title 'Spine Fluoro Trainer', a minimal src/app/main.ts, and one first unit test in tests/core/. Dependencies: typescript, vite, three, @types/three, vitest, eslint, typescript-eslint, and @playwright/test pinned to exactly 1.63.0 (used from F0-S2; do NOT run 'playwright install'). npm scripts: dev, build, test (vitest run), lint (eslint + tsc --noEmit), typecheck (tsc --noEmit), and check (for now: lint, typecheck and test; F0-S2 adds screen tests). SHARED FILES: this story creates package.json, package-lock.json, tsconfig.json, vite.config.ts, eslint.config.js, vitest.config.ts and index.html, and is explicitly allowed to. No test suite exists before this story; a failing baseline in step 3 is expected and is not a separate fix.",
+      "specRefs": ["F0.1", "F0.9"],
+      "acceptance": [
+        "npm install completes without errors and creates package-lock.json",
+        "package.json pins @playwright/test to exactly 1.63.0 and every other dependency to an exact version (no ^ or ~)",
+        "npm run lint, npm run typecheck, npm test and npm run build all pass",
+        "index.html has <title>Spine Fluoro Trainer</title>",
+        "vite.config.ts serves the dev server on port 5173 and fails rather than switching port if 5173 is taken (strictPort)",
+        "npm test runs at least one unit test from tests/ and ignores tests/e2e/"
+      ],
+      "verify": "npm install && npm run check && npm run build",
+      "zone": "shared",
+      "priority": 1,
+      "dependsOn": [],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F0-S2",
+      "title": "Set up Playwright screen tests in a desktop and a tablet set-up",
+      "description": "Add playwright.config.ts with two projects that every screen test runs in: 'desktop' (Chromium, 1280×800, mouse + keyboard) and 'tablet' (Chromium, 1024×768, hasTouch: true, isMobile: true). Screen tests are tests/e2e/**/*.spec.ts. The config starts the app with 'npm run dev' on http://localhost:5173 (webServer, reuse an existing server locally), sets trace to 'off', and passes the Chromium launch flags needed for WebGL2 on the software GPU (e.g. --use-angle=swiftshader, --enable-unsafe-swiftshader — see docs/ARCHITECTURE.md → Known technical risks). Add the npm script test:e2e (playwright test) and extend check to run lint, typecheck, unit tests and screen tests in that order. Add the first screen tests in tests/e2e/app/: the page title is 'Spine Fluoro Trainer', and a WebGL2 context can be created in the page. Never run 'playwright install': Chromium for 1.63.0 is pre-installed. SHARED FILES: creates playwright.config.ts and changes the scripts in package.json; explicitly allowed.",
+      "specRefs": ["F0.1", "F0.9"],
+      "acceptance": [
+        "npm run test:e2e runs every screen test twice: once in the 'desktop' project and once in the 'tablet' project",
+        "A screen test opens http://localhost:5173 and checks the page title is exactly 'Spine Fluoro Trainer' (passes in both projects)",
+        "A screen test checks that document.createElement('canvas').getContext('webgl2') is not null (passes in both projects)",
+        "npm run check runs lint, type check, unit tests and screen tests, and passes"
+      ],
+      "verify": "npx playwright test tests/e2e/app && npm run check",
+      "zone": "shared",
+      "priority": 2,
+      "dependsOn": ["F0-S1"],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F0-S3",
+      "title": "Add the shared tissue labels, vertebral levels and shared types",
+      "description": "Create src/core/labels.ts and src/core/types.ts, the contracts every later feature builds on. labels.ts: a numbered list of tissue labels (8-bit ids, 0 = air) with a short id and a display name, containing at least: air, skin/fat (one label), muscle, cortical bone, cancellous bone, disc, ligamentum flavum, epidural space, thecal sac, spinal cord, nerve root, artery, vein and joint space; plus helpers such as isBone(label). It also lists the vertebral level codes used by the level volume (C1…C7, T1…T12, L1…L5, sacrum, ilium; 0 = no level) and sides (left/right; +x is the patient's left). types.ts: the shared types named in docs/ARCHITECTURE.md, with only the fields the spec needs: Volume (size, voxel spacing in mm, origin/orientation, region name, 8-bit intensity, 8-bit labels, optional 8-bit levels — F1.1, F1.3, F1.6); CArmPose (oblique and tilt in degrees, table left/right, head/foot and height in mm — F3.1); NeedleState (needle id, pre-bend, entry point, hub angles, bevel angle, inserted depth, shaft curve points, tip — F4, F5); TissueEvent (type: lossOfResistance, boneContact, duralPuncture, nerveContact, intravascular, cordContact, injection; time; tip position; message; optional level/side/volume/compartment — F6.2, F6.3, F9.6); AttemptRecord (procedure, mode, date, score parts, unsafe flag, shots, fluoro time — F10.5). Follow the coordinate and unit conventions in docs/ARCHITECTURE.md → Conventions (document them in comments). SHARED FILES: creates files in src/core/; explicitly allowed. Later features can only change these through an interactive session, so check every field against the spec.",
+      "specRefs": ["F0.4", "F1.3", "F3.1", "F6.3", "F10.5"],
+      "acceptance": [
+        "labels.ts exports every tissue label listed in F0.4, each with a unique id from 0 to 255; air is 0",
+        "labels.ts exports the level codes C1–C7, T1–T12, L1–L5, sacrum and ilium with unique ids from 1 to 255, and 0 means no level",
+        "isBone() is true for cortical and cancellous bone only",
+        "types.ts exports Volume, CArmPose, NeedleState, TissueEvent and AttemptRecord; a unit test builds one valid example of each and passes the type check",
+        "Unit tests in tests/core/labels.test.ts pass"
+      ],
+      "verify": "npx vitest run tests/core/labels.test.ts && npm run typecheck",
+      "zone": "core",
+      "priority": 3,
+      "dependsOn": ["F0-S1"],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F0-S4",
+      "title": "Add the central state store, event bus and seeded random numbers",
+      "description": "Create src/core/store.ts (one central store holding the shared state: current C-arm pose — default 0°/0° with the table at 0 —, shot count, last image pose (none until the first image), and the current volume; get, set and subscribe) with a small typed event bus (emit/on/off; events include 'exposure'), and src/core/random.ts (a seeded random number generator: the same seed gives the same sequence). Plain TypeScript, no screen code. SHARED FILES: creates files in src/core/; explicitly allowed.",
+      "specRefs": ["F0.7"],
+      "acceptance": [
+        "The store starts with pose oblique 0°, tilt 0°, table offsets 0 mm, shot count 0 and no last image pose",
+        "set() updates the state and calls subscribers once per change; unsubscribing stops the calls",
+        "An 'exposure' event emitted on the bus reaches every listener registered with on(), and none after off()",
+        "random.ts: two generators with the same seed give identical sequences of 1000 numbers; different seeds give different sequences; every value is in [0, 1)",
+        "Unit tests in tests/core/store.test.ts and tests/core/random.test.ts pass"
+      ],
+      "verify": "npx vitest run tests/core/store.test.ts tests/core/random.test.ts",
+      "zone": "core",
+      "priority": 4,
+      "dependsOn": ["F0-S3"],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F0-S5",
+      "title": "Generate the synthetic phantom volume",
+      "description": "Create src/core/phantom.ts: a function that generates a small, deterministic, labelled Volume (no larger than 128×128×128 voxels) used by all tests instead of the real CT. It contains every tissue label in src/core/labels.ts, and two vertebra-like blocks (cortical shell, cancellous inside, a disc between the bodies) with a foramen between them containing nerve root voxels on both sides, a joint space between the two blocks' posterior parts, a thecal sac with spinal cord inside, epidural space and ligamentum flavum behind it, muscle, a skin/fat layer and air around it, plus an artery and a vein. It also fills the 8-bit intensity volume (bone densest, air lowest, soft tissue in between) and the levels volume (each block's bone voxels get a lumbar level, e.g. L4 and L5; no other voxel has a level). Export documented test points: the vertebra block centres, the foramen centres, and a midline back-to-front test line between the two blocks' posterior parts (interlaminar). Follow docs/ARCHITECTURE.md → Conventions (+y = posterior, mm). SHARED FILES: creates a file in src/core/; explicitly allowed.",
+      "specRefs": ["F0.4"],
+      "acceptance": [
+        "The phantom is no larger than 128×128×128 voxels and has positive voxel spacing in mm",
+        "Every tissue label exported by labels.ts occurs at least once in the phantom",
+        "Walking the exported midline test line from the back (+y) to the front, the first occurrences of skin/fat, muscle, ligamentum flavum, epidural space and thecal sac come in exactly that order",
+        "The label at each exported vertebra block centre is bone (cortical or cancellous), and the level there is that block's level",
+        "Each foramen has nerve root voxels on both the left and right side",
+        "Every bone voxel has a level and no non-bone voxel does",
+        "The mean intensity of bone voxels is higher than that of muscle, which is higher than that of air",
+        "Two calls give identical volumes (deterministic)",
+        "Unit tests in tests/core/phantom.test.ts pass"
+      ],
+      "verify": "npx vitest run tests/core/phantom.test.ts",
+      "zone": "core",
+      "priority": 5,
+      "dependsOn": ["F0-S3"],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F0-S6",
+      "title": "Add C-arm projection geometry (pose to source, detector, project and unproject)",
+      "description": "Create src/core/geometry.ts: given a CArmPose, compute the X-ray source position, the detector plane and a 512×512 pixel grid, and provide project(point) → pixel and unproject(pixel) → ray (origin + direction). Patient prone; the isocentre is the origin of the table-relative frame; table offsets move the patient relative to the isocentre; oblique rotates about the patient's long axis (z), tilt (cranial/caudal) about the left-right axis (x). Use typical mobile C-arm distances (source-to-detector and source-to-isocentre distance, detector size) as exported, commented named constants; the tests do not depend on their exact values. Degrees in the public API, radians only inside. Document the sign conventions (which side the source is on at +90° oblique, which way is image up) in comments. SHARED FILES: creates a file in src/core/; explicitly allowed.",
+      "specRefs": ["F0.5"],
+      "acceptance": [
+        "For at least 20 poses spread across oblique −90…+90° and tilt −40…+40° (table at 0), the isocentre projects to the image centre (within 0.5 px)",
+        "For random points inside the phantom and at least 10 poses, projecting a point and then unprojecting the pixel gives a ray that passes within 0.1 mm of the original point",
+        "At pose (0°, 0°) the beam is a straight AP beam for a prone patient: the source is anterior (−y, under the table), the detector is posterior (+y, above the back), and the central ray is parallel to the y axis",
+        "At oblique +90° (tilt 0°) the central ray is parallel to the x axis (lateral beam)",
+        "Unit tests in tests/core/geometry.test.ts pass"
+      ],
+      "verify": "npx vitest run tests/core/geometry.test.ts",
+      "zone": "core",
+      "priority": 6,
+      "dependsOn": ["F0-S3"],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F0-S7",
+      "title": "Show the training disclaimer with an 'I understand' button on load",
+      "description": "In the app zone, show a disclaimer on every page load (remembering acceptance is F12.1, not this story) containing the words 'For training only' and 'not for clinical use', with an 'I understand' button (test ids: disclaimer, disclaimer-accept). It covers the whole app until the button is clicked or tapped, then disappears. Add a shared screen-test helper tests/fixtures/acceptDisclaimer.ts that later screen tests use to get past it. SHARED FILES: creates tests/fixtures/acceptDisclaimer.ts and edits src/app/main.ts; explicitly allowed.",
+      "specRefs": ["F0.2"],
+      "acceptance": [
+        "Screen test: on load the disclaimer is visible and contains 'For training only' and 'not for clinical use' (both set-ups)",
+        "Screen test: clicking (desktop) or tapping (tablet) 'I understand' hides the disclaimer",
+        "Screen test: the disclaimer covers the full viewport while shown",
+        "Screen tests in tests/e2e/app/disclaimer.spec.ts pass in both the desktop and tablet set-ups"
+      ],
+      "verify": "npx playwright test tests/e2e/app/disclaimer.spec.ts",
+      "zone": "app",
+      "priority": 7,
+      "dependsOn": ["F0-S2"],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F0-S8",
+      "title": "Create every zone folder with a placeholder mount() and show the four main panels",
+      "description": "Create src/<zone>/index.ts for every work zone in docs/ARCHITECTURE.md (core, app, anatomy, render, carm, needle, sim, view3d, contrast, procedures, quiz), each exporting mount(element) (it may render a placeholder or nothing), and one passing placeholder unit test per zone in tests/<zone>/ (e.g. it imports mount and checks it is a function). Each zone builds its own panel: render → fluoro-panel, carm → carm-panel, needle → needle-panel, view3d → view3d-panel (all except the fluoro panel may be placeholders). src/app/main.ts mounts all zones and puts the synthetic phantom (src/core/phantom.ts) into the store as the current volume. Panels must stay unusable while the disclaimer (F0-S7) is shown. SHARED FILES: creates src/core/index.ts and edits src/app/main.ts; explicitly allowed.",
+      "specRefs": ["F0.2", "F0.3", "F0.8"],
+      "acceptance": [
+        "Each of the 11 zone folders listed in docs/ARCHITECTURE.md → Work zones has an index.ts exporting a mount(element) function",
+        "Each zone has at least one passing unit test in tests/<zone>/",
+        "src/app/main.ts imports and calls mount() for every zone",
+        "Screen test: after accepting the disclaimer, elements with test ids fluoro-panel, carm-panel, needle-panel and view3d-panel are visible (both set-ups)",
+        "Screen test: before accepting, the four panels are hidden or covered: a click/tap at the centre of each panel lands on the disclaimer, not the panel (both set-ups)",
+        "After start-up, the store's current volume is the synthetic phantom"
+      ],
+      "verify": "npx vitest run && npx playwright test tests/e2e/app/panels.spec.ts",
+      "zone": "app",
+      "priority": 8,
+      "dependsOn": ["F0-S4", "F0-S5", "F0-S7"],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F0-S9",
+      "title": "Add the window.__sim test hook, present in development and absent from the production build",
+      "description": "Create src/core/testHook.ts: when import.meta.env.DEV is true (npm run dev, which the screen tests use), it creates window.__sim with getState() returning the C-arm pose, the shot count and the last image's pose (read from the store), and a way for zones to register more read-only getters. It is wired in so that the production build contains no trace of it: load it only inside an import.meta.env.DEV check (e.g. a dynamic import), so the bundler drops it. Add a unit test that runs a production build with Vite's build() API into a temporary folder and checks no built file contains the text '__sim'. SHARED FILES: creates src/core/testHook.ts and edits src/app/main.ts; explicitly allowed.",
+      "specRefs": ["F0.7"],
+      "acceptance": [
+        "Screen test (both set-ups): in the dev server, window.__sim.getState() returns pose { oblique: 0, tilt: 0, table offsets 0 }, shot count 0 and no last image pose on start-up",
+        "Unit test: zones can register a read-only getter and it appears in window.__sim; the returned state cannot change the store",
+        "Unit test: after a production build, no file in the output folder contains the text '__sim'",
+        "npm run build still passes"
+      ],
+      "verify": "npx vitest run tests/core/testHook.test.ts tests/core/testHook.build.test.ts && npx playwright test tests/e2e/app/testHook.spec.ts && npm run build",
+      "zone": "core",
+      "priority": 9,
+      "dependsOn": ["F0-S4", "F0-S8"],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F0-S10",
+      "title": "Take an image with the spacebar or a 'Take image' button",
+      "description": "In the carm zone's panel, add a 'Take image' button (test id take-image) and a spacebar shortcut. Each one press/tap adds 1 to the shot count in the store, records the current pose as the last image pose, and emits one 'exposure' event on the bus. The spacebar must not scroll the page or trigger a focused button twice. Register nothing new in window.__sim (getState already covers it).",
+      "specRefs": ["F0.6", "F0.7"],
+      "acceptance": [
+        "Screen test (desktop): one spacebar press raises window.__sim.getState() shot count from 0 to 1 and sets the last image pose to the current pose",
+        "Screen test (desktop): one click on 'Take image' raises the shot count by exactly 1",
+        "Screen test (tablet): one tap on 'Take image' raises the shot count by exactly 1",
+        "Unit test: one shot emits exactly one 'exposure' event",
+        "Screen tests in tests/e2e/carm/take-image.spec.ts pass in both set-ups"
+      ],
+      "verify": "npx vitest run tests/carm && npx playwright test tests/e2e/carm/take-image.spec.ts",
+      "zone": "carm",
+      "priority": 10,
+      "dependsOn": ["F0-S9"],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F0-S11",
+      "title": "Add a WebGL2 canvas to the fluoro panel that redraws on each exposure, with a pixel read-back test helper",
+      "description": "In the render zone, put a 512×512 WebGL2 canvas (via Three.js, test id fluoro-canvas) in the fluoro panel. It shows a blank screen until the first image, and draws a frame on every 'exposure' event (for now a flat fill is enough; the DRR comes in F0-S12). Make the pixels readable by screen tests (e.g. preserveDrawingBuffer, or reading right after drawing). Add a shared screen-test helper tests/fixtures/readCanvas.ts that returns the canvas pixels as grey values 0–255 at given (x, y) positions in the 512×512 image. This story de-risks reading WebGL pixels on the software GPU before the real shader is written. SHARED FILES: creates tests/fixtures/readCanvas.ts; explicitly allowed.",
+      "specRefs": ["F0.6"],
+      "acceptance": [
+        "Screen test (both set-ups): after accepting the disclaimer, the fluoro panel contains a canvas with a 512×512 drawing size",
+        "Screen test (both set-ups): readCanvas returns values in 0–255 for the corners and centre of the image",
+        "Screen test (both set-ups): the pixels after taking an image differ from the blank screen shown before the first image",
+        "Screen tests in tests/e2e/render/canvas.spec.ts pass in both set-ups"
+      ],
+      "verify": "npx playwright test tests/e2e/render/canvas.spec.ts",
+      "zone": "render",
+      "priority": 11,
+      "dependsOn": ["F0-S8", "F0-S10"],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F0-S12",
+      "title": "Render a GPU DRR of the phantom on each exposure, with bone dark and air light",
+      "description": "In the render zone, replace the flat fill with a minimal GPU DRR: upload the store's volume intensity as a 3D texture (Three.js Data3DTexture), and in a fragment shader march each pixel's ray from the X-ray source to the detector using src/core/geometry.ts (same pose, same 512×512 grid), add up absorption from the intensity values, and display brightness = e^(−total absorption) so that more absorption is darker (bone dark, air light). Only the fluoro panel's rendering changes; noise, collimation, magnification, flips and the CPU reference are F2, not this story. The screen test computes the expected pixel by importing src/core/geometry.ts and src/core/phantom.ts in the test itself (they are plain TypeScript), projecting a vertebra block centre at the image's pose.",
+      "specRefs": ["F0.6"],
+      "acceptance": [
+        "Screen test (desktop, spacebar) and (tablet, tap 'Take image'): after one image at the default pose, the grey value at the projected centre of a phantom vertebra block is at least 50 lower (darker) than the grey value at an image corner (air)",
+        "npm run check passes (lint, type check, unit tests and screen tests in both set-ups)"
+      ],
+      "verify": "npx playwright test tests/e2e/render/drr.spec.ts && npm run check",
+      "zone": "render",
+      "priority": 12,
+      "dependsOn": ["F0-S5", "F0-S6", "F0-S11"],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    }
+  ]
+}
