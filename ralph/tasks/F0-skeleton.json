@@ -135,9 +135,9 @@
       "dependsOn": [
         "F0-S4"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-09. 'None' is null in the store. The contrast absorption volume is a Uint8Array on the volume's grid (8-bit, like the other volumes); F9/F2 may need to revisit precision in an interactive session. src/core/store.ts exports createStore/createEventBus plus the app's shared instances store and bus."
     },
     {
       "id": "F0-S6",

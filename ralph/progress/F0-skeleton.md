@@ -41,3 +41,9 @@
 - Files touched: src/core/labels.ts, src/core/types.ts, tests/core/labels.test.ts, tests/core/types.test.ts, ralph/tasks/F0-skeleton.json, ralph/progress/F0-skeleton.md
 - Test result: verify passed (labels + types 8/8; typecheck OK). npm run check passed (unit 18/18, screen 4/4).
 - Next round should know: Volume voxel index = i + size.x * (j + size.y * k); origin is the centre of voxel (0,0,0); orientation gives the patient direction of the i, j, k axes. Table offsets map leftRight→x, height→y, headFoot→z (patient moves by the offset relative to the isocentre). See the story notes for review points in types.ts.
+
+## Round — 2026-11-09 07:10 — F0-S5 — done
+- What I did: Created src/core/store.ts (SimState with pose, shotCount, fluoroTimeSeconds, lastImagePose, mode, volume, landmarks, needle, contrast; createStore with get/set/subscribe — set notifies once per call and only if a field actually changed; typed event bus with exposure, caseStart and tissueEvent; shared instances `store` and `bus`) and src/core/random.ts (createRandom(seed), mulberry32). Tests first: tests/core/store.test.ts, tests/core/random.test.ts.
+- Files touched: src/core/store.ts, src/core/random.ts, tests/core/store.test.ts, tests/core/random.test.ts, ralph/tasks/F0-skeleton.json, ralph/progress/F0-skeleton.md
+- Test result: verify passed (13/13). npm run check passed (unit 31/31, screen 4/4).
+- Next round should know: bus.emit('exposure') takes no payload; bus.emit('tissueEvent', event) requires one (type-checked). Store compares fields with Object.is, so always pass new objects/arrays when changing a pose or needle.
