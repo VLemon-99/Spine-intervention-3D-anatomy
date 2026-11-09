@@ -2,6 +2,16 @@
 
 > One entry per meaningful choice, newest at the top. This stops future sessions and loop rounds from quietly undoing past decisions. Loop rounds don't edit this file — they record proposals in their progress log, and an interactive session adds them here after review.
 
+## 2026-11-09 — F0 story review fixes
+- **Decision:**
+  - **Oblique sign:** positive oblique = right. The detector (above the prone patient's back) swings toward the patient's right side; at +90° the detector is on the patient's right and the source on the left.
+  - **Shared contracts grow now, in F0:** `src/core/` gains a `Landmarks` type (foramina listed under the level above), a `Mode` type, an `AttemptRecord` that also fits quiz attempts, and store slots for fluoro time, mode, landmarks, needle state and contrast volume, plus `caseStart` and `tissueEvent` bus events. The phantom exports landmarks in the same format as the real regions.
+  - **No browser stand-in for unit tests:** no jsdom or happy-dom. Logic that needs unit tests is kept in plain functions; screens are checked by Playwright screen tests.
+  - The phantom and the GPU X-ray image stories are each split in two (F0 now has 15 stories).
+- **Why:** After F0, `src/core/` can only change in an interactive session, so anything that later features pass between zones has to exist up front, or parallel loops get blocked. Keeping logic browser-free avoids a new dependency. The splits make the two riskiest stories small enough for one round.
+- **Alternatives considered:** Adding shared fields feature by feature (blocks parallel loops); adding happy-dom (new dependency); keeping the large stories whole.
+- **Revisit if:** A later feature needs another cross-zone field (that is an interactive change to `src/core/`), or browser-free unit tests become awkward.
+
 ## 2026-11-09 — F0 planning answers
 - **Decision:**
   - F0 adds the `npm run anatomy:convert` command now (with `tsx`, a small dev tool that runs TypeScript files in Node) and a placeholder converter. F1 fills in the converter.

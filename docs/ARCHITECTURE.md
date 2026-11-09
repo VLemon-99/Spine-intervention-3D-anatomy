@@ -8,7 +8,7 @@ A static website: TypeScript, built with Vite. It runs entirely in the browser, 
 ## Components
 | Component | What it does | Where it lives |
 |---|---|---|
-| Core (shared contracts) | Shared types (`Volume`, `CArmPose`, `NeedleState`, `TissueEvent`, `AttemptRecord`), tissue label list, C-arm projection geometry, central state store + event bus, seeded random numbers, synthetic phantom, `window.__sim` test hook | `src/core/` |
+| Core (shared contracts) | Shared types (`Volume`, `Landmarks`, `Mode`, `CArmPose`, `NeedleState`, `TissueEvent`, `AttemptRecord`), tissue label list, C-arm projection geometry, central state store (pose, shot count, fluoro time, last image pose, mode, volume, landmarks, needle state, contrast volume) + event bus (`exposure`, `caseStart`, `tissueEvent`), seeded random numbers, synthetic phantom (with landmarks), `window.__sim` test hook | `src/core/` |
 | App shell | Disclaimer, home screen, modes (Practice / Exam / Quiz / Free play), layout, history (browser storage), About page, WebGL2 check. `main.ts` mounts every zone's panel | `src/app/` |
 | Anatomy | Converter script (NIfTI → web format), soft-tissue modeller, region loader, landmarks | `tools/anatomy/`, `src/anatomy/`, `public/data/` |
 | Renderer | GPU DRR shader, CPU reference DRR, display (invert, noise, collimation, magnification, flip), needle and contrast in the image, fluoro panel | `src/render/` |
@@ -37,7 +37,10 @@ The 3D view only reads the store; it never changes it.
 - **Determinism:** anything random takes a seed from `src/core/random.ts`.
 - **Clinical data files** (`params.json`, `tissues.json`, case files, quiz bank) carry a `status` or `reviewedByOwner` field. Loops write `draft` or `false`; only the owner changes them.
 - **UI:** each zone except `core` exports `mount(element)` from its `index.ts` and builds its own panel. Only the app zone edits `src/app/main.ts`. Interactive elements get `data-testid` attributes.
-- **Test hook:** `window.__sim` is created in `src/core/testHook.ts` only when `import.meta.env.DEV` or test mode is on. Zones register read-only getters for their state through it.
+- **Test hook:** `window.__sim` is created in `src/core/testHook.ts` only when `import.meta.env.DEV` or test mode is on. Zones register read-only getters for their state through it. The registration function zones import lives in its own file, does nothing in production and never contains the text `__sim`.
+- **Oblique sign:** positive oblique = right: the detector (above the prone patient's back) swings toward the patient's right (−x). At +90° the detector is on the patient's right and the source on the left.
+- **Landmark levels:** a foramen is listed under the level above it (the L4–L5 foramen belongs to L4, whose nerve root exits there). This is how events name a nerve root's level.
+- **Unit tests run without a browser page** (Vitest `node` environment, no jsdom/happy-dom). Logic that needs a unit test lives in plain functions; screens are checked by screen tests.
 
 ## Work zones (for parallel loops)
 Each zone is a set of folders. Two loops can run at the same time only if their features touch **different zones**. Every story in `ralph/tasks/` names its zone.
