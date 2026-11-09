@@ -329,9 +329,9 @@
       "dependsOn": [
         "F0-S11"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-09. takeShot(store, bus) in src/carm/shot.ts. The spacebar handler reads <html data-disclaimer=\"shown\"> (no import from src/app/), ignores keys while typing in text fields, ignores key repeats, and calls preventDefault on space keydown and keyup so the page does not scroll and a focused button does not fire a second shot. Desktop-only/tablet-only screen tests are skipped in the other set-up (6 skipped)."
     },
     {
       "id": "F0-S13",

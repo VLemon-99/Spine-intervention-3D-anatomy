@@ -12,6 +12,7 @@
 - Screen tests: use `tests/fixtures/acceptDisclaimer.ts` (`await acceptDisclaimer(page)`) after `page.goto('/')`; it clicks on desktop and taps on tablet (`test.info().project.use.hasTouch`).
 - Vitest sets NODE_ENV=test, so Vite's build() called from a unit test builds with import.meta.env.DEV = true unless process.env.NODE_ENV is set to 'production' around the call (see tests/core/testHook.build.test.ts).
 - Screen tests read state with `await page.waitForFunction(() => 'getState' in (window.__sim ?? {}))` first: the hook is installed by an async dynamic import.
+- Set-up-specific screen tests: `test.skip(({ hasTouch }) => hasTouch, 'desktop set-up only')` inside a describe (the skip callback gets fixtures, not testInfo).
 
 ## Rounds
 <!--
@@ -87,3 +88,9 @@
 - Files touched: src/core/debugRegistry.ts, src/core/testHook.ts, src/app/main.ts, tests/core/testHook.test.ts, tests/core/testHook.build.test.ts, tests/e2e/app/testHook.spec.ts, ralph/tasks/F0-skeleton.json, ralph/progress/F0-skeleton.md
 - Test result: verify passed (unit 5/5, screen 4/4, build OK, dist has no '__sim'). npm run check passed (unit 71/71, screen 22/22).
 - Next round should know: installTestHook takes `object` as target (typing window directly clashed with the Window type). The first build-test attempt failed because of NODE_ENV=test (see Lessons) — fixed in the test set-up, not by weakening the check.
+
+## Round — 2026-11-09 07:24 — F0-S12 — done
+- What I did: Added src/carm/shot.ts (takeShot: shot count + 1, lastImagePose = copy of pose, then one 'exposure' event). The carm panel now has a 'Shot' button (shot-button) and a window spacebar shortcut (ignored while the disclaimer is shown, while typing, and on key repeat; preventDefault on keydown/keyup). Tests first: tests/carm/shot.test.ts (3) and tests/e2e/carm/shot.spec.ts (5 desktop + 1 tablet).
+- Files touched: src/carm/shot.ts, src/carm/index.ts, tests/carm/shot.test.ts, tests/e2e/carm/shot.spec.ts, ralph/tasks/F0-skeleton.json, ralph/progress/F0-skeleton.md
+- Test result: verify passed (carm unit 4/4; shot screen tests 6 passed, 6 skipped by design). npm run check passed (unit 74/74, screen 28 passed, 6 skipped); build OK.
+- Next round should know: to take an image in a screen test, press Space (desktop) or tap shot-button (tablet) after acceptDisclaimer(); the 'exposure' event fires after the store is updated.
