@@ -29,3 +29,9 @@
 - Files touched: playwright.config.ts, package.json, tests/core/project-config.test.ts, tests/e2e/app/smoke.spec.ts, ralph/tasks/F0-skeleton.json, ralph/progress/F0-skeleton.md
 - Test result: verify command passed: --list shows each of the 2 screen tests under desktop and tablet; project-config 8/8; screen tests 4/4; npm run check passed; build OK.
 - Next round should know: Playwright's webServer starts the dev server by itself, so screen tests just need `npx playwright test <path>`. The loop-state file .claude/ralph-loop.local.md is excluded locally via .git/info/exclude (never commit it).
+
+## Round — 2026-11-09 07:07 — F0-S3 — done
+- What I did: Added dev dependency tsx 4.23.15 (exact) and the npm script anatomy:convert ("tsx tools/anatomy/convert.ts"). Created the placeholder tools/anatomy/convert.ts: with fewer than two folders it prints "Usage: npm run anatomy:convert -- <input-folder> <output-folder>" and exits 1; otherwise prints that conversion comes in F1 and exits 1. Added "tools" to tsconfig.json include. Tests written first: tests/anatomy/convert-cli.test.ts (spawnSync npm with a fixed argument list, no shell) and one more project-config test.
+- Files touched: package.json, package-lock.json, tsconfig.json, tools/anatomy/convert.ts, tests/anatomy/convert-cli.test.ts, tests/core/project-config.test.ts, ralph/tasks/F0-skeleton.json, ralph/progress/F0-skeleton.md
+- Test result: verify passed (npm install; convert-cli + project-config 10/10; lint OK). npm run check passed (unit 10/10, screen 4/4); build OK.
+- Next round should know: the convert script sets process.exitCode instead of calling process.exit, so F1 can make main() async without losing output.

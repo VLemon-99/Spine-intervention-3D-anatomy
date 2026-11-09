@@ -74,9 +74,9 @@
       "dependsOn": [
         "F0-S1"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-09. Added dev dependency tsx 4.23.15 (exact). tsconfig.json include now has tools/ so tools/anatomy/convert.ts is type-checked; ESLint already lints the whole repo."
     },
     {
       "id": "F0-S4",

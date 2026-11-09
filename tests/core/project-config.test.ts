@@ -69,4 +69,9 @@ describe('project configuration', () => {
   it('has the script test:e2e', () => {
     expect(pkg.scripts?.['test:e2e'], 'missing script "test:e2e"').toBeTruthy();
   });
+
+  it('has the script anatomy:convert running tools/anatomy/convert.ts through tsx, with tsx pinned exactly', () => {
+    expect(pkg.scripts?.['anatomy:convert']).toBe('tsx tools/anatomy/convert.ts');
+    expect(pkg.devDependencies?.tsx).toMatch(EXACT_VERSION);
+  });
 });

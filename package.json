@@ -10,7 +10,8 @@
     "lint": "eslint . && tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "check": "npm run lint && npm run typecheck && npm run test && npm run test:e2e",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "anatomy:convert": "tsx tools/anatomy/convert.ts"
   },
   "dependencies": {
     "three": "0.187.0"
@@ -21,6 +22,7 @@
     "@types/node": "22.20.5",
     "@types/three": "0.187.0",
     "eslint": "10.14.0",
+    "tsx": "4.23.15",
     "typescript": "6.0.3",
     "typescript-eslint": "8.72.1",
     "vite": "8.3.6",
