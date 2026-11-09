@@ -39,6 +39,7 @@ The 3D view only reads the store; it never changes it.
 - **UI:** each zone except `core` exports `mount(element)` from its `index.ts` and builds its own panel. Only the app zone edits `src/app/main.ts`. Interactive elements get `data-testid` attributes.
 - **Test hook:** `window.__sim` is created in `src/core/testHook.ts` only when `import.meta.env.DEV` or test mode is on. Zones register read-only getters for their state through it. The registration function zones import lives in its own file, does nothing in production and never contains the text `__sim`.
 - **Oblique sign:** positive oblique = right: the detector (above the prone patient's back) swings toward the patient's right (−x). At +90° the detector is on the patient's right and the source on the left.
+- **Tilt sign:** positive tilt = cranial: the detector tilts toward the patient's head (+z) and the source toward the feet. Negative = caudal.
 - **Landmark levels:** a foramen is listed under the level above it (the L4–L5 foramen belongs to L4, whose nerve root exits there). This is how events name a nerve root's level.
 - **Unit tests run without a browser page** (Vitest `node` environment, no jsdom/happy-dom). Logic that needs a unit test lives in plain functions; screens are checked by screen tests.
 
