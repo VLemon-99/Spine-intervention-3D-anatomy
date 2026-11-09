@@ -51,9 +51,9 @@
       "dependsOn": [
         "F0-S1"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-09. Screen tests live in tests/e2e/app/smoke.spec.ts. Chromium launch flags: --use-angle=swiftshader --enable-unsafe-swiftshader --ignore-gpu-blocklist; WebGL2 works in both set-ups."
     },
     {
       "id": "F0-S3",

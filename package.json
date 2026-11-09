@@ -9,7 +9,8 @@
     "test": "vitest run",
     "lint": "eslint . && tsc --noEmit",
     "typecheck": "tsc --noEmit",
-    "check": "npm run lint && npm run typecheck && npm run test"
+    "check": "npm run lint && npm run typecheck && npm run test && npm run test:e2e",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "three": "0.187.0"

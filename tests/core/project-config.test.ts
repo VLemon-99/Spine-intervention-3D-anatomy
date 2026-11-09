@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import viteConfig from '../../vite.config';
 import vitestConfig from '../../vitest.config';
+import playwrightConfig from '../../playwright.config';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const readText = (file: string): string => readFileSync(root + file, 'utf8');
@@ -52,5 +53,20 @@ describe('project configuration', () => {
     expect(test?.environment).toBe('node');
     expect(test?.include).toContain('tests/**/*.test.ts');
     expect(test?.exclude?.some((pattern) => pattern.startsWith('tests/e2e'))).toBe(true);
+  });
+
+  it('defines exactly the Playwright projects desktop (1280×800) and tablet (1024×768, touch)', () => {
+    const projects = playwrightConfig.projects ?? [];
+    expect(projects.map((p) => p.name).sort()).toEqual(['desktop', 'tablet']);
+    const desktop = projects.find((p) => p.name === 'desktop');
+    const tablet = projects.find((p) => p.name === 'tablet');
+    expect(desktop?.use?.viewport).toEqual({ width: 1280, height: 800 });
+    expect(tablet?.use?.viewport).toEqual({ width: 1024, height: 768 });
+    expect(tablet?.use?.hasTouch).toBe(true);
+    expect(tablet?.use?.isMobile).toBe(true);
+  });
+
+  it('has the script test:e2e', () => {
+    expect(pkg.scripts?.['test:e2e'], 'missing script "test:e2e"').toBeTruthy();
   });
 });
