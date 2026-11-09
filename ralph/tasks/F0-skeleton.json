@@ -26,9 +26,9 @@
       "zone": "all",
       "priority": 1,
       "dependsOn": [],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-09. Added @types/node (exact) and @eslint/js (exact) beyond the listed deps: @types/node lets tests and configs read files with node:fs under the type check; @eslint/js supplies the recommended base rules for the flat config. TypeScript is 6.0.3, not 7.x, because typescript-eslint 8.72.1 supports only TypeScript < 6.1."
     },
     {
       "id": "F0-S2",
