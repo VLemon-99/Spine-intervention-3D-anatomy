@@ -24,7 +24,7 @@
       "zone": "carm",
       "priority": 1,
       "dependsOn": [],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": ""
     },
