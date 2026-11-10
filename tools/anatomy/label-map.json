@@ -1,7 +1,18 @@
 {
   "status": "draft",
   "reviewedByOwner": false,
-  "note": "Draft mapping from TotalSegmentator mask names (file name without .nii/.nii.gz) to our tissue labels (src/core/labels.ts) and, for bones, a vertebral level. Mask names were written without network access and must be re-checked against the real download in F1.7. Every bone is labelled cancellousBone here; the cortical/cancellous split by CT number comes later. Where masks overlap, bone wins, then the order of this list. Only the owner sets reviewedByOwner to true.",
+  "note": "Draft mapping from TotalSegmentator mask names (file name without .nii/.nii.gz) to our tissue labels (src/core/labels.ts) and, for bones, a vertebral level. Mask names were written without network access and must be re-checked against the real download in F1.7. Bone masks first give cancellousBone; the CT-number thresholds below then split cortical from cancellous bone. Where masks overlap, bone wins, then the order of this list. Only the owner sets reviewedByOwner to true.",
+  "thresholdsNote": "Draft CT numbers (HU) for the owner to review. Bone voxels at or above bone.corticalFromHu are cortical bone, below it cancellous bone. Voxels covered by no mask get the highest class whose 'from' value their CT number reaches (air below unmasked.skinFatFromHu, skin/fat up to unmasked.muscleFromHu, muscle — generic soft tissue — above). Voxels labelled by a non-bone mask keep their label.",
+  "thresholds": {
+    "bone": {
+      "corticalFromHu": 600
+    },
+    "unmasked": {
+      "airFromHu": -1000,
+      "skinFatFromHu": -250,
+      "muscleFromHu": -20
+    }
+  },
   "entries": [
     {
       "mask": "vertebrae_C1",

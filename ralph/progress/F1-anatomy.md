@@ -41,3 +41,9 @@
 - Files touched: tools/anatomy/label-map.json, tools/anatomy/labels.ts, tests/anatomy/labels.test.ts, task file, this log.
 - Test result: verify 8/8 passed; `npm run check` green (124 unit tests, 46 screen tests passed).
 - Next round should know: masks count as "inside" when value > 0. labelsFromMasks paints lowest priority first so later (higher priority) masks overwrite. F1-S25 adds thresholds to the same JSON — keep validateLabelMap accepting extra fields. Ribs are not in the table (no level code for them).
+
+## Round — 2026-11-10 13:18 — F1-S25 — done
+- What I did: draft HU thresholds in label-map.json, validateThresholds, and refineLabelsByHu (bone → cortical/cancellous; unmasked → air/skin-fat/muscle; non-bone masks untouched); 6 new unit tests appended, earlier 8 unchanged.
+- Files touched: tools/anatomy/label-map.json, tools/anatomy/labels.ts, tests/anatomy/labels.test.ts, task file, this log.
+- Test result: verify 14/14 passed; `npm run check` green (130 unit tests, 46 screen tests passed).
+- Next round should know: pipeline order is labelsFromMasks(ctSize, masks, map) → refineLabelsByHu(labels, ctHu, map.thresholds!). validateLabelMap stays thresholds-free (its earlier tests count problems exactly); thresholds are checked by validateThresholds and by loadLabelMap.

@@ -117,9 +117,9 @@
       "dependsOn": [
         "F1-S4"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. label-map.json gained \"thresholds\" {bone.corticalFromHu 600, unmasked airFromHu -1000 / skinFatFromHu -250 / muscleFromHu -20} (draft, for owner review) and \"thresholdsNote\". labels.ts: validateThresholds(map), refineLabelsByHu(labels, hu, thresholds) -> new Uint8Array; loadLabelMap checks both. Unmasked dense voxels (e.g. ribs, not in the table) become muscle, as the story asks."
     },
     {
       "id": "F1-S5",

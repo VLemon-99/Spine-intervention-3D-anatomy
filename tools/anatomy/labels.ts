@@ -13,10 +13,19 @@ export interface LabelMapEntry {
   level?: LevelCode;
 }
 
+/** Draft CT-number thresholds (HU) for the owner to review. */
+export interface LabelThresholds {
+  /** Bone voxels at or above this are cortical, below it cancellous. */
+  bone: { corticalFromHu: number };
+  /** Voxels covered by no mask: the highest class whose 'from' value the CT number reaches (below airFromHu is air too). */
+  unmasked: { airFromHu: number; skinFatFromHu: number; muscleFromHu: number };
+}
+
 export interface LabelMap {
   status: string;
   reviewedByOwner: boolean;
   note: string;
+  thresholds?: LabelThresholds;
   entries: LabelMapEntry[];
 }
 
@@ -38,7 +47,7 @@ const LABEL_MAP_URL = new URL('./label-map.json', import.meta.url);
 /** Reads and checks tools/anatomy/label-map.json. */
 export function loadLabelMap(): LabelMap {
   const map = JSON.parse(readFileSync(LABEL_MAP_URL, 'utf8')) as unknown;
-  const problems = validateLabelMap(map);
+  const problems = [...validateLabelMap(map), ...validateThresholds(map)];
   if (problems.length) throw new Error(`tools/anatomy/label-map.json is invalid:\n- ${problems.join('\n- ')}`);
   return map as LabelMap;
 }
@@ -107,4 +116,48 @@ export function labelsFromMasks(ctSize: Size3, masks: readonly Mask[], map: Labe
     for (let v = 0; v < count; v++) if (data[v] > 0) labels[v] = id;
   }
   return { labels, ignored: ignored.sort() };
+}
+
+/** Lists everything wrong with a table's CT-number thresholds (empty list = valid). */
+export function validateThresholds(map: unknown): string[] {
+  const t = (map as Partial<LabelMap> | null)?.thresholds;
+  if (typeof t !== 'object' || t === null) return ['thresholds are missing'];
+  const problems: string[] = [];
+  const num = (v: unknown, name: string) => {
+    if (typeof v !== 'number' || !Number.isFinite(v)) problems.push(`thresholds.${name} must be a finite number`);
+  };
+  num(t.bone?.corticalFromHu, 'bone.corticalFromHu');
+  const u = t.unmasked;
+  num(u?.airFromHu, 'unmasked.airFromHu');
+  num(u?.skinFatFromHu, 'unmasked.skinFatFromHu');
+  num(u?.muscleFromHu, 'unmasked.muscleFromHu');
+  if (problems.length === 0 && !(u.airFromHu < u.skinFatFromHu && u.skinFatFromHu < u.muscleFromHu)) {
+    problems.push('thresholds.unmasked must rise: airFromHu < skinFatFromHu < muscleFromHu');
+  }
+  return problems;
+}
+
+/**
+ * Second pass after labelsFromMasks, using the CT numbers (HU, same voxel order):
+ * bone → cortical or cancellous by the bone threshold; voxels covered by no mask
+ * (still air) → air, skin/fat or muscle; voxels from non-bone masks are left alone.
+ * Returns a new array.
+ */
+export function refineLabelsByHu(labels: Uint8Array, hu: ArrayLike<number>, thresholds: LabelThresholds): Uint8Array {
+  if (hu.length !== labels.length) {
+    throw new Error(`CT has ${hu.length} voxels but the label volume has ${labels.length}`);
+  }
+  const { corticalFromHu } = thresholds.bone;
+  const { skinFatFromHu, muscleFromHu } = thresholds.unmasked;
+  const out = new Uint8Array(labels.length);
+  for (let v = 0; v < labels.length; v++) {
+    const label = labels[v];
+    const h = hu[v];
+    if (isBone(label)) out[v] = h >= corticalFromHu ? TISSUE.corticalBone : TISSUE.cancellousBone;
+    else if (label === TISSUE.air) {
+      // NaN fails every comparison and stays air.
+      out[v] = h >= muscleFromHu ? TISSUE.muscle : h >= skinFatFromHu ? TISSUE.skinFat : TISSUE.air;
+    } else out[v] = label;
+  }
+  return out;
 }

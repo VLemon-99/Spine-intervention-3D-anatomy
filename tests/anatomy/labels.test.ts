@@ -1,7 +1,14 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { isBone, LEVEL_CODES, TISSUE } from '../../src/core/labels';
-import { labelsFromMasks, loadLabelMap, validateLabelMap, type Mask } from '../../tools/anatomy/labels';
+import {
+  labelsFromMasks,
+  loadLabelMap,
+  refineLabelsByHu,
+  validateLabelMap,
+  validateThresholds,
+  type Mask,
+} from '../../tools/anatomy/labels';
 
 const rawMap = JSON.parse(readFileSync(new URL('../../tools/anatomy/label-map.json', import.meta.url), 'utf8'));
 
@@ -112,5 +119,72 @@ describe('labelsFromMasks', () => {
   it('rejects a mask whose size differs from the CT’s, with a clear error', () => {
     const wrong: Mask = { name: 'aorta', size: { x: 5, y: 1, z: 1 }, data: new Uint8Array(5) };
     expect(() => labelsFromMasks(size, [wrong], map)).toThrow(/"aorta" is 5×1×1.*CT is 6×1×1/);
+  });
+});
+
+describe('refineLabelsByHu (CT-number thresholds)', () => {
+  const map = loadLabelMap();
+  const t = map.thresholds!;
+
+  it('makes bone voxels at or above the threshold cortical and below it cancellous', () => {
+    const c = t.bone.corticalFromHu;
+    const { labels } = labelsFromMasks(size, [mask('vertebrae_L4', [0, 1, 2]), mask('sacrum', [3])], map);
+    const out = refineLabelsByHu(labels, [c, c + 500, c - 1, c - 400, 0, 0], t);
+    expect(Array.from(out.slice(0, 4))).toEqual([
+      TISSUE.corticalBone,
+      TISSUE.corticalBone,
+      TISSUE.cancellousBone,
+      TISSUE.cancellousBone,
+    ]);
+  });
+
+  it('labels unmasked voxels air, skin/fat or muscle by their CT number', () => {
+    const u = t.unmasked;
+    const labels = new Uint8Array(6);
+    const hu = [-3000, u.skinFatFromHu - 1, u.skinFatFromHu, u.muscleFromHu - 1, u.muscleFromHu, 1500];
+    expect(Array.from(refineLabelsByHu(labels, hu, t))).toEqual([
+      TISSUE.air,
+      TISSUE.air,
+      TISSUE.skinFat,
+      TISSUE.skinFat,
+      TISSUE.muscle,
+      TISSUE.muscle,
+    ]);
+  });
+
+  it('leaves voxels from non-bone masks (canal, artery, vein, muscle) alone whatever their CT number', () => {
+    const { labels } = labelsFromMasks(
+      size,
+      [mask('spinal_cord', [0]), mask('aorta', [1]), mask('inferior_vena_cava', [2]), mask('autochthon_left', [3])],
+      map,
+    );
+    for (const hu of [-1000, -100, 50, 3000]) {
+      const out = refineLabelsByHu(labels, [hu, hu, hu, hu, hu, hu], t);
+      expect(Array.from(out.slice(0, 4))).toEqual([TISSUE.thecalSac, TISSUE.artery, TISSUE.vein, TISSUE.muscle]);
+    }
+  });
+
+  it('keeps the thresholds in label-map.json finite, rising, and not reviewed by the owner', () => {
+    expect(validateThresholds(rawMap)).toEqual([]);
+    const u = rawMap.thresholds.unmasked;
+    for (const v of [u.airFromHu, u.skinFatFromHu, u.muscleFromHu, rawMap.thresholds.bone.corticalFromHu]) {
+      expect(Number.isFinite(v)).toBe(true);
+    }
+    expect(u.airFromHu).toBeLessThan(u.skinFatFromHu);
+    expect(u.skinFatFromHu).toBeLessThan(u.muscleFromHu);
+    expect(rawMap.reviewedByOwner).toBe(false);
+  });
+
+  it('flags thresholds that are missing, not finite or not rising', () => {
+    expect(validateThresholds({})).toHaveLength(1);
+    const bad = (unmasked: object, bone: object = { corticalFromHu: 600 }) =>
+      validateThresholds({ thresholds: { bone, unmasked } });
+    expect(bad({ airFromHu: -1000, skinFatFromHu: -250, muscleFromHu: Number.NaN })[0]).toMatch(/finite/);
+    expect(bad({ airFromHu: -1000, skinFatFromHu: 0, muscleFromHu: -20 })[0]).toMatch(/rise/);
+    expect(bad({ airFromHu: -1000, skinFatFromHu: -250, muscleFromHu: -20 }, {})[0]).toMatch(/corticalFromHu/);
+  });
+
+  it('rejects a CT whose voxel count differs from the labels', () => {
+    expect(() => refineLabelsByHu(new Uint8Array(6), [0, 0], t)).toThrow(/2 voxels/);
   });
 });
