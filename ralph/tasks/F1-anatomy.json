@@ -382,9 +382,9 @@
       "dependsOn": [
         "F1-S13"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. softTissue.ts: modelThecalSac(vol, labels, params) runs first in modelSoftTissue; does nothing if any thecalSac voxel exists. Canal per slice = largest bone-enclosed non-bone area within [thecalSac.minCanalAreaMm2 50, canal.maxAreaMm2 1500]; tube of thecalSac.radiusMm 5 round its centroid, kept inside it; slices within the bones' height without a closed canal use the nearest one's outline and an interpolated centre. For real data: in the cervical spine the foramina transversaria are also bone-enclosed holes, but the canal is larger so \"largest\" picks it."
     },
     {
       "id": "F1-S14",

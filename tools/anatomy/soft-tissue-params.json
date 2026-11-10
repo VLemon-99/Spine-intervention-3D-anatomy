@@ -9,5 +9,10 @@
   "ligamentumFlavum": {
     "thicknessMm": 4,
     "note": "Layer added behind the canal outline where there is no bone behind it (the gap between two laminae)."
+  },
+  "thecalSac": {
+    "radiusMm": 5,
+    "minCanalAreaMm2": 50,
+    "note": "Only when the scan has no thecal sac at all: a tube of this radius down the middle of the bony canal (kept inside it). The canal in a slice is the largest bone-enclosed non-bone area between minCanalAreaMm2 and canal.maxAreaMm2; slices without one take the outline of the nearest slice that has one."
   }
 }

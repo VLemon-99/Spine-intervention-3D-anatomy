@@ -110,3 +110,9 @@
 - Files touched: tools/anatomy/softTissue.ts, tools/anatomy/soft-tissue-params.json, tests/anatomy/softTissueCanal.test.ts, tests/anatomy/strippedPhantom.ts, tests/anatomy/softTissueChecks.ts (all new), task file, this log.
 - Test result: verify 6/6 passed; `npm run check` green (190 unit tests, 46 screen tests passed).
 - Next round should know: createStrippedPhantom({ removeSac: true }) also turns sac and cord into muscle (for F1-S26). expectMidlineOrder(vol) and labelAt(vol, p) are in tests/anatomy/softTissueChecks.ts. modelSoftTissue already takes landmarks (unused so far) for the nerve roots and arteries. The canal step only runs in slices that contain sac/cord voxels, so F1-S26 must add the sac before it.
+
+## Round — 2026-11-10 13:56 — F1-S26 — done
+- What I did: thecal-sac step for scans without one (tube down the middle of the bone-enclosed canal, carried across open slices); params added; 5 unit tests on the phantom with sac and cord removed; F1-S13 tests unchanged and passing.
+- Files touched: tools/anatomy/softTissue.ts, tools/anatomy/soft-tissue-params.json, tests/anatomy/softTissueSac.test.ts (new), task file, this log.
+- Test result: verify 11/11 passed; `npm run check` green (195 unit tests, 46 screen tests passed).
+- Next round should know: step order in modelSoftTissue is sac → canal; nerve roots (F1-S14), joints (F1-S15) and arteries (F1-S16) come after. Only GENERIC labels (air, skin/fat, muscle, epidural, LF) are overwritten by these steps.
