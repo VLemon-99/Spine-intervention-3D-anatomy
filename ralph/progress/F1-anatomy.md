@@ -59,3 +59,9 @@
 - Files touched: tools/anatomy/regions.ts, tests/anatomy/regions.test.ts, task file, this log.
 - Test result: verify 8/8 passed (first run had a fixture too short to show the lower hip bone being cut; fixed the fixture, not the code); `npm run check` green (142 unit tests, 46 screen tests passed).
 - Next round should know: cropToRegion expects the standard layout and Uint8 intensity/labels/levels (so crop after HU→8-bit and after reordering). Margin in voxels = ceil(marginMm / spacing) per axis. Possible real-data snag: the CT couch behind a supine patient counts as non-air for the back-skin reach.
+
+## Round — 2026-11-10 13:24 — F1-S7 — done
+- What I did: resampler (trilinear intensity, nearest labels/levels, origin kept, exact copy when spacing already matches, spacing validation); 6 unit tests.
+- Files touched: tools/anatomy/resample.ts, tests/anatomy/resample.test.ts, task file, this log.
+- Test result: verify 6/6 passed; `npm run check` green (148 unit tests, 46 screen tests passed).
+- Next round should know: resample works on 8-bit intensity (after HU→8-bit). Crop before resampling to save time on real scans; both keep patient positions.

@@ -190,9 +190,9 @@
       "dependsOn": [
         "F1-S3"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. tools/anatomy/resample.ts: DEFAULT_TARGET_SPACING_MM = 1, checkTargetSpacing(number | {x,y,z}), resampleVolume({size, spacing, origin, intensity, labels, levels?}, target) -> same shape. Origin (first voxel centre) unchanged; output count per axis = floor((n-1)*s/t)+1; same spacing returns copies."
     },
     {
       "id": "F1-S8",
