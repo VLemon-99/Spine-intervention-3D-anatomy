@@ -1,8 +1,10 @@
 // C-arm and table controls, exposure, counters — F3.
 // mount() builds this zone's panel (carm-panel) with the Shot button and the
-// spacebar shortcut (F0.6, F3.3). Sliders, fluoro and counters come in F3.
+// spacebar shortcut (F0.6, F3.3) and the pose sliders (F3.2). Fluoro and
+// counters come later in F3.
 import { bus, store } from '../core/store';
 import { takeShot } from './shot';
+import { buildSliders } from './sliders';
 
 /** True while the training disclaimer is on screen (set by the app zone on <html>). */
 const disclaimerShown = (): boolean => document.documentElement.getAttribute('data-disclaimer') === 'shown';
@@ -39,7 +41,13 @@ export function mount(element: HTMLElement): void {
   Object.assign(shotButton.style, { minWidth: '88px', minHeight: '44px', fontSize: '16px', cursor: 'pointer' });
   shotButton.addEventListener('click', () => takeShot(store, bus));
 
-  panel.append(marker, heading, shotButton);
+  // Title and Shot side by side, to keep the quarter-screen panel compact.
+  const header = document.createElement('div');
+  Object.assign(header.style, { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' });
+  heading.style.margin = '0';
+  header.append(heading, shotButton);
+
+  panel.append(marker, header, buildSliders(store));
   element.append(panel);
 
   // Spacebar = one shot. Ignored while the disclaimer is shown (so space can
