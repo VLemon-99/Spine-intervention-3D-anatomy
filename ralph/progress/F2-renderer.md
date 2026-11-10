@@ -11,6 +11,8 @@
 - ESLint rejects unused parameters even with a leading underscore; use `void options;` for a parameter kept for later stories.
 - Settings: change them with `renderSettings.set(patch)` (shared instance in `src/render/settings.ts`); shutters can be patched one at a time (`{ collimation: { left: 20 } }`). In screen tests use `setRenderSettings` / `getRenderInfo` from `tests/e2e/render/renderPage.ts`.
 - `tests/render/settings.test.ts` checks that the default `noiseLevel` is 0 (F2-S2's own acceptance text, "0 for now"). F2-S13 changes that default on purpose, so that round must NOT quietly edit the test: its story text allows the screen tests to stay unedited (they read the defaults from the module), but the unit-test line is a human call — block or flag it as the rules require.
+- CPU-vs-GPU comparison pattern: `tests/e2e/render/cpuMatch.spec.ts` (render the CPU image in the test process, `readWholeCanvas(page)`, compare `value × 255` with the grey values). With matching sampling the mean difference is about 0.05 grey levels and the worst pixel under 2 — a later story that lands near the 7.65 limit almost certainly has a real mismatch (wrong order of steps or an off-by-one pixel), not rounding.
+- The canvas shows the shader's values as they are (no colour conversion): grey = round(value × 255).
 
 ## Rounds
 <!--
@@ -32,3 +34,9 @@
 - Files touched: `src/render/settings.ts` (new), `src/render/fluoroCanvas.ts`, `tests/render/settings.test.ts` (new), `tests/e2e/render/renderPage.ts` (new), `tests/e2e/render/settings.spec.ts` (new), this log, the task file.
 - Test result: verify command passed (16 unit tests, 8 screen tests, production build has no '__sim'). `npm run check` passed: lint + types clean, 110 unit tests, 54 screen tests passed and 6 skipped (one-set-up-only tests).
 - Next round should know: the image counter goes up on every `exposure` event, also when no volume is loaded. `createFluoroCanvas` takes the settings store as an optional 4th argument (default: the shared one). The GPU draw now uses `lastImage.pose`.
+
+## Round — 2026-11-10 13:08 — F2-S3 — done
+- What I did: Added the screen test for F2.2 (`cpuMatch.spec.ts`): three poses, noiseLevel 0, the whole 512×512 canvas compared with `renderDrrCpu` on the phantom. Added `readWholeCanvas(page)` to `renderPage.ts`. The two renderers already matched, so no renderer code changed.
+- Files touched: `tests/e2e/render/cpuMatch.spec.ts` (new), `tests/e2e/render/renderPage.ts`, this log, the task file.
+- Test result: verify command passed (6 new screen tests; all 28 render screen tests). `npm run check` passed: lint + types clean, 110 unit tests, 60 screen tests passed and 6 skipped (one-set-up-only tests).
+- Next round should know: measured mean differences were 0.052 (default pose), 0.056 (oblique +30°/tilt +15°) and 0.054 (third pose) grey levels; worst single pixel 1.7. `readWholeCanvas` returns `{ width, height, data: Uint8Array }` with pixel (x, y) at x + 512 × y from the top.

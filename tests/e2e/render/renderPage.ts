@@ -35,3 +35,29 @@ export async function getRenderInfo(page: Page): Promise<RenderInfo> {
   );
   return page.evaluate(() => (window as unknown as RenderHook).__sim.render());
 }
+
+/**
+ * Grey values (0–255) of ALL pixels of the fluoro canvas: pixel (x, y) is at
+ * index x + width × y, y counted from the top (as in renderDrrCpu). The grey
+ * value is the mean of the red, green and blue channels.
+ */
+export async function readWholeCanvas(page: Page): Promise<{ width: number; height: number; data: Uint8Array }> {
+  const result = await page.getByTestId('fluoro-canvas').evaluate((element) => {
+    const canvas = element as HTMLCanvasElement;
+    const copy = document.createElement('canvas');
+    copy.width = canvas.width;
+    copy.height = canvas.height;
+    const context = copy.getContext('2d');
+    if (!context) throw new Error('no 2D context for reading pixels');
+    context.drawImage(canvas, 0, 0);
+    const { data } = context.getImageData(0, 0, copy.width, copy.height);
+    // One character per pixel keeps the hand-over to the test process small.
+    let grey = '';
+    for (let i = 0; i < data.length; i += 4) {
+      grey += String.fromCharCode(Math.round(((data[i] ?? 0) + (data[i + 1] ?? 0) + (data[i + 2] ?? 0)) / 3));
+    }
+    return { width: copy.width, height: copy.height, grey };
+  });
+  const data = Uint8Array.from(result.grey, (character) => character.charCodeAt(0));
+  return { width: result.width, height: result.height, data };
+}

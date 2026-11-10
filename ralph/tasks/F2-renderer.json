@@ -78,9 +78,9 @@
         "F2-S1",
         "F2-S2"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. Measured mean difference about 0.05 grey levels (worst single pixel under 2) at all three poses, in both set-ups; no renderer change was needed."
     },
     {
       "id": "F2-S4",
