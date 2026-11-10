@@ -22,7 +22,15 @@ export function formatFluoroTime(seconds: number): string {
 /** Build the two counters, kept in step with the store. */
 export function buildCounters(store: Store): HTMLElement {
   const container = document.createElement('div');
-  Object.assign(container.style, { display: 'flex', gap: '12px', fontSize: '13px', fontVariantNumeric: 'tabular-nums' });
+  // Stacked, so the header row has room for the title and four buttons.
+  Object.assign(container.style, {
+    display: 'flex',
+    flexDirection: 'column',
+    fontSize: '13px',
+    lineHeight: '1.3',
+    fontVariantNumeric: 'tabular-nums',
+    whiteSpace: 'nowrap',
+  });
 
   const counter = (label: string, testId: string): HTMLElement => {
     const wrap = document.createElement('span');

@@ -6,6 +6,9 @@
 <!-- Reusable learnings for future rounds: gotchas, patterns, commands that work. After the feature is merged, an interactive session promotes the useful ones into CLAUDE.md. -->
 - Touch drag on a range input works in the tablet set-up with a CDP session: Input.dispatchTouchEvent touchStart / touchMove steps / touchEnd (see tests/e2e/carm/controls.ts). Starting a little off the handle is fine: Chromium jumps the handle to the touch point.
 
+- CDP multi-touch: Input.dispatchTouchEvent touchStart / touchMove list EVERY finger on the screen, but touchEnd must list only the finger(s) being lifted — listing the remaining fingers lifts those instead (see touchScreen() in tests/e2e/carm/controls.ts).
+- Throwaway debug specs: create them with the Write tool and delete with a plain `rm <file>`; a combined mkdir + heredoc + rm -rf command was refused by the permission check.
+
 ## Rounds
 <!--
 ## Round — YYYY-MM-DD HH:MM — F1-S1 — done | failed | blocked
@@ -56,3 +59,9 @@
 - Files touched: src/carm/fluoroRunner.ts, src/carm/index.ts, tests/e2e/carm/fluoro.spec.ts, ralph/tasks/F3-carm.json, ralph/progress/F3-carm.md
 - Test result: verify 4 passed (desktop; tablet skipped by design), stable over --repeat-each=3; npm run check green (139 unit tests, 102 screen tests passed, 16 skipped by set-up).
 - Next round should know: The pedal (F3-S11) should call the same runner (fluoro.begin / fluoro.end in index.ts) with pointer event time stamps. Note: if F and the pedal are both held, releasing either one stops fluoro (the runner has no per-source count) — decide in S11 whether to track sources. The renderer has no noise yet, so canvas pixels are exactly equal when nothing is drawn.
+
+## Round — 2026-11-10 13:31 — F3-S11 — done
+- What I did: Added src/carm/pedal.ts: buildPedal(runner) → 'Fluoro' button (test id fluoro-pedal, ≥88×44, touch-action none, no text selection / long-press callout, contextmenu blocked). pointerdown (left button for mouse) → setPointerCapture + runner.begin(e.timeStamp); pointerup / pointercancel / lostpointercapture for the same pointer → runner.end(e.timeStamp). aria-pressed and the gold background follow runner.onChange (new on FluoroRunner), so they reset when fluoro stops another way (page hidden, blur). Header row: title · counters (now stacked in two lines) · ? · Shot · Fluoro. tests/e2e/carm/controls.ts now has touchScreen(page) (several fingers by id), centreOf(locator), and dragSlider(..., { screen, id }) for a second finger.
+- Files touched: src/carm/pedal.ts, src/carm/fluoroRunner.ts, src/carm/counters.ts, src/carm/index.ts, tests/e2e/carm/controls.ts, tests/e2e/carm/fluoroPedal.spec.ts, ralph/tasks/F3-carm.json, ralph/progress/F3-carm.md
+- Test result: verify (fluoroPedal + fluoro specs) 11 passed, 7 skipped by set-up; fluoroPedal stable over --repeat-each=3; npm run check green (139 unit tests, 109 screen tests passed, 19 skipped by set-up). F-key tests unchanged and passing.
+- Next round should know: Holding F and the pedal together: releasing either stops fluoro (no per-source counting) — safe default, not tested. Tablet header width is about 382 of 484 px, leaving ~100 px; the region picker (S9) may fit at the end of the header row or as a short extra row (about 50 px of panel height remain).
