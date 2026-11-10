@@ -65,3 +65,9 @@
 - Files touched: src/carm/pedal.ts, src/carm/fluoroRunner.ts, src/carm/counters.ts, src/carm/index.ts, tests/e2e/carm/controls.ts, tests/e2e/carm/fluoroPedal.spec.ts, ralph/tasks/F3-carm.json, ralph/progress/F3-carm.md
 - Test result: verify (fluoroPedal + fluoro specs) 11 passed, 7 skipped by set-up; fluoroPedal stable over --repeat-each=3; npm run check green (139 unit tests, 109 screen tests passed, 19 skipped by set-up). F-key tests unchanged and passing.
 - Next round should know: Holding F and the pedal together: releasing either stops fluoro (no per-source counting) — safe default, not tested. Tablet header width is about 382 of 484 px, leaving ~100 px; the region picker (S9) may fit at the end of the header row or as a short extra row (about 50 px of panel height remain).
+
+## Round — 2026-11-10 13:32 — F3-S8 — done
+- What I did: Added tests/e2e/carm/lastImageHold.spec.ts: take an image, record a 16×16-grid canvas fingerprint, move oblique and tilt with the sliders (plus Shift+L on desktop), check the fingerprint is identical, pose ≠ lastImagePose, lastImagePose and shot count unchanged; then one more Shot raises the count by exactly 1, sets lastImagePose to the new pose and changes the fingerprint. The behaviour already held; no app code changed.
+- Files touched: tests/e2e/carm/lastImageHold.spec.ts, ralph/tasks/F3-carm.json, ralph/progress/F3-carm.md
+- Test result: verify passed in both set-ups (stable over --repeat-each=2); npm run check green (139 unit tests, 111 screen tests passed, 19 skipped by set-up).
+- Next round should know: Once the renderer adds noise/grain (F2), exact fingerprint equality still holds for the hold (nothing is redrawn), but "changes after a Shot" stays true too.
