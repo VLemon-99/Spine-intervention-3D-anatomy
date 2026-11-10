@@ -288,9 +288,9 @@
       "dependsOn": [
         "F1-S10"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. landmarks.ts: findLevelParts(vol) -> body + endplates + pedicleCentre + optional foramenCentre per typical level. Pedicle = level bone in the canal's front-to-back range, beside the canal, up to PEDICLE_REACH_MM (10) past its side wall (stand-in canal behind the body if no canal voxels). Foramen = under the pedicle's (x, y), midway between the pedicle bottom and the highest bone of the next level (L5 -> sacrum) in the pedicle's footprint columns, moved off bone if needed. Pelvis fixture: tests/anatomy/pelvisFixture.ts (createPelvisFixture({topZ?}), PELVIS_TRUTH incl. sacrum, crests, SI gap, L5-S1 facet gap)."
     },
     {
       "id": "F1-S12",

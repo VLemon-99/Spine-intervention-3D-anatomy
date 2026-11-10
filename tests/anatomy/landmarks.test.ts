@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { isBone, LEVEL_IDS, TISSUE } from '../../src/core/labels';
 import { createPhantom, createPhantomLandmarks } from '../../src/core/phantom';
 import type { Vec3, Volume } from '../../src/core/types';
-import { findBodyLandmarks } from '../../tools/anatomy/landmarks';
+import { findBodyLandmarks, findLevelParts } from '../../tools/anatomy/landmarks';
+import { createPelvisFixture, PELVIS_TRUTH } from './pelvisFixture';
 
 const phantom = createPhantom();
 const truth = createPhantomLandmarks();
@@ -86,6 +87,55 @@ describe('findBodyLandmarks', () => {
       const levels = phantom.levels!.map((l) => (l === LEVEL_IDS.L4 ? LEVEL_IDS[skipped] : l));
       const result = findBodyLandmarks({ ...phantom, levels });
       expect(result.map((l) => l.level), skipped).toEqual(['L5']);
+    }
+  });
+});
+
+describe('findLevelParts: pedicles and foramina', () => {
+  const parts = findLevelParts(phantom);
+  const get = (level: string) => parts.find((l) => l.level === level)!;
+
+  it('puts the L4 and L5 pedicle centres, left and right, within 3 mm of the phantom’s', () => {
+    for (const level of ['L4', 'L5'] as const) {
+      const want = truth.levels.find((l) => l.level === level)!;
+      for (const side of ['left', 'right'] as const) {
+        expect(dist(get(level).pedicleCentre[side], want.pedicleCentre[side]), `${level} ${side}`).toBeLessThanOrEqual(3);
+      }
+    }
+  });
+
+  it('gives L4 a left and right foramen centre within 4 mm of the phantom’s, and L5 (lowest, no sacrum) none', () => {
+    const want = truth.levels.find((l) => l.level === 'L4')!.foramenCentre!;
+    for (const side of ['left', 'right'] as const) {
+      expect(dist(get('L4').foramenCentre![side]!, want[side]!), side).toBeLessThanOrEqual(4);
+    }
+    expect(get('L5').foramenCentre).toBeUndefined();
+  });
+
+  it('gives left landmarks a larger x than right ones', () => {
+    for (const l of parts) {
+      expect(l.pedicleCentre.left.x).toBeGreaterThan(l.pedicleCentre.right.x);
+      if (l.foramenCentre) expect(l.foramenCentre.left!.x).toBeGreaterThan(l.foramenCentre.right!.x);
+    }
+  });
+
+  it('never puts a foramen centre in a bone voxel', () => {
+    for (const l of parts)
+      for (const p of Object.values(l.foramenCentre ?? {})) expect(isBone(phantom.labels[voxelAt(phantom, p!)])).toBe(false);
+  });
+
+  it('on the pelvis fixture gives L5 an L5–S1 foramen on each side, between L5’s pedicle and the sacrum top', () => {
+    const pelvis = createPelvisFixture();
+    const l5 = findLevelParts(pelvis).find((l) => l.level === 'L5')!;
+    expect(l5).toBeDefined();
+    for (const side of ['left', 'right'] as const) {
+      const f = l5.foramenCentre?.[side];
+      expect(f, side).toBeDefined();
+      expect(f!.z).toBeLessThan(l5.pedicleCentre[side].z);
+      expect(f!.z).toBeGreaterThan(PELVIS_TRUTH.sacrumTopBesideCanalZ);
+      expect(dist(f!, PELVIS_TRUTH.l5.foramenCentre[side])).toBeLessThanOrEqual(4);
+      expect(isBone(pelvis.labels[voxelAt(pelvis, f!)])).toBe(false);
+      expect(dist(l5.pedicleCentre[side], PELVIS_TRUTH.l5.pedicleCentre[side])).toBeLessThanOrEqual(3);
     }
   });
 });

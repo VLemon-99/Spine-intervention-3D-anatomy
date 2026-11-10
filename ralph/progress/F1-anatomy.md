@@ -10,6 +10,7 @@
 - Read JSON tables in tools/ with `readFileSync(new URL('./x.json', import.meta.url))` — tsconfig has no `resolveJsonModule`, so `import x from './x.json'` fails the type check (and tsconfig is a shared file).
 - ESLint here has `preserve-caught-error`: when re-throwing inside a `catch`, pass `{ cause: e }` to `new Error(...)`.
 - Converter logic is in `tools/anatomy/convertCore.ts` so tests can call `runConvertCli(args, { log, error })` without spawning a process; `convert.ts` just sets `process.exitCode`.
+- Don't use `Math.min(...list)` / `Math.max(...list)` on voxel lists: real vertebrae have ~100k voxels and spreading that many arguments can overflow the stack. `landmarks.ts` has a `range(values)` loop helper.
 
 ## Rounds
 <!--
@@ -85,3 +86,9 @@
 - Files touched: tools/anatomy/landmarks.ts, tests/anatomy/landmarks.test.ts, task file, this log.
 - Test result: verify 6/6 passed; `npm run check` green (171 unit tests, 46 screen tests passed).
 - Next round should know: landmarks.ts works on any {size, spacing, origin, labels, levels} in the standard layout (e.g. createPhantom()). Reuse boneVoxelsByLevel / bodyVoxels / centreInside for pedicles and articular processes. Endplate centre = mean of top (or bottom) voxel centres, i.e. on the outer voxel centres, as in the phantom's truth.
+
+## Round — 2026-11-10 13:40 — F1-S11 — done
+- What I did: pedicle centres and foramen centres (incl. L5–S1 with the sacrum) in landmarks.ts; pelvis fixture helper with true landmark positions; 5 new unit tests, earlier 6 unchanged.
+- Files touched: tools/anatomy/landmarks.ts, tests/anatomy/landmarks.test.ts, tests/anatomy/pelvisFixture.ts (new), task file, this log.
+- Test result: verify 11/11 passed; `npm run check` green (176 unit tests, 46 screen tests passed).
+- Next round should know: pelvis fixture is 121×81×111 voxels (1 mm, origin (−60, −40, −70)); building it takes well under a second. Its S1 SAP pillars top out at z −4 (tips (±15, 18, −4)); L5's pillars run −2…23 (facet gap z −3). findLevelParts skips a level whose pedicles can't be found on both sides.

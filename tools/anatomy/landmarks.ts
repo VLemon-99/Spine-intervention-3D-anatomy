@@ -3,7 +3,7 @@
 // sits at origin + (i, j, k) × spacing in patient mm (+x left, +y back, +z head).
 // Results are approximations for the owner to review on real anatomy.
 import { isBone, LEVEL_CODES, LEVEL_IDS, TISSUE, type LevelCode } from '../../src/core/labels';
-import type { Endplate, LevelLandmarks, Vec3, Volume } from '../../src/core/types';
+import type { Endplate, LevelLandmarks, Sided, Vec3, Volume } from '../../src/core/types';
 
 /** Levels with a typical vertebral body (C1 and C2 are left out for now; sacrum and ilium have their own landmarks). */
 export const TYPICAL_LEVELS: readonly LevelCode[] = LEVEL_CODES.filter(
@@ -151,7 +151,7 @@ function fitEndplates(vol: VolumeGrid, body: readonly number[]): Pick<BodyLandma
     }
   }
   const all = [...cols.values()];
-  const tallest = Math.max(...all.map((c) => c.top - c.bottom + 1));
+  const tallest = range(all.map((c) => c.top - c.bottom + 1))[1];
   const used = all.filter((c) => c.top - c.bottom + 1 >= ENDPLATE_COLUMN_SHARE * tallest);
   if (used.length < 3) return null;
   const pts = (pick: 'top' | 'bottom') => used.map((c) => position(vol, c.i, c.j, c[pick]));
@@ -193,4 +193,164 @@ function fitPlane(points: readonly Vec3[], up: 1 | -1): Endplate | null {
     centre: { x: mx, y: my, z: mz },
     normal: { x: (-a / len) * up, y: (-b / len) * up, z: (1 / len) * up },
   };
+}
+
+// ── Pedicles and foramina (F1-S11) ──────────────────────────────────────────
+
+/** How far (mm) beyond the canal's side wall a pedicle voxel may lie. */
+export const PEDICLE_REACH_MM = 10;
+
+export type LevelParts = BodyLandmarks & Pick<LevelLandmarks, 'pedicleCentre' | 'foramenCentre'>;
+
+interface CanalBox {
+  centreX: number; // voxel i (fractional)
+  halfWidth: number; // voxels along i
+  jMin: number;
+  jMax: number;
+}
+
+/** The canal beside a level: the canal voxels in the level's slices (or a stand-in just behind the body). */
+function canalBeside(vol: VolumeGrid, bone: readonly number[], body: readonly number[]): CanalBox {
+  const { x: nx, y: ny } = vol.size;
+  const [kMin, kMax] = range(bone.map((v) => ijk(vol, v)[2]));
+  let sum = 0;
+  let n = 0;
+  let iMin = Infinity;
+  let iMax = -Infinity;
+  let jMin = Infinity;
+  let jMax = -Infinity;
+  for (let k = kMin; k <= kMax; k++)
+    for (let j = 0; j < ny; j++) {
+      const row = nx * (j + ny * k);
+      for (let i = 0; i < nx; i++) {
+        if (!CANAL_LABELS.has(vol.labels[row + i])) continue;
+        sum += i;
+        n++;
+        if (i < iMin) iMin = i;
+        if (i > iMax) iMax = i;
+        if (j < jMin) jMin = j;
+        if (j > jMax) jMax = j;
+      }
+    }
+  if (n > 0) {
+    const centreX = sum / n;
+    return { centreX, halfWidth: Math.max(centreX - iMin, iMax - centreX), jMin, jMax };
+  }
+  // No canal voxels: assume a canal just behind the body, a third of the body's width wide and as deep.
+  const b = body.map((v) => ijk(vol, v));
+  const bi = b.map((p) => p[0]);
+  const bodyBack = range(b.map((p) => p[1]))[1];
+  const [biMin, biMax] = range(bi);
+  const width = biMax - biMin + 1;
+  const centreX = bi.reduce((a, c) => a + c, 0) / bi.length;
+  return { centreX, halfWidth: width / 6, jMin: bodyBack + 1, jMax: bodyBack + Math.round(width / 3) };
+}
+
+/** Pedicle voxels on each side: the level's bone beside the canal, within the canal's front-to-back range. */
+function pedicleVoxels(vol: VolumeGrid, bone: readonly number[], canal: CanalBox): Sided<number[]> {
+  const reach = canal.halfWidth + PEDICLE_REACH_MM / vol.spacing.x;
+  const out: Sided<number[]> = { left: [], right: [] };
+  for (const v of bone) {
+    const [i, j] = ijk(vol, v);
+    if (j < canal.jMin || j > canal.jMax) continue;
+    const dx = i - canal.centreX;
+    if (Math.abs(dx) <= canal.halfWidth || Math.abs(dx) > reach) continue;
+    // Standard layout: +i is +x, the patient's left.
+    (dx > 0 ? out.left : out.right).push(v);
+  }
+  return out;
+}
+
+/** The level below in LEVEL_CODES order (L5 → sacrum). */
+function levelBelow(level: LevelCode): LevelCode | undefined {
+  const next = LEVEL_CODES[LEVEL_CODES.indexOf(level) + 1];
+  return next === 'ilium' ? undefined : next;
+}
+
+/**
+ * Foramen centre on one side: under the pedicle's (x, y), midway between the
+ * pedicle's lowest voxel and the highest bone of the level below in the
+ * pedicle's footprint columns. Moved to the nearest non-bone voxel of that
+ * column if it lands on bone. Undefined when there is no bone below.
+ */
+function foramenCentre(vol: VolumeGrid, pedicle: readonly number[], belowId: number): Vec3 | undefined {
+  if (pedicle.length === 0) return undefined;
+  const { x: nx, y: ny } = vol.size;
+  const nxy = nx * ny;
+  const pts = pedicle.map((v) => ijk(vol, v));
+  const bottom = range(pts.map((p) => p[2]))[0];
+  const columns = new Set(pts.map((p) => p[0] + nx * p[1]));
+  let top = -1;
+  for (const col of columns) {
+    for (let k = bottom - 1; k > top; k--) {
+      const v = col + nxy * k;
+      if (vol.levels![v] === belowId && isBone(vol.labels[v])) {
+        top = k;
+        break;
+      }
+    }
+  }
+  if (top < 0) return undefined;
+  const mi = pts.reduce((s, p) => s + p[0], 0) / pts.length;
+  const mj = pts.reduce((s, p) => s + p[1], 0) / pts.length;
+  const mid = (bottom + top) / 2;
+  const [ci, cj] = [Math.round(mi), Math.round(mj)];
+  const isBoneAt = (k: number) => isBone(vol.labels[ci + nx * (cj + ny * k)]);
+  if (!isBoneAt(Math.round(mid))) return position(vol, mi, mj, mid);
+  for (let d = 1; d < bottom - top; d++) {
+    for (const k of [Math.round(mid) - d, Math.round(mid) + d]) {
+      if (k > top && k < bottom && !isBoneAt(k)) return position(vol, mi, mj, k);
+    }
+  }
+  return undefined;
+}
+
+function meanPosition(vol: VolumeGrid, voxels: readonly number[]): Vec3 {
+  const pts = voxels.map((v) => ijk(vol, v));
+  const n = pts.length;
+  return position(
+    vol,
+    pts.reduce((s, p) => s + p[0], 0) / n,
+    pts.reduce((s, p) => s + p[1], 0) / n,
+    pts.reduce((s, p) => s + p[2], 0) / n,
+  );
+}
+
+/**
+ * Body, endplates, pedicles and foramina for every typical level present.
+ * A foramen is listed under the level above it; the lowest level has none,
+ * except L5 when the sacrum is in the volume (the L5–S1 foramen).
+ */
+export function findLevelParts(vol: VolumeGrid): LevelParts[] {
+  const byLevel = boneVoxelsByLevel(vol);
+  const out: LevelParts[] = [];
+  for (const body of findBodyLandmarks(vol)) {
+    const bone = byLevel.get(LEVEL_IDS[body.level])!;
+    const canal = canalBeside(vol, bone, bodyVoxels(vol, bone));
+    const ped = pedicleVoxels(vol, bone, canal);
+    if (ped.left.length === 0 || ped.right.length === 0) continue;
+    const parts: LevelParts = {
+      ...body,
+      pedicleCentre: { left: meanPosition(vol, ped.left), right: meanPosition(vol, ped.right) },
+    };
+    const below = levelBelow(body.level);
+    if (below && byLevel.has(LEVEL_IDS[below])) {
+      const left = foramenCentre(vol, ped.left, LEVEL_IDS[below]);
+      const right = foramenCentre(vol, ped.right, LEVEL_IDS[below]);
+      if (left || right) parts.foramenCentre = { ...(left ? { left } : {}), ...(right ? { right } : {}) };
+    }
+    out.push(parts);
+  }
+  return out;
+}
+
+/** Smallest and largest value (a loop, so it works on very long lists). */
+function range(values: readonly number[]): [number, number] {
+  let lo = Infinity;
+  let hi = -Infinity;
+  for (const v of values) {
+    if (v < lo) lo = v;
+    if (v > hi) hi = v;
+  }
+  return [lo, hi];
 }
