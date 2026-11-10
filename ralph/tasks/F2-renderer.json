@@ -124,9 +124,9 @@
       "dependsOn": [
         "F2-S4"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. The controls sit in a narrow column to the right of the picture (container test id fluoro-controls)."
     },
     {
       "id": "F2-S6",

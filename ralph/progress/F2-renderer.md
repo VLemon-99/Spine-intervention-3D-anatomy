@@ -16,6 +16,9 @@
 - GPU drawing is two steps in `drrGpu.ts`: `take(volume, pose)` renders into the held off-screen image (a 512×512, 8-bit `WebGLRenderTarget`); `display(options)` draws it to the canvas with `texelFetch(uHeld, ivec2(gl_FragCoord.xy), 0)`, so held pixel = canvas pixel with no y-flip. Things that belong to TAKING the image (magnification, collimation, noise, contrast) go in the first shader; display settings (invert, flips, rotation) go in `displayFragmentShader` and in `DisplayOptions`.
 - `fluoroCanvas.ts` re-runs `display()` on every settings change while an image is held, so a new display setting only has to be passed into `drr.display({...})`. Settings changes made with `setRenderSettings` are on the canvas as soon as the call returns (no waiting needed in tests).
 - Whole-canvas comparisons in screen tests: `worstDifference(now, before, expected)` in `tests/e2e/render/invert.spec.ts` is a pattern to copy.
+- Fluoro panel layout: `src/render/index.ts` has a row (`body`) with the picture on the left and `createControls` (`src/render/controls.ts`, test id `fluoro-controls`) as a wrapping column on the right. New buttons go into that column; `createToggle(...)` builds an on/off button that follows the settings. On the tablet the panel is about 500×370 px and the picture about 325 px square, so roughly 110 px of width is free for controls before the picture starts to shrink.
+- Screen-test helpers for controls in `tests/e2e/render/renderPage.ts`: `press(page, testId)` (click on desktop, tap on tablet) and `expectOnScreen(page, locator)` (inside the window with the page not scrolled; returns the box for the 44 px check).
+- To look at the layout, a throwaway spec with `page.screenshot(...)` into the scratchpad works (delete the spec afterwards); never start the dev server by hand.
 
 ## Rounds
 <!--
@@ -49,3 +52,9 @@
 - Files touched: `src/render/drrGpu.ts`, `src/render/fluoroCanvas.ts`, `src/render/drrCpu.ts`, `tests/render/drrCpu.test.ts` (3 tests added), `tests/e2e/render/invert.spec.ts` (new), this log, the task file.
 - Test result: verify command passed (14 unit tests, 10 invert screen tests, all 38 render screen tests incl. the CPU match). `npm run check` passed: lint + types clean, 113 unit tests, 70 screen tests passed and 6 skipped (one-set-up-only tests).
 - Next round should know: before the first image, and after an image taken with no volume loaded, nothing is held, so display settings do not repaint the canvas. The no-volume fill is not inverted (the story does not ask for it). No on-screen Invert button yet — that is F2-S5.
+
+## Round — 2026-11-10 13:15 — F2-S5 — done
+- What I did: Added the Invert button (`invert-toggle`, a `<button>` with `aria-pressed`) in a new controls column beside the canvas. It flips `settings.invert` and follows the setting when it changes elsewhere.
+- Files touched: `src/render/controls.ts` (new), `src/render/index.ts`, `tests/e2e/render/invertToggle.spec.ts` (new), `tests/e2e/render/renderPage.ts` (helpers `press`, `expectOnScreen`), this log, the task file.
+- Test result: verify command passed (8 screen tests). `npm run check` passed: lint + types clean, 113 unit tests, 78 screen tests passed and 6 skipped (one-set-up-only tests).
+- Next round should know: the button is 64×44 px minimum. Its test also checks that the picture stays at least 200 px and that the button does not lie on top of it — later control stories should keep that true (the collimation sliders will probably need the fold-out group).

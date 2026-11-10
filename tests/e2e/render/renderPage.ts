@@ -1,5 +1,5 @@
 // Screen-test helpers of the render zone (not a spec file).
-import type { Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import type { CArmPose } from '../../../src/core/types';
 import type { RenderSettings, RenderSettingsPatch } from '../../../src/render/settings';
 
@@ -60,4 +60,31 @@ export async function readWholeCanvas(page: Page): Promise<{ width: number; heig
   });
   const data = Uint8Array.from(result.grey, (character) => character.charCodeAt(0));
   return { width: result.width, height: result.height, data };
+}
+
+/** Press a control the way the set-up's user would: a click on desktop, a tap on the tablet. */
+export async function press(page: Page, testId: string): Promise<void> {
+  const control = page.getByTestId(testId);
+  if (test.info().project.use.hasTouch) {
+    await control.tap();
+  } else {
+    await control.click();
+  }
+}
+
+/**
+ * Check that a control is fully inside the window without scrolling the page
+ * (the page itself is not scrolled), and return its on-screen box.
+ */
+export async function expectOnScreen(page: Page, locator: Locator): Promise<{ width: number; height: number }> {
+  await expect(locator).toBeVisible();
+  expect(await page.evaluate(() => [window.scrollX, window.scrollY])).toEqual([0, 0]);
+  const box = await locator.boundingBox();
+  const viewport = page.viewportSize();
+  if (!box || !viewport) throw new Error('no box or viewport');
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.y).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+  expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
+  return { width: box.width, height: box.height };
 }

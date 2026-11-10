@@ -1,7 +1,10 @@
 // Renderer (DRR, display, fluoro panel) — F2, F7.
-// mount() builds this zone's panel (fluoro-panel) with the fluoro canvas.
+// mount() builds this zone's panel (fluoro-panel): the fluoro canvas with the
+// display controls beside it.
 import { bus, store } from '../core/store';
+import { createControls } from './controls';
 import { createFluoroCanvas } from './fluoroCanvas';
+import { renderSettings } from './settings';
 
 export function mount(element: HTMLElement): void {
   const panel = document.createElement('section');
@@ -17,11 +20,16 @@ export function mount(element: HTMLElement): void {
   heading.className = 'panel-title';
   heading.textContent = 'Fluoro image';
 
+  // The picture on the left, the controls in a narrow column on its right.
+  const body = document.createElement('div');
+  Object.assign(body.style, { flex: '1', minHeight: '0', display: 'flex', gap: '8px' });
   const imageArea = document.createElement('div');
-  Object.assign(imageArea.style, { flex: '1', minHeight: '0', display: 'flex', alignItems: 'center' });
+  Object.assign(imageArea.style, { flex: '1', minWidth: '0', minHeight: '0', display: 'flex', alignItems: 'center' });
+  body.append(imageArea);
 
   Object.assign(panel.style, { display: 'flex', flexDirection: 'column' });
-  panel.append(marker, heading, imageArea);
+  panel.append(marker, heading, body);
   element.append(panel);
-  createFluoroCanvas(imageArea, store, bus);
+  createFluoroCanvas(imageArea, store, bus, renderSettings);
+  createControls(body, renderSettings);
 }
