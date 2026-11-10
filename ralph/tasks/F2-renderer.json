@@ -1,0 +1,519 @@
+{
+  "feature": "F2",
+  "name": "Fluoroscopic image renderer",
+  "branch": "ralph/F2-renderer",
+  "zone": "render",
+  "dependsOnFeatures": [
+    "F0"
+  ],
+  "stories": [
+    {
+      "id": "F2-S1",
+      "title": "Add the CPU reference X-ray image (renderDrrCpu) with the absorption law",
+      "description": "Create src/render/pipeline.ts and src/render/drrCpu.ts. pipeline.ts holds the numbers both renderers share (move MARCH_STEP_MM and ABSORPTION_PER_MM there from drrGpu.ts and import them back; no behaviour change on the GPU) and, in a comment at the top, the ORDER OF STEPS every later story follows. Taking the image (frozen until the next exposure): (1) magnification m: image pixel p uses the detector position centre + (p − centre) / m, centre = (256, 256); (2) ray from the source through that detector position, total absorption = sum over 0.5 mm steps of (intensity/255 × ABSORPTION_PER_MM + extra/255 × EXTRA_ABSORPTION_PER_MM) × step, value = e^(−total); (3) noise (seeded grain) added, result kept within 0…1; (4) collimation: pixels outside the open area get the fixed 'no signal' value and no noise. Displaying the held image (applied straight away, no new exposure): (5) invert: value → 1 − value; (6) flip left-right, flip up-down, then rotate clockwise by 0/90/180/270°. This story builds step 2 without the extra volume. renderDrrCpu(volume, pose, options) returns { width: 512, height: 512, data: Float32Array } with values 0…1 (1 = full brightness), pixel (x, y) at index x + 512 × y, y counted from the top; each pixel's ray comes from createProjection(pose).unproject at the pixel centre (x + 0.5, y + 0.5). Use the same sampling as the GPU shader (nearest voxel, samples at entry + (i + 0.5) × step inside the volume's box). Also export a one-pixel function (e.g. transmissionAt(volume, projection, pixel, options)) so unit tests can check single rays quickly. Volumes are always in the standard layout (identity orientation; owner decision 2026-11-10: the F1 converter standardises files), so throw a clear error for any other orientation. Voxel spacing may differ per axis. Plain TypeScript, no browser code.",
+      "specRefs": [
+        "F2.1"
+      ],
+      "acceptance": [
+        "Unit test: for an empty volume (all intensity 0) every one of the 512×512 values is exactly 1",
+        "Unit test: for a uniform slab across the beam at pose (0°, 0°), the centre pixel's value goes down each time the slab gets thicker (at least three thicknesses)",
+        "Unit test: doubling the slab thickness squares the transmitted fraction at the centre pixel, within 2%",
+        "Unit test: a volume whose orientation is not the identity is rejected with a clear error",
+        "Unit test: on the phantom at the default pose, the pixel at the projected centre of the upper vertebra block is darker than the pixel at (0, 0)",
+        "The existing render screen tests still pass (the GPU image is unchanged)"
+      ],
+      "verify": "npx vitest run tests/render/drrCpu.test.ts && npx playwright test tests/e2e/render",
+      "zone": "render",
+      "priority": 1,
+      "dependsOn": [],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F2-S2",
+      "title": "Add the render settings (invert, magnification, collimation, noise level, flips, rotation) and report them in window.__sim",
+      "description": "Create src/render/settings.ts: the RenderSettings type { invert: boolean; magnification: 1 | 1.5 | 2; collimation: { left, right, top, bottom } (each the percentage of the field covered from that edge, 0–50); noiseLevel (0–1); flipHorizontal: boolean; flipVertical: boolean; rotation: 0 | 90 | 180 | 270 }, the defaults (not inverted, 1×, shutters fully open, noiseLevel 0 for now, no flips, rotation 0), a function that validates a change (numbers outside their range are clamped; non-finite numbers and values that are not one of the allowed options are ignored), and a small zone-local settings store (get, set, subscribe) with one shared instance. The settings have NO effect on the image yet; later stories switch them on one by one. In fluoroCanvas.ts, remember for each exposure the pose, a copy of the settings and the image's noise seed (an image counter: 1 for the first image after page load, then 2, 3 …). Register a read-only getter with registerDebugGetter('render', …) so window.__sim.render() returns { settings, lastImage } where lastImage is null before the first image and otherwise { pose, settings, noiseSeed }. Add the zone's screen-test helper tests/e2e/render/renderPage.ts (not a spec file): setRenderSettings(page, patch) changes the settings through the app's own settings module as served by the dev server (the same trick as setPose in tests/fixtures/simPage.ts), and getRenderInfo(page) returns window.__sim.render(). No edits in src/core/ or tests/fixtures/.",
+      "specRefs": [
+        "F2.3",
+        "F2.4",
+        "F2.5",
+        "F2.6",
+        "F2.7"
+      ],
+      "acceptance": [
+        "Unit test: the defaults are as listed in the description",
+        "Unit test: each collimation value is clamped to 0–50 and noiseLevel to 0–1; NaN/Infinity, a magnification other than 1, 1.5 or 2 and a rotation other than 0, 90, 180 or 270 leave the old value unchanged",
+        "Unit test: subscribers of the settings store are called once per real change and not when nothing changed",
+        "Screen test (both set-ups): before the first image window.__sim.render() returns the default settings and lastImage null",
+        "Screen test (both set-ups): after setRenderSettings(page, { magnification: 2 }) and one image, lastImage.pose equals getState().lastImagePose, lastImage.settings.magnification is 2 and lastImage.noiseSeed is 1; after a second image it is 2",
+        "The production build still contains no '__sim' text (npm run build, then the existing tests/core/testHook.build.test.ts passes)"
+      ],
+      "verify": "npx vitest run tests/render/settings.test.ts && npx playwright test tests/e2e/render/settings.spec.ts && npx vitest run tests/core/testHook.build.test.ts",
+      "zone": "render",
+      "priority": 2,
+      "dependsOn": [
+        "F2-S1"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F2-S3",
+      "title": "Check the GPU image against the CPU reference at three poses",
+      "description": "Add the screen test for F2.2. For three poses — the default pose; oblique +30° with tilt +15°; and oblique −45°, tilt −20°, table left/right +10 mm, head/foot −15 mm, height +20 mm — set the pose (setPose from tests/fixtures/simPage.ts is allowed until F3's controls are merged), set noiseLevel to 0 with setRenderSettings, take an image and read ALL 512×512 canvas pixels (add readWholeCanvas(page) to tests/e2e/render/renderPage.ts). In the test process, compute renderDrrCpu on createPhantom() at the same pose and compare value × 255 with the canvas grey values. If the two do not match, fix the GPU shader or the CPU reference (same sampling, same constants from pipeline.ts) until they do — never by loosening a test.",
+      "specRefs": [
+        "F2.2"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups): at each of the three poses the mean absolute difference between the canvas and the CPU reference is 3% of the grey range or less (≤ 7.65 grey levels)",
+        "The test first checks the CPU image is not flat (it contains values below 0.5 and values of exactly 1), so a blank image cannot pass",
+        "All earlier render tests still pass"
+      ],
+      "verify": "npx playwright test tests/e2e/render/cpuMatch.spec.ts && npx playwright test tests/e2e/render",
+      "zone": "render",
+      "priority": 3,
+      "dependsOn": [
+        "F2-S1",
+        "F2-S2"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F2-S4",
+      "title": "Draw the image in two steps (take, then display) and add Invert to both renderers",
+      "description": "Change the GPU drawing to two steps, following the order of steps documented at the top of src/render/pipeline.ts: on each exposure the X-ray image is rendered into an off-screen image (a WebGLRenderTarget) and kept; a second, cheap display step draws that held image to the canvas. The display step is re-run whenever a display setting (invert now; flips and rotation later) changes, WITHOUT a new exposure — so the learner sees Invert immediately and the shot count does not change (owner decision 2026-11-10). Because the held image is reused, nothing else on screen may change when Invert is toggled (this protects last image hold, F3.5 and F7.4). Add invert to the display step (value → 1 − value) and to renderDrrCpu as options.invert. No on-screen button yet (next story): tests switch it with setRenderSettings.",
+      "specRefs": [
+        "F2.3"
+      ],
+      "acceptance": [
+        "Unit test: with options.invert every CPU value equals 1 − the value without it",
+        "Screen test (both set-ups): after one image, setRenderSettings(page, { invert: true }) changes the canvas without a new image (shot count unchanged) and the pixel at the projected centre of the upper vertebra block becomes lighter than the corner pixel (0, 0)",
+        "Screen test (both set-ups): take an image, change the pose in the store (no new image), then turn invert on: every canvas pixel equals 255 − its earlier value within 1 grey level (the held image was re-displayed, not re-taken)",
+        "Screen test (both set-ups): turning invert off again restores the earlier pixels within 1 grey level",
+        "All earlier render tests still pass, including the CPU match"
+      ],
+      "verify": "npx vitest run tests/render/drrCpu.test.ts && npx playwright test tests/e2e/render/invert.spec.ts && npx playwright test tests/e2e/render",
+      "zone": "render",
+      "priority": 4,
+      "dependsOn": [
+        "F2-S3"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F2-S5",
+      "title": "Add the Invert toggle button to the fluoro panel",
+      "description": "Add an 'Invert' button (test id invert-toggle, aria-pressed showing its state) to the fluoro panel. A click (desktop) or tap (tablet) flips settings.invert; the button also follows the setting when it is changed elsewhere. Layout: the fluoro panel is one quarter of the screen (F0 layout), so put controls beside or under the canvas and keep them compact; make every button or slider handle at least 44×44 px (F12.3 will check this later); F12 owns the final layout. Use <button> elements with aria-pressed for on/off controls, not checkboxes (the spacebar is the Shot shortcut).",
+      "specRefs": [
+        "F2.3"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups; click on desktop, tap on tablet): after one image, pressing Invert makes the vertebra pixel from F0.6 lighter than the corner pixel; pressing it again makes it darker again",
+        "Screen test (both set-ups): aria-pressed is 'false' at the start and 'true' after one press, and window.__sim.render().settings.invert matches",
+        "Screen test (both set-ups): the button and the canvas are both visible without scrolling the page, and the button is at least 44×44 px"
+      ],
+      "verify": "npx playwright test tests/e2e/render/invertToggle.spec.ts",
+      "zone": "render",
+      "priority": 5,
+      "dependsOn": [
+        "F2-S4"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F2-S6",
+      "title": "Add magnification (1×, 1.5×, 2×) to the CPU reference",
+      "description": "Add options.magnification (1, 1.5 or 2; anything else is an error) to renderDrrCpu, as step 1 of the order of steps documented at the top of src/render/pipeline.ts: image pixel p looks at detector position centre + (p − centre) / m, so structures appear m times larger around the image centre. Unit tests measure the projected width of a phantom structure (for example the dark band of the upper vertebra body along the image row through its centre: the number of pixels darker than halfway between the soft-tissue and bone values).",
+      "specRefs": [
+        "F2.4"
+      ],
+      "acceptance": [
+        "Unit test: the measured width at 1.5× is 1.5 times the width at 1× (±5%), and at 2× it is 2 times (±5%)",
+        "Unit test: at 1×, moving the table (and so the anatomy) closer to the source (pose 0°/0°, table height lowered) makes the same structure wider",
+        "Unit test: the isocentre still appears at the image centre at every magnification",
+        "Unit test: a magnification other than 1, 1.5 or 2 is rejected with a clear error"
+      ],
+      "verify": "npx vitest run tests/render/magnification.test.ts",
+      "zone": "render",
+      "priority": 6,
+      "dependsOn": [
+        "F2-S1"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F2-S7",
+      "title": "Apply magnification in the GPU image, from the next image on",
+      "description": "Use settings.magnification in the GPU step that takes the image (a uniform; same formula as the CPU reference). Magnification belongs to taking the image, so changing it does NOT change the held image; it shows on the next exposure.",
+      "specRefs": [
+        "F2.4",
+        "F2.2"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups): with noiseLevel 0, at magnification 1.5 (default pose) and 2 (oblique +30°, tilt +15°) the canvas matches renderDrrCpu with the same magnification: mean absolute difference ≤ 3% of the grey range",
+        "Screen test (both set-ups): after an image at 1×, changing the setting to 2× leaves every canvas pixel unchanged until the next image is taken",
+        "Screen test (both set-ups): after that next image, window.__sim.render().lastImage.settings.magnification is 2",
+        "All earlier render tests still pass"
+      ],
+      "verify": "npx playwright test tests/e2e/render/magnification.spec.ts && npx playwright test tests/e2e/render",
+      "zone": "render",
+      "priority": 7,
+      "dependsOn": [
+        "F2-S6",
+        "F2-S4"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F2-S8",
+      "title": "Add the magnification buttons (1×, 1.5×, 2×) to the fluoro panel",
+      "description": "Add three buttons labelled 1×, 1.5× and 2× (test ids magnification-1x, magnification-1.5x, magnification-2x) to the fluoro panel; the one in use has aria-pressed 'true'. Pressing one sets settings.magnification (it takes effect on the next image). Layout: the fluoro panel is one quarter of the screen (F0 layout), so put controls beside or under the canvas and keep them compact; make every button or slider handle at least 44×44 px (F12.3 will check this later); F12 owns the final layout. Use <button> elements with aria-pressed for on/off controls, not checkboxes (the spacebar is the Shot shortcut).",
+      "specRefs": [
+        "F2.4"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups; click on desktop, tap on tablet): pressing 2× sets window.__sim.render().settings.magnification to 2 and only that button has aria-pressed 'true'",
+        "Screen test (both set-ups): pressing 2× and taking an image makes the upper vertebra body's dark band along its image row about twice as wide as in an image taken at 1× (±10%, read from the canvas with noiseLevel 0)",
+        "Screen test (both set-ups): the three buttons and the canvas are visible without scrolling the page, and each button is at least 44×44 px"
+      ],
+      "verify": "npx playwright test tests/e2e/render/magnificationButtons.spec.ts",
+      "zone": "render",
+      "priority": 8,
+      "dependsOn": [
+        "F2-S7",
+        "F2-S5"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F2-S9",
+      "title": "Add collimation (four shutters) to the CPU reference",
+      "description": "Add options.collimation { left, right, top, bottom } to renderDrrCpu, each the percentage (0–50) of the image covered from that edge. It is step 4 of the order of steps documented at the top of src/render/pipeline.ts: it is measured on the image as taken (after magnification, before any flip or rotation), and covered pixels get the fixed NO_SIGNAL value from pipeline.ts (black) — exactly the same value for every covered pixel. Example: left = 20 covers the pixel columns x < 0.2 × 512.",
+      "specRefs": [
+        "F2.5"
+      ],
+      "acceptance": [
+        "Unit test: with { left: 20, right: 10, top: 30, bottom: 0 } every pixel outside the open rectangle has exactly the NO_SIGNAL value (zero variation), and every pixel inside it equals the value without collimation",
+        "Unit test: with all four shutters at 0 the image is identical to one rendered without the option",
+        "Unit test: with left and right both at 50 every pixel is NO_SIGNAL",
+        "Unit test: the covered area is the same at magnification 1 and 2 (shutters are a percentage of the shown field)",
+        "Unit test: values outside 0–50 or non-finite values are rejected with a clear error"
+      ],
+      "verify": "npx vitest run tests/render/collimation.test.ts",
+      "zone": "render",
+      "priority": 9,
+      "dependsOn": [
+        "F2-S6"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F2-S10",
+      "title": "Apply collimation in the GPU image",
+      "description": "Use settings.collimation in the GPU step that takes the image, exactly as in the CPU reference (shows from the next image; the held image does not change when the setting changes). The covered area must stay perfectly uniform when Invert is on as well.",
+      "specRefs": [
+        "F2.5",
+        "F2.2"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups): with { left: 20, right: 10, top: 30, bottom: 0 } and a new image, all canvas pixels outside the open rectangle have one single grey value (max − min = 0)",
+        "Screen test (both set-ups): the same holds with Invert on",
+        "Screen test (both set-ups): with noiseLevel 0 the whole canvas matches renderDrrCpu with the same collimation: mean absolute difference ≤ 3% of the grey range",
+        "Screen test (both set-ups): changing the shutters without taking an image leaves the canvas unchanged",
+        "All earlier render tests still pass"
+      ],
+      "verify": "npx playwright test tests/e2e/render/collimation.spec.ts && npx playwright test tests/e2e/render",
+      "zone": "render",
+      "priority": 10,
+      "dependsOn": [
+        "F2-S9",
+        "F2-S7"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F2-S11",
+      "title": "Add the four collimation sliders to the fluoro panel",
+      "description": "Add four sliders (<input type=\"range\">, 0–50, step 1; test ids collimation-left, collimation-right, collimation-top, collimation-bottom) with a number readout in % each (test ids collimation-left-readout …). Moving a slider sets that shutter in the settings (it takes effect on the next image); the sliders follow the settings when they change elsewhere. They may sit in a small fold-out group if space is short. Layout: the fluoro panel is one quarter of the screen (F0 layout), so put controls beside or under the canvas and keep them compact; make every button or slider handle at least 44×44 px (F12.3 will check this later); F12 owns the final layout. Use <button> elements with aria-pressed for on/off controls, not checkboxes (the spacebar is the Shot shortcut).",
+      "specRefs": [
+        "F2.5"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups; click on the slider track on desktop, tap on it on tablet): the slider's value changes, its readout shows the same number with a % sign, and window.__sim.render().settings.collimation has the same number for that shutter — checked for all four sliders",
+        "Screen test (both set-ups): after setting the left slider and taking an image, the covered pixel columns on the canvas have one single grey value",
+        "Screen test (both set-ups): the sliders (once the group is open, if there is one) and the canvas are visible without scrolling the page"
+      ],
+      "verify": "npx playwright test tests/e2e/render/collimationSliders.spec.ts",
+      "zone": "render",
+      "priority": 11,
+      "dependsOn": [
+        "F2-S10",
+        "F2-S8"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F2-S12",
+      "title": "Add seeded X-ray grain (noise) to the CPU reference, with default levels for shots and fluoro",
+      "description": "Create src/render/noise.ts and add options.noise { seed, level } to renderDrrCpu as step 3 of the order of steps documented at the top of src/render/pipeline.ts: a zero-mean random amount, the same every time for the same seed and pixel, scaled by the level (0 = none, 1 = maximum) and added to the value, which is then kept within 0…1. Collimated pixels get no noise. Put two default levels in pipeline.ts, DEFAULT_NOISE_LEVEL = { shot, fluoro } with fluoro higher than shot and shot above 0, and export defaultNoiseLevel(kind: 'shot' | 'fluoro'). The exact numbers are a look-and-feel choice the owner may tune later; keep the shot level small (the F0 screen tests compare bone and air by 50 grey levels and must keep passing). The CPU and GPU grain patterns do not have to be identical to each other.",
+      "specRefs": [
+        "F2.6"
+      ],
+      "acceptance": [
+        "Unit test: the same seed and level give an identical image; a different seed gives a different image",
+        "Unit test: on a uniform region (a uniform slab, away from its edges) the standard deviation of the values is 0 at level 0 and rises with each higher level (at least three levels)",
+        "Unit test: the mean of that region stays within 2% of its value without noise, and every value stays within 0…1",
+        "Unit test: collimated pixels still have exactly the NO_SIGNAL value with noise on",
+        "Unit test: defaultNoiseLevel('fluoro') > defaultNoiseLevel('shot') > 0"
+      ],
+      "verify": "npx vitest run tests/render/noise.test.ts",
+      "zone": "render",
+      "priority": 12,
+      "dependsOn": [
+        "F2-S9"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F2-S13",
+      "title": "Add the seeded grain to the GPU image",
+      "description": "Add the grain to the GPU step that takes the image: level = settings.noiseLevel, seed = the image's noise seed (the image counter from F2-S2), so every new image has fresh grain but a reloaded page repeats the same sequence. Change the default settings.noiseLevel from 0 to defaultNoiseLevel('shot'). The grain is part of the held image: re-displaying it (Invert) must not change the grain. Using the higher fluoro level for continuous-fluoro frames is a separate, blocked story (F2-S21).",
+      "specRefs": [
+        "F2.6"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups): with noiseLevel 0 two images of the same pose are identical pixel for pixel",
+        "Screen test (both set-ups): with noiseLevel 0.1 two images in a row differ, but after reloading the page the first image is identical to the first image before the reload (same seed = same image)",
+        "Screen test (both set-ups): in a soft-tissue area without bone (around the projection of the point x = 30, y = 0, z = 0 on the phantom) the standard deviation of the canvas values is higher at noiseLevel 0.1 than at 0.03, and higher at 0.03 than at 0",
+        "Screen test (both set-ups): collimated pixels still have one single grey value with noise on",
+        "Screen test (both set-ups): turning Invert on and off again restores the exact earlier pixels within 1 grey level (the grain was not re-drawn)",
+        "Screen test (both set-ups): window.__sim.render().settings.noiseLevel starts at the shot default, which is above 0",
+        "All earlier render tests still pass without being edited"
+      ],
+      "verify": "npx playwright test tests/e2e/render/noise.spec.ts && npx playwright test tests/e2e/render",
+      "zone": "render",
+      "priority": 13,
+      "dependsOn": [
+        "F2-S12",
+        "F2-S10"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F2-S14",
+      "title": "Add image orientation (flip left-right, flip up-down, rotate in 90° steps) to the CPU reference",
+      "description": "Add options.flipHorizontal, options.flipVertical and options.rotation (0, 90, 180 or 270, clockwise) to renderDrrCpu as step 6 of the order of steps documented at the top of src/render/pipeline.ts: flips first, then the rotation. With pixel (x, y) counted from the top-left of the 512×512 image: flip left-right moves it to (511 − x, y); flip up-down to (x, 511 − y); rotating 90° clockwise to (511 − y, x). Put the pixel mapping in one small plain function (e.g. src/render/orientation.ts) that the GPU story reuses for its tests.",
+      "specRefs": [
+        "F2.7"
+      ],
+      "acceptance": [
+        "Unit test: for an image with one off-centre dark spot (a small dense blob in an otherwise empty volume), the spot ends up at the expected pixel for flip left-right, flip up-down, and each rotation 90°, 180° and 270°",
+        "Unit test: flip left-right together with rotation 90° puts the spot where applying the flip first and then the rotation predicts",
+        "Unit test: rotation 0 with no flips gives the unchanged image, and four 90° turns map every pixel back to itself",
+        "Unit test: a rotation other than 0, 90, 180 or 270 is rejected with a clear error"
+      ],
+      "verify": "npx vitest run tests/render/orientation.test.ts",
+      "zone": "render",
+      "priority": 14,
+      "dependsOn": [
+        "F2-S4"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F2-S15",
+      "title": "Apply flips and rotation in the GPU display step, straight away",
+      "description": "Use settings.flipHorizontal, flipVertical and rotation in the GPU display step (the same mapping as the CPU reference). Like Invert, they re-display the held image immediately, with no new exposure.",
+      "specRefs": [
+        "F2.7"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups): after one image, for each of flip left-right, flip up-down and rotation 90°, 180°, 270°, every canvas pixel equals the pixel of the unflipped canvas that the mapping predicts, within 1 grey level, and the shot count is unchanged",
+        "Screen test (both set-ups): with noiseLevel 0, flip left-right plus rotation 90° matches renderDrrCpu with the same options: mean absolute difference ≤ 3% of the grey range",
+        "All earlier render tests still pass"
+      ],
+      "verify": "npx playwright test tests/e2e/render/orientation.spec.ts && npx playwright test tests/e2e/render",
+      "zone": "render",
+      "priority": 15,
+      "dependsOn": [
+        "F2-S14"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F2-S16",
+      "title": "Add the flip and rotate buttons to the fluoro panel",
+      "description": "Add three buttons to the fluoro panel: 'Flip ↔' (test id flip-horizontal, aria-pressed), 'Flip ↕' (test id flip-vertical, aria-pressed) and 'Rotate' (test id rotate-button; each press adds 90° clockwise and wraps from 270° back to 0°; it shows the current angle). They change the settings and the picture changes immediately. Layout: the fluoro panel is one quarter of the screen (F0 layout), so put controls beside or under the canvas and keep them compact; make every button or slider handle at least 44×44 px (F12.3 will check this later); F12 owns the final layout. Use <button> elements with aria-pressed for on/off controls, not checkboxes (the spacebar is the Shot shortcut).",
+      "specRefs": [
+        "F2.7"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups; click on desktop, tap on tablet): pressing Flip ↔ sets settings.flipHorizontal to true and the canvas becomes the left-right mirror of what it was (within 1 grey level); pressing again restores it",
+        "Screen test (both set-ups): pressing Flip ↕ sets settings.flipVertical and mirrors the canvas up-down",
+        "Screen test (both set-ups): pressing Rotate four times gives settings.rotation 90, 180, 270 and 0 in turn",
+        "Screen test (both set-ups): the three buttons and the canvas are visible without scrolling the page, and each button is at least 44×44 px"
+      ],
+      "verify": "npx playwright test tests/e2e/render/orientationButtons.spec.ts",
+      "zone": "render",
+      "priority": 16,
+      "dependsOn": [
+        "F2-S15",
+        "F2-S11"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F2-S17",
+      "title": "Add the optional extra absorption volume to the CPU reference",
+      "description": "Add options.extraAbsorption to renderDrrCpu: a Uint8Array on the same grid as the volume (same size and index order; a different length is an error). Along each ray its value adds value/255 × EXTRA_ABSORPTION_PER_MM per mm to the absorption (step 2 of the order of steps documented at the top of src/render/pipeline.ts). Add EXTRA_ABSORPTION_PER_MM to pipeline.ts, chosen so a few millimetres of full-strength contrast is clearly darker than soft tissue; it is a display number that F9 or the owner may tune.",
+      "specRefs": [
+        "F2.8"
+      ],
+      "acceptance": [
+        "Unit test: with a small synthetic blob in the extra volume, every pixel whose ray samples at least one blob voxel is darker than without the extra volume, and every other pixel is exactly unchanged",
+        "Unit test: an all-zero extra volume gives the identical image",
+        "Unit test: a stronger blob value gives darker pixels",
+        "Unit test: an extra volume of the wrong length is rejected with a clear error"
+      ],
+      "verify": "npx vitest run tests/render/extraAbsorption.test.ts",
+      "zone": "render",
+      "priority": 17,
+      "dependsOn": [
+        "F2-S1"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F2-S18",
+      "title": "Add the extra absorption volume (contrast) to the GPU image",
+      "description": "In the GPU step that takes the image, add the store's contrast volume (store.get().contrast, a Uint8Array on the volume's grid, or null for none) as a second 3D texture and add its absorption along each ray exactly as the CPU reference does. Upload the texture again whenever the array object in the store changes (the store only reports a change when a new array is set). Contrast belongs to taking the image: it shows on the next exposure, never on the held image. Add a helper to tests/e2e/render/renderPage.ts that puts a contrast array in the store through the dev server's store module (as setPose does). No edits in src/core/.",
+      "specRefs": [
+        "F2.8",
+        "F2.2"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups): with a synthetic blob in the store's contrast volume and noiseLevel 0, a new image matches renderDrrCpu with the same extraAbsorption: mean absolute difference ≤ 3% of the grey range",
+        "Screen test (both set-ups): the pixel at the blob's projected centre is at least 20 grey levels darker than in an image without contrast, and a pixel far from the blob is unchanged within 1 grey level",
+        "Screen test (both set-ups): putting contrast in the store without taking an image leaves the canvas unchanged (last image hold)",
+        "Screen test (both set-ups): after setting the contrast back to null, the next image equals the image without contrast",
+        "All earlier render tests still pass"
+      ],
+      "verify": "npx playwright test tests/e2e/render/extraAbsorption.spec.ts && npx playwright test tests/e2e/render",
+      "zone": "render",
+      "priority": 18,
+      "dependsOn": [
+        "F2-S17",
+        "F2-S4"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F2-S19",
+      "title": "Show the image's pose as text on the fluoro image",
+      "description": "Add a text label lying over the top-left of the fluoro image (a normal page element above the canvas, test id pose-readout; it is not flipped or rotated with the picture). It shows the pose the image ON SCREEN was taken with (the store's lastImagePose; owner decision 2026-11-10), so it changes only when a new image is taken, and it is empty before the first image. Put the wording in a plain function formatPose(pose): 'OBL R 25°' for positive oblique, 'OBL L 25°' for negative, 'AP' for 0; then ' · ', then 'CRAN 10°' for positive tilt, 'CAUD 10°' for negative, 'TILT 0°' for 0. Angles are rounded to whole degrees. (The wording for 0° is a planning choice the owner may change.) The label must not block taps on the image (pointer-events: none), because F5 will use taps on the image later.",
+      "specRefs": [
+        "F2.9"
+      ],
+      "acceptance": [
+        "Unit test: formatPose gives 'OBL R 25° · CRAN 10°' for oblique +25, tilt +10; 'OBL L 30° · CAUD 15°' for −30, −15; 'AP · TILT 0°' for 0, 0; and rounds 24.6 to 25",
+        "Screen test (both set-ups): the label is empty before the first image; after an image at the default pose it reads 'AP · TILT 0°'",
+        "Screen test (both set-ups): after setting oblique +25, tilt +10 the label is unchanged until an image is taken, then reads 'OBL R 25° · CRAN 10°'",
+        "Screen test (both set-ups): the label lies inside the canvas's on-screen rectangle, and the canvas's drawing size is 512×512"
+      ],
+      "verify": "npx vitest run tests/render/formatPose.test.ts && npx playwright test tests/e2e/render/poseText.spec.ts",
+      "zone": "render",
+      "priority": 19,
+      "dependsOn": [
+        "F2-S2"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F2-S20",
+      "title": "Check the GPU image against the CPU reference with every setting switched on together",
+      "description": "Add one final screen test that switches everything on at once — oblique +30°, tilt +15°, magnification 1.5, collimation { left: 10, right: 5, top: 15, bottom: 20 }, a contrast blob, invert, flip left-right and rotation 90°, with noiseLevel 0 — and compares the canvas with renderDrrCpu given the same options. This catches steps applied in a different order by the two renderers. Fix any mismatch in the renderers (following the order of steps documented at the top of src/render/pipeline.ts), never by loosening a test. Then run the whole check.",
+      "specRefs": [
+        "F2.2",
+        "F2.3",
+        "F2.4",
+        "F2.5",
+        "F2.7",
+        "F2.8"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups): with all the listed settings on, the mean absolute difference between the canvas and the CPU reference is ≤ 3% of the grey range",
+        "npm run check passes (lint, type check, unit tests, screen tests in both set-ups)",
+        "npm run build passes"
+      ],
+      "verify": "npx playwright test tests/e2e/render/combined.spec.ts && npm run check && npm run build",
+      "zone": "render",
+      "priority": 20,
+      "dependsOn": [
+        "F2-S7",
+        "F2-S10",
+        "F2-S13",
+        "F2-S15",
+        "F2-S18"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F2-S21",
+      "title": "Use the higher noise level for continuous-fluoro frames on screen",
+      "description": "When an image is a continuous-fluoro frame, take it with defaultNoiseLevel('fluoro') instead of the shot level. BLOCKED AT PLANNING: the renderer cannot tell a fluoro frame from a single shot. The 'exposure' event carries no information and the store has no field for it; adding one is a change to src/core/ (a shared file), and F3 (which produces fluoro frames) must fill it in.",
+      "specRefs": [
+        "F2.6"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups): an image taken as a continuous-fluoro frame reports the fluoro noise level in window.__sim.render().lastImage, and a single shot reports the shot level"
+      ],
+      "verify": "npx playwright test tests/e2e/render/fluoroNoise.spec.ts",
+      "zone": "render",
+      "priority": 21,
+      "dependsOn": [
+        "F2-S13"
+      ],
+      "status": "blocked",
+      "attempts": 0,
+      "notes": "Blocked at planning (2026-11-10), not by a failed attempt. Needs the owner's OK for a small shared-contract change, done in an interactive session: for example a store field lastImageKind: 'shot' | 'fluoro' | null in src/core/store.ts, set by the carm zone when it takes an image. It also needs F3's continuous fluoro to be merged. After both, set this story to 'todo'. F2.6 itself only asks for the unit test, which F2-S12 provides."
+    }
+  ]
+}
