@@ -9,10 +9,11 @@
 // The settings live in a small store that belongs to the render zone; the
 // app uses the one shared instance `renderSettings`.
 
+import { ROTATIONS, type Rotation } from './orientation';
 import { MAGNIFICATIONS, type Collimation, type Magnification } from './pipeline';
 
+export { ROTATIONS, type Rotation };
 export { MAGNIFICATIONS, type Collimation, type Magnification };
-export type Rotation = 0 | 90 | 180 | 270;
 
 export interface RenderSettings {
   /** false = more absorption is darker (bone dark, air light); true swaps this. */
@@ -34,7 +35,6 @@ export type RenderSettingsPatch = Partial<Omit<RenderSettings, 'collimation'>> &
   collimation?: Partial<Collimation>;
 };
 
-export const ROTATIONS: readonly Rotation[] = [0, 90, 180, 270];
 export const COLLIMATION_MAX_PERCENT = 50;
 const EDGES = ['left', 'right', 'top', 'bottom'] as const;
 

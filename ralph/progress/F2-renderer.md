@@ -34,6 +34,8 @@
 - Vitest's default time limit is 5 s per test: more than about five whole 512×512 CPU images in ONE test needs a longer limit as the test's last argument (e.g. `30_000`), or fewer images.
 - In the uniform-slab image the middle 100×100 pixels are exactly equal without noise (standard deviation exactly 0), so spread tests can use `toBe(0)`.
 - When writing a note into the task file with a script, load the file as JSON afterwards BEFORE committing (`python3 -c "import json; json.load(open('ralph/tasks/F2-renderer.json'))"`), and chain the commit with `&&` so it cannot run after a failed step.
+- Orientation: `orientPixel(pixel, orientation)` says where a pixel of the image as taken is SHOWN; `unorientPixel` is the opposite (which taken pixel is shown at a canvas pixel — what the GPU display shader needs). Both in `src/render/orientation.ts`; `ROTATIONS` / `Rotation` live there too (settings.ts re-exports them).
+- Image directions at pose (0°, 0°): the patient's LEFT (+x) is on the LEFT half of the image (x < 256), the head (+z) at the top. A small blob's shadow has only a few different values, so follow a whole image (`expectMoved` in `tests/render/orientation.test.ts`), not one "unique" pixel.
 
 ## Rounds
 <!--
@@ -122,3 +124,9 @@
 - Test result: baseline `npm run check` passed: 138 unit tests, 114 screen tests passed and 6 skipped. No code changed.
 - Mistake this round: my first commit of the blocked status (5th commit from the top at the time, "F2-S13: blocked …") contained a task file that was not valid JSON (a stray backslash in the note) and no log entry, because the script failed halfway and the commit still ran. Fixed in the next commit; no code or test was affected.
 - Next round should know: F2-S21 and F2-S20 depend on F2-S13 and cannot start until it is unblocked. Still open and not affected: F2-S14, S15, S16, S17, S18, S19. When F2-S13 is unblocked, the plan is: one uniform `uNoiseLevel` and one `uNoiseSeed` in the shader that takes the image, a seeded hash giving g in −0.5…0.5, value + g × 2 × NOISE_AMPLITUDE × level clamped to 0…1, placed after the collimation early return; `fluoroCanvas.ts` passes `lastImage.settings.noiseLevel` and `lastImage.noiseSeed`.
+
+## Round — 2026-11-10 17:01 — F2-S14 — done
+- What I did: Added `src/render/orientation.ts` (`orientPixel`, `unorientPixel`, `ROTATIONS`) and `options.flipHorizontal`, `options.flipVertical`, `options.rotation` to `renderDrrCpu` / `transmissionAt` as step 6 (flips first, then the clockwise rotation; a bad rotation throws).
+- Files touched: `src/render/orientation.ts` (new), `src/render/drrCpu.ts`, `src/render/settings.ts` (re-exports the rotation list), `tests/render/orientation.test.ts` (new), this log, the task file.
+- Test result: verify command passed (15 unit tests) after correcting two mistakes in my own new test (it looked for a pixel with a unique value, which the spot does not have, and expected the spot on the wrong half of the image). `npm run check` passed: lint + types clean, 153 unit tests, 114 screen tests passed and 6 skipped (one-set-up-only tests).
+- Next round should know: the GPU display step does not flip or rotate yet (F2-S15): add the three settings to `DisplayOptions` and, in `displayFragmentShader`, look up the held pixel that `unorientPixel` gives for the canvas pixel (canvas row from the top = 511 − floor(gl_FragCoord.y); the held image is stored bottom row first). The worker was restarted in the middle of this round; nothing was lost.

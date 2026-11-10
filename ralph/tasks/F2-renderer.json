@@ -343,9 +343,9 @@
       "dependsOn": [
         "F2-S4"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. The mapping is orientPixel (and its opposite, unorientPixel) in src/render/orientation.ts."
     },
     {
       "id": "F2-S15",

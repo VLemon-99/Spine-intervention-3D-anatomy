@@ -4,7 +4,8 @@
 // with no browser code, so unit tests can check the maths and screen tests can
 // compare the GPU image with it. It follows the ORDER OF STEPS at the top of
 // pipeline.ts; so far step 1 (magnification), step 2 (absorption, without the
-// extra volume), step 3 (noise), step 4 (collimation) and step 5 (invert).
+// extra volume), step 3 (noise), step 4 (collimation), step 5 (invert) and
+// step 6 (flips and rotation).
 //
 // Sampling is the same as in the GPU shader: the ray is clipped to the
 // volume's box, samples are taken at entry + (i + 0.5) × step, and each sample
@@ -12,6 +13,7 @@
 import { IMAGE_SIZE_PX, createProjection, type Pixel, type Projection } from '../core/geometry';
 import type { CArmPose, Vec3, Volume } from '../core/types';
 import { addNoise, type NoiseOptions } from './noise';
+import { orientPixel, unorientPixel, type Orientation, type Rotation } from './orientation';
 import {
   ABSORPTION_PER_MM,
   MAGNIFICATIONS,
@@ -34,6 +36,12 @@ export interface DrrCpuOptions {
   collimation?: Collimation;
   /** Display step 5: value → 1 − value (more absorption = lighter). */
   invert?: boolean;
+  /** Display step 6: flip left-right (first). */
+  flipHorizontal?: boolean;
+  /** Display step 6: flip up-down (second). */
+  flipVertical?: boolean;
+  /** Display step 6: rotate clockwise by 0, 90, 180 or 270° (last; default 0). */
+  rotation?: Rotation;
 }
 
 export interface DrrImage {
@@ -140,12 +148,26 @@ function noiseOf(options: DrrCpuOptions): NoiseOptions {
   return noise;
 }
 
+/** The flips and rotation to use (a bad rotation is reported by orientPixel). */
+function orientationOf(options: DrrCpuOptions): Orientation {
+  const orientation: Orientation = {
+    flipHorizontal: options.flipHorizontal ?? false,
+    flipVertical: options.flipVertical ?? false,
+    rotation: options.rotation ?? 0,
+  };
+  orientPixel({ x: 0, y: 0 }, orientation); // throws on an unsupported rotation
+  return orientation;
+}
+
+const isUnchanged = (o: Orientation): boolean => !o.flipHorizontal && !o.flipVertical && o.rotation === 0;
+
 /** The display steps that change a pixel's value (step 5, invert). */
 const display = (value: number, options: DrrCpuOptions): number => (options.invert ? 1 - value : value);
 
 /**
  * Fraction of the X-rays (0…1) that gets through the volume along the ray of
- * one image pixel position (after magnification; e.g. { x: 255.5, y: 255.5 } for the centre of
+ * one pixel position of the image as shown (after magnification, flips and
+ * rotation; e.g. { x: 255.5, y: 255.5 } for the centre of
  * pixel (255, 255)), shown inverted if options.invert is set. For checking
  * single rays quickly.
  */
@@ -159,6 +181,8 @@ export function transmissionAt(
   const magnification = magnificationOf(options);
   const collimation = collimationOf(options);
   const noise = noiseOf(options);
+  // Step 6 backwards: which position of the image as taken is shown at this pixel.
+  pixel = unorientPixel(pixel, orientationOf(options), IMAGE_SIZE_PX);
   const x = Math.floor(pixel.x);
   const y = Math.floor(pixel.y);
   if (isCollimated(x, y, collimation)) return display(NO_SIGNAL, options);
@@ -172,6 +196,7 @@ export function renderDrrCpu(volume: Volume, pose: CArmPose, options: DrrCpuOpti
   const magnification = magnificationOf(options);
   const collimation = collimationOf(options);
   const noise = noiseOf(options);
+  const orientation = orientationOf(options);
   const projection = createProjection(pose);
   const width = IMAGE_SIZE_PX;
   const height = IMAGE_SIZE_PX;
@@ -186,5 +211,15 @@ export function renderDrrCpu(volume: Volume, pose: CArmPose, options: DrrCpuOpti
       data[x + width * y] = display(addNoise(march(volume, projection, onDetector), noise, x, y), options);
     }
   }
-  return { width, height, data };
+  if (isUnchanged(orientation)) return { width, height, data };
+
+  // Step 6: move every pixel of the image as taken to where it is shown.
+  const shown = new Float32Array(width * height);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const to = orientPixel({ x, y }, orientation);
+      shown[to.x + width * to.y] = data[x + width * y]!;
+    }
+  }
+  return { width, height, data: shown };
 }
