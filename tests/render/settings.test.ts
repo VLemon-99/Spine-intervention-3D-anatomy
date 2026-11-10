@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { defaultNoiseLevel } from '../../src/render/pipeline';
 import {
   applySettingsPatch,
   createSettingsStore,
@@ -12,7 +13,7 @@ const DEFAULTS: RenderSettings = {
   invert: false,
   magnification: 1,
   collimation: { left: 0, right: 0, top: 0, bottom: 0 },
-  noiseLevel: 0,
+  noiseLevel: defaultNoiseLevel('shot'),
   flipHorizontal: false,
   flipVertical: false,
   rotation: 0,

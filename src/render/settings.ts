@@ -10,7 +10,7 @@
 // app uses the one shared instance `renderSettings`.
 
 import { ROTATIONS, type Rotation } from './orientation';
-import { MAGNIFICATIONS, type Collimation, type Magnification } from './pipeline';
+import { MAGNIFICATIONS, defaultNoiseLevel, type Collimation, type Magnification } from './pipeline';
 
 export { ROTATIONS, type Rotation };
 export { MAGNIFICATIONS, type Collimation, type Magnification };
@@ -43,7 +43,7 @@ export function defaultRenderSettings(): RenderSettings {
     invert: false,
     magnification: 1,
     collimation: { left: 0, right: 0, top: 0, bottom: 0 },
-    noiseLevel: 0,
+    noiseLevel: defaultNoiseLevel('shot'),
     flipHorizontal: false,
     flipVertical: false,
     rotation: 0,

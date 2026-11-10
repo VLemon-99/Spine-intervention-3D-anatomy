@@ -46,6 +46,7 @@ import {
   EXTRA_ABSORPTION_PER_MM,
   MARCH_STEP_MM,
   MAX_MARCH_STEPS,
+  NOISE_AMPLITUDE,
   NO_SIGNAL,
   type Collimation,
   type Magnification,
@@ -75,6 +76,10 @@ const fragmentShader = /* glsl */ `
   // Shutter widths in pixels, from each edge: left, right, top, bottom.
   uniform vec4 uShutterPx;
   uniform float uNoSignal;
+  // Grain: level 0…1, the image's seed, and the largest change at level 1.
+  uniform float uNoiseLevel;
+  uniform uint uNoiseSeed;
+  uniform float uNoiseAmplitude;
   uniform vec3 uBoxMin;
   uniform vec3 uBoxMax;
   uniform float uStep;
@@ -133,6 +138,20 @@ const fragmentShader = /* glsl */ `
       total += perMm * uStep;
     }
     float grey = exp(-total);
+
+    // Step 3, noise: a seeded random amount per pixel, the same every time for
+    // the same seed and pixel. It is the same number sequence as the CPU
+    // reference uses (mulberry32 from src/core/random.ts, one number per pixel,
+    // each seed its own stretch of the sequence), spread over -0.5…0.5.
+    if (uNoiseLevel > 0.0) {
+      uint pixelIndex = uint(column) + uint(uImageSize) * uint(row);
+      uint state = uNoiseSeed * uint(uImageSize * uImageSize) + pixelIndex + 0x6D2B79F5u;
+      uint t = state;
+      t = (t ^ (t >> 15)) * (t | 1u);
+      t ^= t + (t ^ (t >> 7)) * (t | 61u);
+      float grain = float(t ^ (t >> 14)) / 4294967296.0 - 0.5;
+      grey = clamp(grey + grain * 2.0 * uNoiseAmplitude * uNoiseLevel, 0.0, 1.0);
+    }
     outColor = vec4(vec3(grey), 1.0);
   }
 `;
@@ -190,6 +209,8 @@ export interface TakeOptions {
    * none. Uploaded again whenever a different array object is passed.
    */
   contrast: Uint8Array | null;
+  /** Grain: the image's seed (a whole number) and the level 0…1. Collimated pixels get none. */
+  noise: { seed: number; level: number };
 }
 
 /** The display settings the display step uses. */
@@ -220,6 +241,9 @@ export function createDrrGpu(renderer: WebGLRenderer): DrrGpu {
       uMagnification: { value: 1 },
       uShutterPx: { value: new Vector4() },
       uNoSignal: { value: NO_SIGNAL },
+      uNoiseLevel: { value: 0 },
+      uNoiseSeed: { value: 0 },
+      uNoiseAmplitude: { value: NOISE_AMPLITUDE },
       uBoxMin: { value: new Vector3() },
       uBoxMax: { value: new Vector3() },
       uStep: { value: MARCH_STEP_MM },
@@ -312,6 +336,8 @@ export function createDrrGpu(renderer: WebGLRenderer): DrrGpu {
       const shutterPx = (percent: number): number => (percent / 100) * projection.width;
       const { left, right, top, bottom } = options.collimation;
       u.uShutterPx!.value = new Vector4(shutterPx(left), shutterPx(right), shutterPx(top), shutterPx(bottom));
+      u.uNoiseLevel!.value = Math.min(1, Math.max(0, options.noise.level));
+      u.uNoiseSeed!.value = Math.trunc(options.noise.seed) >>> 0;
       // The box spans from the outer face of the first voxel to that of the last.
       u.uBoxMin!.value = new Vector3(origin.x - spacing.x / 2, origin.y - spacing.y / 2, origin.z - spacing.z / 2);
       u.uBoxMax!.value = new Vector3(

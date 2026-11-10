@@ -96,9 +96,15 @@ export function createFluoroCanvas(
     const { volume } = store.get();
     if (volume && lastImage) {
       // Taken with the settings as they were at the exposure.
-      const { magnification, collimation } = lastImage.settings;
+      const { magnification, collimation, noiseLevel } = lastImage.settings;
       // Contrast belongs to taking the image: whatever is in the store now is in this image.
-      drr.take(volume, lastImage.pose, { magnification, collimation, contrast: store.get().contrast });
+      drr.take(volume, lastImage.pose, {
+        magnification,
+        collimation,
+        contrast: store.get().contrast,
+        // Fresh grain for every image; a reloaded page repeats the same sequence of seeds.
+        noise: { seed: lastImage.noiseSeed, level: noiseLevel },
+      });
       holding = true;
       display();
     } else {
