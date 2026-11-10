@@ -1,7 +1,7 @@
 // Dataset masks → our tissue labels, through tools/anatomy/label-map.json (SPEC F1.3).
 // Plain Node code; reads the table with node:fs.
 import { readFileSync } from 'node:fs';
-import { isBone, LEVEL_CODES, TISSUE, type LevelCode, type TissueKey } from '../../src/core/labels';
+import { isBone, LEVEL_CODES, LEVEL_IDS, NO_LEVEL, TISSUE, type LevelCode, type TissueKey } from '../../src/core/labels';
 import type { Size3 } from './standardLayout';
 
 export interface LabelMapEntry {
@@ -160,4 +160,29 @@ export function refineLabelsByHu(labels: Uint8Array, hu: ArrayLike<number>, thre
     } else out[v] = label;
   }
   return out;
+}
+
+/**
+ * The level volume (SPEC F1.3): for every bone voxel in `labels`, the level id
+ * (LEVEL_IDS) of the bone mask it belongs to — the first in the table's order
+ * where bone masks overlap — and NO_LEVEL (0) for every voxel that is not bone.
+ * `masks` are the same masks given to labelsFromMasks (sizes already checked there).
+ */
+export function levelsFromMasks(labels: Uint8Array, masks: readonly Mask[], map: LabelMap): Uint8Array {
+  const order = new Map(map.entries.map((e, n) => [e.mask, n]));
+  const bones = masks
+    .map((mask) => ({ mask, n: order.get(mask.name) }))
+    .filter((m): m is { mask: Mask; n: number } => m.n !== undefined && isBone(TISSUE[map.entries[m.n].tissue]))
+    .sort((a, b) => b.n - a.n); // last in table order first, so the first overwrites
+  const levels = new Uint8Array(labels.length);
+  for (const { mask, n } of bones) {
+    if (mask.data.length !== labels.length) {
+      throw new Error(`Mask "${mask.name}" has ${mask.data.length} voxels but the label volume has ${labels.length}`);
+    }
+    const id = LEVEL_IDS[map.entries[n].level as LevelCode];
+    for (let v = 0; v < labels.length; v++) if (mask.data[v] > 0) levels[v] = id;
+  }
+  // Only bone voxels keep a level.
+  for (let v = 0; v < labels.length; v++) if (!isBone(labels[v])) levels[v] = NO_LEVEL;
+  return levels;
 }

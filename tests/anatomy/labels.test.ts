@@ -1,8 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { isBone, LEVEL_CODES, TISSUE } from '../../src/core/labels';
+import { isBone, LEVEL_CODES, LEVEL_IDS, NO_LEVEL, TISSUE } from '../../src/core/labels';
 import {
   labelsFromMasks,
+  levelsFromMasks,
   loadLabelMap,
   refineLabelsByHu,
   validateLabelMap,
@@ -186,5 +187,69 @@ describe('refineLabelsByHu (CT-number thresholds)', () => {
 
   it('rejects a CT whose voxel count differs from the labels', () => {
     expect(() => refineLabelsByHu(new Uint8Array(6), [0, 0], t)).toThrow(/2 voxels/);
+  });
+});
+
+describe('levelsFromMasks (level volume)', () => {
+  const map = loadLabelMap();
+  const t = map.thresholds!;
+  // Fixture: two vertebrae, sacrum, both hip bones, canal, artery, vein, and one unmasked voxel.
+  const big = { x: 10, y: 1, z: 1 };
+  const m = (name: string, inside: number[]): Mask => ({
+    name,
+    size: big,
+    data: Uint8Array.from({ length: 10 }, (_, n) => (inside.includes(n) ? 1 : 0)),
+  });
+  const masks = [
+    m('vertebrae_L4', [0, 1]),
+    m('vertebrae_L5', [2]),
+    m('sacrum', [3]),
+    m('hip_left', [4]),
+    m('hip_right', [5]),
+    m('spinal_cord', [6]),
+    m('aorta', [7]),
+    m('inferior_vena_cava', [8]),
+  ];
+  const hu = [300, 900, 300, 300, 900, 300, 10, 40, 40, 2000];
+  const labels = refineLabelsByHu(labelsFromMasks(big, masks, map).labels, hu, t);
+  const levels = levelsFromMasks(labels, masks, map);
+
+  it('gives every bone voxel (cortical or cancellous) a level other than 0', () => {
+    let bones = 0;
+    labels.forEach((label, v) => {
+      if (isBone(label)) {
+        bones++;
+        expect(levels[v]).not.toBe(NO_LEVEL);
+      }
+    });
+    expect(bones).toBe(6);
+    expect(labels[1]).toBe(TISSUE.corticalBone);
+    expect(labels[0]).toBe(TISSUE.cancellousBone);
+  });
+
+  it('gives no non-bone voxel a level (even a dense unmasked one)', () => {
+    labels.forEach((label, v) => {
+      if (!isBone(label)) expect(levels[v]).toBe(NO_LEVEL);
+    });
+    expect(labels[9]).toBe(TISSUE.muscle);
+  });
+
+  it("gives vertebrae_L4 voxels L4, sacrum → 'sacrum', hip_left and hip_right → 'ilium'", () => {
+    expect(levels[0]).toBe(LEVEL_IDS.L4);
+    expect(levels[1]).toBe(LEVEL_IDS.L4);
+    expect(levels[2]).toBe(LEVEL_IDS.L5);
+    expect(levels[3]).toBe(LEVEL_IDS.sacrum);
+    expect(levels[4]).toBe(LEVEL_IDS.ilium);
+    expect(levels[5]).toBe(LEVEL_IDS.ilium);
+  });
+
+  it("gives each voxel exactly one level where bone masks overlap (the first in the table's order)", () => {
+    // vertebrae_L4 comes before vertebrae_L5, and L5 before sacrum, in the table.
+    const overlap = [m('sacrum', [0, 1]), m('vertebrae_L5', [1, 2]), m('vertebrae_L4', [2])];
+    const lab = labelsFromMasks(big, overlap, map).labels;
+    const lev = levelsFromMasks(lab, overlap, map);
+    expect(lev[0]).toBe(LEVEL_IDS.sacrum);
+    expect(lev[1]).toBe(LEVEL_IDS.L5);
+    expect(lev[2]).toBe(LEVEL_IDS.L4);
   });
 });

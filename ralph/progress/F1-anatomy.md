@@ -47,3 +47,9 @@
 - Files touched: tools/anatomy/label-map.json, tools/anatomy/labels.ts, tests/anatomy/labels.test.ts, task file, this log.
 - Test result: verify 14/14 passed; `npm run check` green (130 unit tests, 46 screen tests passed).
 - Next round should know: pipeline order is labelsFromMasks(ctSize, masks, map) → refineLabelsByHu(labels, ctHu, map.thresholds!). validateLabelMap stays thresholds-free (its earlier tests count problems exactly); thresholds are checked by validateThresholds and by loadLabelMap.
+
+## Round — 2026-11-10 13:19 — F1-S5 — done
+- What I did: level volume from the bone masks (table order on overlap, 0 for non-bone); 4 unit tests on a 10-voxel fixture (two vertebrae, sacrum, both hips, canal, artery, vein, dense unmasked voxel).
+- Files touched: tools/anatomy/labels.ts, tests/anatomy/labels.test.ts, task file, this log.
+- Test result: verify 18/18 passed; `npm run check` green (134 unit tests, 46 screen tests passed).
+- Next round should know: full label pipeline is labelsFromMasks → refineLabelsByHu → levelsFromMasks(refinedLabels, masks, map). All three work on the masks' own voxel order, so reorder (applyLayoutPlan) either the masks first or the three outputs afterwards — the same plan for all.

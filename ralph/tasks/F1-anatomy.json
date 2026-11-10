@@ -140,9 +140,9 @@
       "dependsOn": [
         "F1-S4"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. labels.ts: levelsFromMasks(labels, masks, map) -> Uint8Array of LEVEL_IDS; first bone mask in table order wins on overlap; non-bone voxels forced to NO_LEVEL. Call it with the refined labels (after refineLabelsByHu)."
     },
     {
       "id": "F1-S6",
