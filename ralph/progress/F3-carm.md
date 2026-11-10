@@ -44,3 +44,9 @@
 - Files touched: src/carm/counters.ts, src/carm/index.ts, tests/carm/counters.test.ts, tests/e2e/carm/counters.spec.ts, ralph/tasks/F3-carm.json, ralph/progress/F3-carm.md
 - Test result: verify 4 unit + 8 screen tests passed (both set-ups); npm run check green (131 unit tests, 98 screen tests passed, 12 skipped by set-up).
 - Next round should know: F3-S7 must replace the hard-coded fluoroOn: false in the 'carm' debug getter in src/carm/index.ts with the real running state. Screen tests emit bus events by importing '/src/core/store.ts' in page.evaluate (see emitCaseStart in counters.spec.ts).
+
+## Round — 2026-11-10 13:22 — F3-S6 — done
+- What I did: Added src/carm/fluoro.ts: createFluoro(store, bus) → { start(nowMs), frame(nowMs), stop(nowMs), isRunning() }. Time is added from clock differences (countedUntilMs), each frame adds time since the last counted moment, stop adds the rest; a backwards clock adds nothing. Each running frame sets lastImagePose (copy) and lastImageKind 'fluoro' in one store.set, then emits 'exposure'. start does not draw a frame by itself.
+- Files touched: src/carm/fluoro.ts, tests/carm/fluoro.test.ts, ralph/tasks/F3-carm.json, ralph/progress/F3-carm.md
+- Test result: verify 8/8 passed; npm run check green (139 unit tests, 98 screen tests passed, 12 skipped by set-up).
+- Next round should know: Clock is in milliseconds (event.timeStamp and requestAnimationFrame's time are both ms on the performance.now() clock). F3-S7 should call frame() once right after start() if an immediate first image is wanted, and use fluoro.isRunning() for the 'carm' debug getter's fluoroOn.
