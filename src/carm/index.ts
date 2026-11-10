@@ -1,8 +1,10 @@
 // C-arm and table controls, exposure, counters — F3.
 // mount() builds this zone's panel (carm-panel) with the Shot button and the
-// spacebar shortcut (F0.6, F3.3) and the pose sliders (F3.2). Fluoro and
-// counters come later in F3.
+// spacebar shortcut (F0.6, F3.3), the pose sliders, pose keys and help
+// overlay (F3.2). Fluoro and counters come later in F3.
+import { shortcuts } from '../core/shortcuts';
 import { bus, store } from '../core/store';
+import { buildHelp, carmShortcutEntries } from './help';
 import { changePose } from './limits';
 import { takeShot } from './shot';
 import { stepPose } from './keymap';
@@ -47,9 +49,14 @@ export function mount(element: HTMLElement): void {
   const header = document.createElement('div');
   Object.assign(header.style, { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' });
   heading.style.margin = '0';
-  header.append(heading, shotButton);
+  shortcuts.register('C-arm', carmShortcutEntries());
+  const help = buildHelp(shortcuts);
+  const headerButtons = document.createElement('div');
+  Object.assign(headerButtons.style, { display: 'flex', gap: '8px' });
+  headerButtons.append(help.button, shotButton);
+  header.append(heading, headerButtons);
 
-  panel.append(marker, header, buildSliders(store));
+  panel.append(marker, header, buildSliders(store), help.overlay);
   element.append(panel);
 
   // Spacebar = one shot. Ignored while the disclaimer is shown (so space can
@@ -76,5 +83,19 @@ export function mount(element: HTMLElement): void {
     if (!next) return;
     event.preventDefault();
     changePose(store, next);
+  });
+
+  // ? = show or hide the help overlay; Escape closes it. Same rules as the
+  // spacebar. Matched by the character, because ? sits on different keys
+  // in different keyboard layouts.
+  window.addEventListener('keydown', (event) => {
+    if (disclaimerShown() || isTyping(event.target)) return;
+    if (event.key === '?' && !event.ctrlKey && !event.altKey && !event.metaKey) {
+      event.preventDefault();
+      if (!event.repeat) help.toggle();
+    } else if (event.key === 'Escape' && help.isOpen()) {
+      event.preventDefault();
+      help.close();
+    }
   });
 }

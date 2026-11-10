@@ -32,3 +32,9 @@
 - Files touched: src/carm/keymap.ts, src/carm/index.ts, tests/carm/keymap.test.ts, tests/e2e/carm/shortcuts.spec.ts, ralph/tasks/F3-carm.json, ralph/progress/F3-carm.md
 - Test result: verify 34 unit + 3 desktop screen tests passed (3 skipped on tablet by design); npm run check green (127 unit tests, 79 screen tests passed, 9 skipped by set-up).
 - Next round should know: The help overlay (F3-S4) can build its 'C-arm' group from POSE_KEYS (label + action) and stepSize(). stepPose returns CArmPose | null, so tests need ?. before indexing (tsc strict).
+
+## Round — 2026-11-10 13:18 — F3-S4 — done
+- What I did: Added src/carm/help.ts: carmShortcutEntries() builds the 'C-arm' group from POSE_KEYS (paired per value, with step sizes) plus Shift, Space, F (hold) and ?; buildHelp(shortcuts) makes the overlay (test id help-overlay, role dialog, fixed over the page; one section test id help-group per registered group, with an h3 heading and <kbd> keys) and the '?' button (help-button, 44×44, aria-expanded). The overlay re-renders on shortcuts.subscribe. index.ts registers the group, puts '?' next to Shot in the header row, and adds a keydown listener: ? toggles (matched by event.key, not code, because ? moves between layouts), Escape closes; same disclaimer/typing rules. Close button (help-close) and a click on the dimmed background close it. Pose keys and Space keep working while it is open.
+- Files touched: src/carm/help.ts, src/carm/index.ts, tests/e2e/carm/help.spec.ts, ralph/tasks/F3-carm.json, ralph/progress/F3-carm.md
+- Test result: verify 11 passed (3 desktop-only tests skipped on tablet); npm run check green (127 unit tests, 90 screen tests passed, 12 skipped by set-up).
+- Next round should know: The C-arm panel title is also 'C-arm', so tests looking for the overlay's 'C-arm' heading must scope to help-group. Header row now holds title, '?' and Shot.
