@@ -219,9 +219,9 @@
       "dependsOn": [
         "F2-S6"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. NO_SIGNAL is 0 (black). Following the order of steps, Invert (step 5) comes after collimation (step 4), so with Invert on the covered area is uniformly white (1 − NO_SIGNAL); say so if the owner would rather keep it black."
     },
     {
       "id": "F2-S10",

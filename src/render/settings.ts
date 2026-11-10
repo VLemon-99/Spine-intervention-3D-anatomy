@@ -9,18 +9,10 @@
 // The settings live in a small store that belongs to the render zone; the
 // app uses the one shared instance `renderSettings`.
 
-import { MAGNIFICATIONS, type Magnification } from './pipeline';
+import { MAGNIFICATIONS, type Collimation, type Magnification } from './pipeline';
 
-export { MAGNIFICATIONS, type Magnification };
+export { MAGNIFICATIONS, type Collimation, type Magnification };
 export type Rotation = 0 | 90 | 180 | 270;
-
-/** Each shutter: the percentage of the field it covers from that edge, 0–50. */
-export interface Collimation {
-  left: number;
-  right: number;
-  top: number;
-  bottom: number;
-}
 
 export interface RenderSettings {
   /** false = more absorption is darker (bone dark, air light); true swaps this. */

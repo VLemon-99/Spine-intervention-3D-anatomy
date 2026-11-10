@@ -56,3 +56,31 @@ export function detectorPosition(pixel: Pixel, magnification: number): Pixel {
     y: centre + (pixel.y - centre) / magnification,
   };
 }
+
+/** Step 4: the fixed "no signal" value of pixels covered by a shutter (black). */
+export const NO_SIGNAL = 0;
+
+/** Each shutter: the percentage of the image it covers from that edge, 0–50. */
+export interface Collimation {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+}
+
+/**
+ * Step 4: is image pixel (x, y) — whole numbers, (0, 0) at the top-left —
+ * covered by a shutter? Measured on the image as taken (after magnification,
+ * before any flip or rotation). left = 20 covers the columns x < 0.2 × 512;
+ * the other three edges work the same way, counted from their own edge.
+ */
+export function isCollimated(x: number, y: number, collimation: Collimation): boolean {
+  const last = IMAGE_SIZE_PX - 1;
+  const covered = (fromEdge: number, percent: number): boolean => fromEdge < (percent / 100) * IMAGE_SIZE_PX;
+  return (
+    covered(x, collimation.left) ||
+    covered(last - x, collimation.right) ||
+    covered(y, collimation.top) ||
+    covered(last - y, collimation.bottom)
+  );
+}

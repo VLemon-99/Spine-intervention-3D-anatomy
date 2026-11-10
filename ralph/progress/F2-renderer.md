@@ -24,6 +24,8 @@
 - Settings for TAKING the image reach the shader through `drr.take(volume, pose, options)` (`TakeOptions` in `drrGpu.ts`); `fluoroCanvas.ts` passes values from `lastImage.settings` (the copy made at the exposure), never from the live settings. Add collimation, noise and contrast the same way.
 - Comparison helpers in `tests/e2e/render/renderPage.ts`: `meanDifference(canvas, reference)`, `MAX_MEAN_DIFFERENCE`, `samePixels(a, b)`. In a match test also check that the reference with the setting differs from the plain reference by more than the limit, so a GPU that ignores the setting cannot pass.
 - The controls column is now about 140 px wide (the row of three 44 px magnification buttons). A group of buttons in a row: a `<div role="group">` with `display: flex` inside the column. `bodyWidthOnCanvas(page, m)` in `tests/e2e/render/magnificationButtons.spec.ts` measures a structure's width on the canvas.
+- Collimation rule: `isCollimated(x, y, collimation)` in `pipeline.ts` (whole pixel numbers). A pixel is covered when its distance from an edge, in pixels, is less than percent / 100 × 512. For `{ left: 20, right: 10, top: 30, bottom: 0 }` the open rectangle is columns 103…459 and rows 154…511. In the shader use the same test on `floor(gl_FragCoord)`-style whole pixel numbers BEFORE the magnification step changes px/py.
+- Invert after collimation: inverted covered pixels are 1 − NO_SIGNAL = white, still perfectly uniform.
 
 ## Rounds
 <!--
@@ -81,3 +83,9 @@
 - Files touched: `src/render/controls.ts`, `tests/e2e/render/magnificationButtons.spec.ts` (new), this log, the task file.
 - Test result: verify command passed (8 screen tests). `npm run check` passed: lint + types clean, 119 unit tests, 92 screen tests passed and 6 skipped (one-set-up-only tests).
 - Next round should know: column height used so far is two rows (about 94 px of roughly 325 px on the tablet). The layout tests of F2-S5 and F2-S8 require the picture to stay at least 200 px wide and no button to lie on it.
+
+## Round — 2026-11-10 13:28 — F2-S9 — done
+- What I did: Added `options.collimation` to `renderDrrCpu` / `transmissionAt` (step 4): covered pixels get `NO_SIGNAL` (0, in `pipeline.ts`) and are not ray-marched; values outside 0–50 or non-finite throw. `isCollimated` and the `Collimation` type live in `pipeline.ts` (settings.ts re-exports the type).
+- Files touched: `src/render/pipeline.ts`, `src/render/drrCpu.ts`, `src/render/settings.ts`, `tests/render/collimation.test.ts` (new), this log, the task file.
+- Test result: verify command passed (8 unit tests). `npm run check` passed: lint + types clean, 127 unit tests, 92 screen tests passed and 6 skipped (one-set-up-only tests).
+- Next round should know: the GPU image does not collimate yet (F2-S10). Proposal for the owner (not decided): with Invert on, the covered area is white because Invert comes after collimation in the documented order of steps.

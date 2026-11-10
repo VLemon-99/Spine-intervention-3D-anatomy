@@ -4,7 +4,7 @@
 // with no browser code, so unit tests can check the maths and screen tests can
 // compare the GPU image with it. It follows the ORDER OF STEPS at the top of
 // pipeline.ts; so far step 1 (magnification), step 2 (absorption, without the
-// extra volume) and step 5 (invert).
+// extra volume), step 4 (collimation) and step 5 (invert).
 //
 // Sampling is the same as in the GPU shader: the ray is clipped to the
 // volume's box, samples are taken at entry + (i + 0.5) × step, and each sample
@@ -16,7 +16,10 @@ import {
   MAGNIFICATIONS,
   MARCH_STEP_MM,
   MAX_MARCH_STEPS,
+  NO_SIGNAL,
   detectorPosition,
+  isCollimated,
+  type Collimation,
   type Magnification,
 } from './pipeline';
 
@@ -24,6 +27,8 @@ import {
 export interface DrrCpuOptions {
   /** Step 1: 1, 1.5 or 2 (default 1). Structures appear this much larger around the image centre. */
   magnification?: Magnification;
+  /** Step 4: the four shutters, each 0–50 % of the image from its edge (default: all open). */
+  collimation?: Collimation;
   /** Display step 5: value → 1 − value (more absorption = lighter). */
   invert?: boolean;
 }
@@ -104,6 +109,20 @@ function magnificationOf(options: DrrCpuOptions): Magnification {
   return m;
 }
 
+const OPEN: Collimation = { left: 0, right: 0, top: 0, bottom: 0 };
+
+/** The shutters to use; a value outside 0–50 or one that is not a finite number is an error. */
+function collimationOf(options: DrrCpuOptions): Collimation {
+  const c = options.collimation ?? OPEN;
+  for (const edge of ['left', 'right', 'top', 'bottom'] as const) {
+    const value = c[edge];
+    if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 50) {
+      throw new Error(`Unsupported collimation: ${edge} is ${String(value)}, but it must be a number from 0 to 50.`);
+    }
+  }
+  return c;
+}
+
 /** The display steps that change a pixel's value (step 5, invert). */
 const display = (value: number, options: DrrCpuOptions): number => (options.invert ? 1 - value : value);
 
@@ -121,6 +140,8 @@ export function transmissionAt(
 ): number {
   assertStandardLayout(volume);
   const magnification = magnificationOf(options);
+  const collimation = collimationOf(options);
+  if (isCollimated(Math.floor(pixel.x), Math.floor(pixel.y), collimation)) return display(NO_SIGNAL, options);
   return display(march(volume, projection, detectorPosition(pixel, magnification)), options);
 }
 
@@ -128,12 +149,17 @@ export function transmissionAt(
 export function renderDrrCpu(volume: Volume, pose: CArmPose, options: DrrCpuOptions = {}): DrrImage {
   assertStandardLayout(volume);
   const magnification = magnificationOf(options);
+  const collimation = collimationOf(options);
   const projection = createProjection(pose);
   const width = IMAGE_SIZE_PX;
   const height = IMAGE_SIZE_PX;
   const data = new Float32Array(width * height);
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
+      if (isCollimated(x, y, collimation)) {
+        data[x + width * y] = display(NO_SIGNAL, options);
+        continue;
+      }
       const onDetector = detectorPosition({ x: x + 0.5, y: y + 0.5 }, magnification);
       data[x + width * y] = display(march(volume, projection, onDetector), options);
     }
