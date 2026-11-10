@@ -50,3 +50,9 @@
 - Files touched: src/carm/fluoro.ts, tests/carm/fluoro.test.ts, ralph/tasks/F3-carm.json, ralph/progress/F3-carm.md
 - Test result: verify 8/8 passed; npm run check green (139 unit tests, 98 screen tests passed, 12 skipped by set-up).
 - Next round should know: Clock is in milliseconds (event.timeStamp and requestAnimationFrame's time are both ms on the performance.now() clock). F3-S7 should call frame() once right after start() if an immediate first image is wanted, and use fluoro.isRunning() for the 'carm' debug getter's fluoroOn.
+
+## Round — 2026-11-10 13:25 — F3-S7 — done
+- What I did: Added src/carm/fluoroRunner.ts: createFluoroRunner(fluoro) → { begin(timeMs), end(timeMs), isOn() }; begin starts, draws a first frame at once and runs one frame per requestAnimationFrame; end stops and cancels the frame request. index.ts: F keydown (event.code KeyF, no Ctrl/Alt/Meta, repeats ignored, disclaimer/typing rules) → begin(event.timeStamp); F keyup → end(event.timeStamp) (always, as a safety stop); window blur and visibilitychange→hidden also end. The 'carm' debug getter now reports fluoroOn from the runner.
+- Files touched: src/carm/fluoroRunner.ts, src/carm/index.ts, tests/e2e/carm/fluoro.spec.ts, ralph/tasks/F3-carm.json, ralph/progress/F3-carm.md
+- Test result: verify 4 passed (desktop; tablet skipped by design), stable over --repeat-each=3; npm run check green (139 unit tests, 102 screen tests passed, 16 skipped by set-up).
+- Next round should know: The pedal (F3-S11) should call the same runner (fluoro.begin / fluoro.end in index.ts) with pointer event time stamps. Note: if F and the pedal are both held, releasing either one stops fluoro (the runner has no per-source count) — decide in S11 whether to track sources. The renderer has no noise yet, so canvas pixels are exactly equal when nothing is drawn.

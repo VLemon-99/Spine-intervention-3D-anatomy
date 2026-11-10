@@ -1,12 +1,14 @@
 // C-arm and table controls, exposure, counters — F3.
 // mount() builds this zone's panel (carm-panel) with the Shot button and the
 // spacebar shortcut (F0.6, F3.3), the pose sliders, pose keys and help
-// overlay (F3.2), and the shot / fluoro-time counters (F3.6). Continuous
-// fluoro comes later in F3.
+// overlay (F3.2), the shot / fluoro-time counters (F3.6) and continuous
+// fluoro while F is held (F3.4).
 import { registerDebugGetter } from '../core/debugRegistry';
 import { shortcuts } from '../core/shortcuts';
 import { bus, store } from '../core/store';
 import { buildCounters, resetCountersOnCaseStart } from './counters';
+import { createFluoro } from './fluoro';
+import { createFluoroRunner } from './fluoroRunner';
 import { buildHelp, carmShortcutEntries } from './help';
 import { changePose } from './limits';
 import { takeShot } from './shot';
@@ -64,8 +66,10 @@ export function mount(element: HTMLElement): void {
 
   // Counters reset when a new case starts (F3.6).
   resetCountersOnCaseStart(store, bus);
-  // Read-only for screen tests: window.__sim.carm(). fluoroOn comes with F3-S7.
-  registerDebugGetter('carm', () => ({ fluoroTimeSeconds: store.get().fluoroTimeSeconds, fluoroOn: false }));
+  // Continuous fluoro (F3.4), run by holding F (below).
+  const fluoro = createFluoroRunner(createFluoro(store, bus));
+  // Read-only for screen tests: window.__sim.carm().
+  registerDebugGetter('carm', () => ({ fluoroTimeSeconds: store.get().fluoroTimeSeconds, fluoroOn: fluoro.isOn() }));
 
   // Spacebar = one shot. Ignored while the disclaimer is shown (so space can
   // still press 'I understand') and while typing in a text field.
@@ -105,5 +109,24 @@ export function mount(element: HTMLElement): void {
       event.preventDefault();
       help.close();
     }
+  });
+
+  // Hold F = continuous fluoro. Same rules as the spacebar for starting; key
+  // repeats are ignored. Times come from the events' own time stamps. It
+  // stops on key-up, when the window loses focus and when the page is hidden,
+  // so it never keeps running by itself.
+  const isF = (event: KeyboardEvent): boolean => event.code === 'KeyF';
+  window.addEventListener('keydown', (event) => {
+    if (!isF(event) || event.ctrlKey || event.altKey || event.metaKey) return;
+    if (disclaimerShown() || isTyping(event.target)) return;
+    event.preventDefault();
+    if (!event.repeat) fluoro.begin(event.timeStamp);
+  });
+  window.addEventListener('keyup', (event) => {
+    if (isF(event)) fluoro.end(event.timeStamp);
+  });
+  window.addEventListener('blur', (event) => fluoro.end(event.timeStamp));
+  document.addEventListener('visibilitychange', (event) => {
+    if (document.visibilityState === 'hidden') fluoro.end(event.timeStamp);
   });
 }
