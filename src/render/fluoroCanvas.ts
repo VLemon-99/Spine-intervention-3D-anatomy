@@ -14,7 +14,7 @@
 //
 // The image is drawn in two steps (see drrGpu.ts): each exposure takes the
 // X-ray image into a held off-screen image and then displays it. When a
-// display setting (invert) changes, only the display step runs again — the
+// display setting (invert, flips, rotation) changes, only the display step runs again — the
 // held image is re-shown at once, with no new exposure.
 import { Color, WebGLRenderer } from 'three';
 import { IMAGE_SIZE_PX } from '../core/geometry';
@@ -87,7 +87,8 @@ export function createFluoroCanvas(
   /** True while the canvas shows a held X-ray image (not the blank or no-volume fill). */
   let holding = false;
   const display = (): void => {
-    drr.display({ invert: settings.get().invert });
+    const { invert, flipHorizontal, flipVertical, rotation } = settings.get();
+    drr.display({ invert, flipHorizontal, flipVertical, rotation });
   };
 
   fill(BLANK);

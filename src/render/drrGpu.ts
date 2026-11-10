@@ -12,7 +12,7 @@
 // The image is drawn in two steps, following the ORDER OF STEPS at the top of
 // pipeline.ts: take() renders the X-ray image into an off-screen image that is
 // kept (the held image); display() draws the held image to the canvas, with
-// the display settings (invert). display() can run again at any time without
+// the display settings (invert, flips, rotation). display() can run again at any time without
 // a new exposure.
 //
 // The numbers shared with the CPU reference (drrCpu.ts) live in pipeline.ts.
@@ -39,6 +39,7 @@ import {
 } from 'three';
 import { IMAGE_SIZE_PX, createProjection } from '../core/geometry';
 import type { CArmPose, Vec3, Volume } from '../core/types';
+import { ROTATIONS, type Orientation } from './orientation';
 import {
   ABSORPTION_PER_MM,
   MARCH_STEP_MM,
@@ -128,17 +129,42 @@ const fragmentShader = /* glsl */ `
   }
 `;
 
-/** Display step: draws the held image to the canvas, pixel for pixel. */
+/**
+ * Display step: draws the held image to the canvas with the display settings
+ * (steps 5 and 6 of pipeline.ts). For each canvas pixel it works out which
+ * pixel of the image as taken is shown there — unorientPixel() in
+ * orientation.ts, written out in GLSL — and reads exactly that pixel.
+ */
 const displayFragmentShader = /* glsl */ `
   precision highp float;
 
   uniform sampler2D uHeld;
+  uniform float uImageSize;
   uniform bool uInvert;
+  uniform bool uFlipHorizontal;
+  uniform bool uFlipVertical;
+  // Number of 90° clockwise turns (0–3).
+  uniform int uQuarterTurns;
 
   layout(location = 0) out highp vec4 outColor;
 
   void main() {
-    float value = texelFetch(uHeld, ivec2(gl_FragCoord.xy), 0).r;
+    float last = uImageSize - 1.0;
+    // Canvas pixel, counted from the top-left like the image.
+    float x = floor(gl_FragCoord.x);
+    float y = last - floor(gl_FragCoord.y);
+
+    // Step 6 backwards: undo the rotation, then the up-down flip, then the left-right flip.
+    for (int n = 0; n < uQuarterTurns; n++) {
+      float turnedX = y;
+      y = last - x;
+      x = turnedX;
+    }
+    if (uFlipVertical) y = last - y;
+    if (uFlipHorizontal) x = last - x;
+
+    // The held image is stored bottom row first.
+    float value = texelFetch(uHeld, ivec2(int(x), int(last - y)), 0).r;
     // Step 5, invert: value -> 1 - value.
     if (uInvert) value = 1.0 - value;
     outColor = vec4(vec3(value), 1.0);
@@ -154,7 +180,7 @@ export interface TakeOptions {
 }
 
 /** The display settings the display step uses. */
-export interface DisplayOptions {
+export interface DisplayOptions extends Orientation {
   invert: boolean;
 }
 
@@ -203,7 +229,14 @@ export function createDrrGpu(renderer: WebGLRenderer): DrrGpu {
     glslVersion: GLSL3,
     vertexShader,
     fragmentShader: displayFragmentShader,
-    uniforms: { uHeld: { value: held.texture }, uInvert: { value: false } },
+    uniforms: {
+      uHeld: { value: held.texture },
+      uImageSize: { value: IMAGE_SIZE_PX },
+      uInvert: { value: false },
+      uFlipHorizontal: { value: false },
+      uFlipVertical: { value: false },
+      uQuarterTurns: { value: 0 },
+    },
     depthTest: false,
     depthWrite: false,
   });
@@ -256,7 +289,11 @@ export function createDrrGpu(renderer: WebGLRenderer): DrrGpu {
       renderer.setRenderTarget(null);
     },
     display(options) {
-      displayMaterial.uniforms.uInvert!.value = options.invert;
+      const d = displayMaterial.uniforms;
+      d.uInvert!.value = options.invert;
+      d.uFlipHorizontal!.value = options.flipHorizontal;
+      d.uFlipVertical!.value = options.flipVertical;
+      d.uQuarterTurns!.value = Math.max(0, ROTATIONS.indexOf(options.rotation));
       renderer.setRenderTarget(null);
       renderer.render(displayScene, camera);
     },

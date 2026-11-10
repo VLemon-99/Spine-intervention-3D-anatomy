@@ -36,6 +36,8 @@
 - When writing a note into the task file with a script, load the file as JSON afterwards BEFORE committing (`python3 -c "import json; json.load(open('ralph/tasks/F2-renderer.json'))"`), and chain the commit with `&&` so it cannot run after a failed step.
 - Orientation: `orientPixel(pixel, orientation)` says where a pixel of the image as taken is SHOWN; `unorientPixel` is the opposite (which taken pixel is shown at a canvas pixel — what the GPU display shader needs). Both in `src/render/orientation.ts`; `ROTATIONS` / `Rotation` live there too (settings.ts re-exports them).
 - Image directions at pose (0°, 0°): the patient's LEFT (+x) is on the LEFT half of the image (x < 256), the head (+z) at the top. A small blob's shadow has only a few different values, so follow a whole image (`expectMoved` in `tests/render/orientation.test.ts`), not one "unique" pixel.
+- The "mean difference ≤ 3% (7.65 grey levels)" limit is LOOSE on the phantom, because most of the picture is air: a picture with the wrong orientation is only about 7.5 off, with the wrong magnification or shutters somewhat more. A correct GPU image is about 0.05 off. So in every CPU-match test also demand something stricter (e.g. the canvas at least four times closer than the wrong picture would be), and use exact pixel checks where possible.
+- For orientation tests use a pose whose picture is not symmetric (e.g. oblique 30, tilt 15, tableLeftRight 20, tableHeadFoot −15); at the default pose the phantom is nearly left-right symmetric and a missing flip could go unnoticed.
 
 ## Rounds
 <!--
@@ -130,3 +132,9 @@
 - Files touched: `src/render/orientation.ts` (new), `src/render/drrCpu.ts`, `src/render/settings.ts` (re-exports the rotation list), `tests/render/orientation.test.ts` (new), this log, the task file.
 - Test result: verify command passed (15 unit tests) after correcting two mistakes in my own new test (it looked for a pixel with a unique value, which the spot does not have, and expected the spot on the wrong half of the image). `npm run check` passed: lint + types clean, 153 unit tests, 114 screen tests passed and 6 skipped (one-set-up-only tests).
 - Next round should know: the GPU display step does not flip or rotate yet (F2-S15): add the three settings to `DisplayOptions` and, in `displayFragmentShader`, look up the held pixel that `unorientPixel` gives for the canvas pixel (canvas row from the top = 511 − floor(gl_FragCoord.y); the held image is stored bottom row first). The worker was restarted in the middle of this round; nothing was lost.
+
+## Round — 2026-11-10 17:06 — F2-S15 — done
+- What I did: The GPU display step now applies flip left-right, flip up-down and the clockwise rotation (the `unorientPixel` mapping written in GLSL in `displayFragmentShader`), so they re-display the held image at once with no new exposure. `fluoroCanvas.ts` passes the three settings to `drr.display`.
+- Files touched: `src/render/drrGpu.ts`, `src/render/fluoroCanvas.ts`, `tests/e2e/render/orientation.spec.ts` (new), this log, the task file.
+- Test result: verify command passed (16 new screen tests; all render screen tests) after I reworked a safety check in my own new test (it compared with the 7.65 limit a difference that is really 7.5; the renderer was right). `npm run check` passed: lint + types clean, 153 unit tests, 130 screen tests passed and 6 skipped (one-set-up-only tests).
+- Next round should know: no flip/rotate buttons yet (F2-S16) — see the Lessons entry on the controls column: put the three buttons in ONE row.

@@ -365,9 +365,9 @@
       "dependsOn": [
         "F2-S14"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. Note for review: on the phantom the '3% of the grey range' limit is loose for orientation (a picture shown with no flip or rotation at all is only about 7.5 grey levels off on average, because most of the picture is air), so the test also demands the canvas be at least four times closer than that; the exact pixel-by-pixel mapping tests are the strict check."
     },
     {
       "id": "F2-S16",
