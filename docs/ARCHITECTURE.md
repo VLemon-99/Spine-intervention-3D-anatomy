@@ -37,9 +37,14 @@ The 3D view only reads the store; it never changes it.
 - **Determinism:** anything random takes a seed from `src/core/random.ts`.
 - **Clinical data files** (`params.json`, `tissues.json`, case files, quiz bank) carry a `status` or `reviewedByOwner` field. Loops write `draft` or `false`; only the owner changes them.
 - **UI:** each zone except `core` exports `mount(element)` from its `index.ts` and builds its own panel. Only the app zone edits `src/app/main.ts`. Interactive elements get `data-testid` attributes.
-- **Test hook:** `window.__sim` is created in `src/core/testHook.ts` only when `import.meta.env.DEV` or test mode is on. Zones register read-only getters for their state through it. The registration function zones import lives in its own file, does nothing in production and never contains the text `__sim`.
+- **Test hook:** `window.__sim` is created in `src/core/testHook.ts` only when `import.meta.env.DEV` or test mode is on (`main.ts` loads it with a dynamic import inside a DEV check, so it is not in the production build). Zones register read-only getters with `registerDebugGetter(name, getter)` from `src/core/debugRegistry.ts`; each appears as `window.__sim.<name>()` and returns a copy. That file does nothing in production and never contains the text `__sim`.
 - **Oblique sign:** positive oblique = right: the detector (above the prone patient's back) swings toward the patient's right (−x). At +90° the detector is on the patient's right and the source on the left.
 - **Tilt sign:** positive tilt = cranial: the detector tilts toward the patient's head (+z) and the source toward the feet. Negative = caudal.
+- **Image orientation:** at pose (0°, 0°) image up = the patient's head and image right = the patient's right (seen from behind the prone patient's back). Pixel (0, 0) is the top-left corner; the image is 512×512. Display flips (F2.7) are applied on top.
+- **Table offsets:** `tableLeftRight` along x (+ = toward the patient's left), `tableHeadFoot` along z (+ = toward the head), `tableHeight` along y (+ = up, toward the back). They move the patient relative to the isocentre.
+- **Volume layout:** voxel (i, j, k) is stored at index `i + size.x * (j + size.y * k)`; `origin` is the patient position of the centre of voxel (0, 0, 0); `orientation` gives the patient direction of the i, j and k axes. Level names in landmarks and events are text (`'L4'`); numeric level ids exist only in the level volume (`LEVEL_IDS` in `src/core/labels.ts`).
+- **Shared instances:** `src/core/store.ts` exports the app's one `store` and `bus`; unit tests make their own with `createStore()` / `createEventBus()`.
+- **Disclaimer flag:** while the disclaimer is shown, `<html>` has `data-disclaimer="shown"` and the rest of the page is inert. Zones with page-wide shortcuts read the attribute instead of importing from `src/app/`.
 - **Landmark levels:** a foramen is listed under the level above it (the L4–L5 foramen belongs to L4, whose nerve root exits there). This is how events name a nerve root's level.
 - **Unit tests run without a browser page** (Vitest `node` environment, no jsdom/happy-dom). Logic that needs a unit test lives in plain functions; screens are checked by screen tests.
 
@@ -103,6 +108,7 @@ src/
 tools/anatomy/ NIfTI → web-format converter, soft-tissue modeller
 public/data/   converted anatomy regions + manifest + landmarks
 tests/         unit tests per zone; tests/e2e/<zone>/ screen tests; tests/fixtures/ shared helpers
+               (acceptDisclaimer, simPage: getSimState/takeImage/setPose, readCanvas: grey values of the fluoro canvas)
 docs/          spec, architecture, decisions, prompts
 ralph/         loop prompts, task files, progress logs, loop script
 ```
