@@ -8,6 +8,7 @@
 
 - CDP multi-touch: Input.dispatchTouchEvent touchStart / touchMove list EVERY finger on the screen, but touchEnd must list only the finger(s) being lifted — listing the remaining fingers lifts those instead (see touchScreen() in tests/e2e/carm/controls.ts).
 - Throwaway debug specs: create them with the Write tool and delete with a plain `rm <file>`; a combined mkdir + heredoc + rm -rf command was refused by the permission check.
+- getSimState() in tests/fixtures/simPage.ts is typed without `volume` (shared fixture, do not edit); read volume through page.evaluate with the SimHook type from src/core/testHook.ts (see regionPicker.spec.ts).
 
 ## Rounds
 <!--
@@ -71,3 +72,9 @@
 - Files touched: tests/e2e/carm/lastImageHold.spec.ts, ralph/tasks/F3-carm.json, ralph/progress/F3-carm.md
 - Test result: verify passed in both set-ups (stable over --repeat-each=2); npm run check green (139 unit tests, 111 screen tests passed, 19 skipped by set-up).
 - Next round should know: Once the renderer adds noise/grain (F2), exact fingerprint equality still holds for the hold (nothing is redrawn), but "changes after a Shot" stays true too.
+
+## Round — 2026-11-10 13:35 — F3-S9 — done
+- What I did: Added src/carm/regions.ts: regionEntries(regions, loadedName) (copies of the listed regions, plus the loaded region if missing, titled 'Phantom' for 'phantom', else its name) and buildRegionPicker(store) (<select> test id region-picker, ≥44 px tall, rebuilt when store.regions or volume.region changes, selects the loaded region). index.ts adds a 'Region' row under the sliders. No switching yet (S10).
+- Files touched: src/carm/regions.ts, src/carm/index.ts, tests/carm/regions.test.ts, tests/e2e/carm/regionPicker.spec.ts, ralph/tasks/F3-carm.json, ralph/progress/F3-carm.md
+- Test result: verify 5 unit + 4 screen tests passed (both set-ups); npm run check green (144 unit tests, 115 screen tests passed, 19 skipped by set-up).
+- Next round should know: For S10, add a 'change' listener on the picker: if select.value differs from the loaded region, emit bus 'regionRequest' once, then set select.value back to the loaded region (the picker keeps showing what is loaded until a new volume arrives). The region row fits inside the tablet panel (checked by the screen test).

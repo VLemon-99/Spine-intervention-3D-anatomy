@@ -2,7 +2,8 @@
 // mount() builds this zone's panel (carm-panel) with the Shot button and the
 // spacebar shortcut (F0.6, F3.3), the pose sliders, pose keys and help
 // overlay (F3.2), the shot / fluoro-time counters (F3.6) and continuous
-// fluoro while F or the on-screen pedal is held (F3.4).
+// fluoro while F or the on-screen pedal is held (F3.4), and the region
+// picker (F3.7).
 import { registerDebugGetter } from '../core/debugRegistry';
 import { shortcuts } from '../core/shortcuts';
 import { bus, store } from '../core/store';
@@ -14,6 +15,7 @@ import { changePose } from './limits';
 import { takeShot } from './shot';
 import { stepPose } from './keymap';
 import { buildPedal } from './pedal';
+import { buildRegionPicker } from './regions';
 import { buildSliders } from './sliders';
 
 /** True while the training disclaimer is on screen (set by the app zone on <html>). */
@@ -64,7 +66,12 @@ export function mount(element: HTMLElement): void {
   headerButtons.append(help.button, shotButton, buildPedal(fluoro));
   header.append(heading, buildCounters(store), headerButtons);
 
-  panel.append(marker, header, buildSliders(store), help.overlay);
+  // Region picker (F3.7) in a short row under the sliders.
+  const regionRow = document.createElement('label');
+  Object.assign(regionRow.style, { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', marginTop: '2px' });
+  regionRow.append('Region', buildRegionPicker(store));
+
+  panel.append(marker, header, buildSliders(store), regionRow, help.overlay);
   element.append(panel);
 
   // Counters reset when a new case starts (F3.6).
