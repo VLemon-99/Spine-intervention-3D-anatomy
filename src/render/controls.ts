@@ -1,12 +1,13 @@
 // The display controls of the fluoro panel (docs/SPEC.md F2.3–F2.7): compact
-// buttons beside the canvas that change the render settings. So far: Invert.
+// buttons beside the canvas that change the render settings. So far: Invert
+// and the magnification buttons (1×, 1.5×, 2×).
 //
 // Rules for every control here (F12 owns the final layout):
 // - at least 44×44 px, so it can be tapped on a tablet;
 // - on/off controls are <button> elements with aria-pressed, not checkboxes
 //   (the spacebar is the Shot shortcut);
 // - each control follows the settings when they are changed elsewhere.
-import type { RenderSettings, SettingsStore } from './settings';
+import { MAGNIFICATIONS, type RenderSettings, type SettingsStore } from './settings';
 
 const BUTTON_STYLE: Partial<CSSStyleDeclaration> = {
   minWidth: '64px',
@@ -71,6 +72,26 @@ export function createControls(parent: HTMLElement, settings: SettingsStore): HT
       () => settings.set({ invert: !settings.get().invert }),
     ),
   );
+
+  // Magnification: three buttons in a row; the one in use is pressed. It takes
+  // effect on the next image.
+  const magnification = document.createElement('div');
+  magnification.setAttribute('role', 'group');
+  magnification.setAttribute('aria-label', 'Magnification');
+  Object.assign(magnification.style, { display: 'flex', gap: '4px' });
+  for (const m of MAGNIFICATIONS) {
+    const button = createToggle(
+      settings,
+      `magnification-${m}x`,
+      `${m}×`,
+      `Magnification ${m}× (from the next image)`,
+      (s) => s.magnification === m,
+      () => settings.set({ magnification: m }),
+    );
+    Object.assign(button.style, { minWidth: '44px', padding: '0 2px' });
+    magnification.append(button);
+  }
+  controls.append(magnification);
   parent.append(controls);
   return controls;
 }

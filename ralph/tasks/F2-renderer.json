@@ -195,9 +195,9 @@
         "F2-S7",
         "F2-S5"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. The three buttons sit in one row (each 44×44 px minimum) under the Invert button."
     },
     {
       "id": "F2-S9",

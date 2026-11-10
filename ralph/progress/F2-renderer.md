@@ -23,6 +23,7 @@
 - Pose (0°, 0°): the source is under the table, so a NEGATIVE `tableHeight` moves the anatomy closer to the source (larger picture).
 - Settings for TAKING the image reach the shader through `drr.take(volume, pose, options)` (`TakeOptions` in `drrGpu.ts`); `fluoroCanvas.ts` passes values from `lastImage.settings` (the copy made at the exposure), never from the live settings. Add collimation, noise and contrast the same way.
 - Comparison helpers in `tests/e2e/render/renderPage.ts`: `meanDifference(canvas, reference)`, `MAX_MEAN_DIFFERENCE`, `samePixels(a, b)`. In a match test also check that the reference with the setting differs from the plain reference by more than the limit, so a GPU that ignores the setting cannot pass.
+- The controls column is now about 140 px wide (the row of three 44 px magnification buttons). A group of buttons in a row: a `<div role="group">` with `display: flex` inside the column. `bodyWidthOnCanvas(page, m)` in `tests/e2e/render/magnificationButtons.spec.ts` measures a structure's width on the canvas.
 
 ## Rounds
 <!--
@@ -74,3 +75,9 @@
 - Files touched: `src/render/drrGpu.ts`, `src/render/fluoroCanvas.ts`, `tests/e2e/render/magnification.spec.ts` (new), `tests/e2e/render/renderPage.ts` (comparison helpers), this log, the task file.
 - Test result: verify command passed (6 new screen tests; all 60 render screen tests). `npm run check` passed: lint + types clean, 119 unit tests, 84 screen tests passed and 6 skipped (one-set-up-only tests).
 - Next round should know: no magnification buttons yet (F2-S8) — they go into the controls column from F2-S5.
+
+## Round — 2026-11-10 13:24 — F2-S8 — done
+- What I did: Added the 1×, 1.5× and 2× buttons (`magnification-1x`, `magnification-1.5x`, `magnification-2x`; `<button>` with `aria-pressed`, the one in use pressed) as a row in the controls column. They set `settings.magnification` and follow the setting when it changes elsewhere.
+- Files touched: `src/render/controls.ts`, `tests/e2e/render/magnificationButtons.spec.ts` (new), this log, the task file.
+- Test result: verify command passed (8 screen tests). `npm run check` passed: lint + types clean, 119 unit tests, 92 screen tests passed and 6 skipped (one-set-up-only tests).
+- Next round should know: column height used so far is two rows (about 94 px of roughly 325 px on the tablet). The layout tests of F2-S5 and F2-S8 require the picture to stay at least 200 px wide and no button to lie on it.
