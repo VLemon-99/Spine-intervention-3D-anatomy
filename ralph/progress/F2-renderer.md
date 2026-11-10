@@ -40,6 +40,8 @@
 - For orientation tests use a pose whose picture is not symmetric (e.g. oblique 30, tilt 15, tableLeftRight 20, tableHeadFoot −15); at the default pose the phantom is nearly left-right symmetric and a missing flip could go unnoticed.
 - Controls column rows are now: [Invert | Rotate], [1× | 1.5× | 2×], [Flip ↔ | Flip ↕], [Collimation], and the slider group when open. `row(label, ...buttons)` in `createControls` builds a row of equal-width buttons. With the slider group open this fills the tablet panel's height almost completely — any further control needs a different place (F12 owns the final layout).
 - Extra absorption tests: to find which pixels' rays sample a blob, render the blob as the extra volume over an EMPTY copy of the grid (`{ ...phantom, intensity: new Uint8Array(n) }`): exactly those pixels are below 1 (`crossesBlob` in `tests/render/extraAbsorption.test.ts`). The test blob is voxels i 72–76, j 50–53, k 60–65 of the phantom grid (soft tissue to the patient's left of the spine).
+- Contrast in screen tests: `setContrast(page, array | null)` in `tests/e2e/render/renderPage.ts` (does not take an image). `fluoroCanvas.ts` reads `store.get().contrast` at the exposure and passes it to `drr.take(..., { contrast })`; `drrGpu.ts` keeps one contrast texture and uploads again only for a different array object (or volume).
+- A small feature (the contrast blob) barely moves the whole-image mean, so compare only the pixels it touches (`crossesBlob` = pixels where the two CPU references differ) as well as the whole image.
 
 ## Rounds
 <!--
@@ -152,3 +154,9 @@
 - Files touched: `src/render/pipeline.ts`, `src/render/drrCpu.ts`, `tests/render/extraAbsorption.test.ts` (new), this log, the task file.
 - Test result: verify command passed (6 unit tests). `npm run check` passed: lint + types clean, 159 unit tests, 140 screen tests passed and 6 skipped (one-set-up-only tests).
 - Next round should know: the GPU image has no extra volume yet (F2-S18): a second 3D texture sampled at the same `uvw`, added inside the same loop line, uploaded again whenever `store.get().contrast` is a different array object.
+
+## Round — 2026-11-10 17:21 — F2-S18 — done
+- What I did: The shader that takes the image now reads the store's contrast volume as a second 3D texture and adds its absorption along each ray exactly as the CPU reference does (`uExtra`, `uHasExtra`, `uExtraAbsorptionPerMm`). The texture is uploaded again only when the array object changes. Contrast shows on the next image, never on the held one. Added the `setContrast` test helper.
+- Files touched: `src/render/drrGpu.ts`, `src/render/fluoroCanvas.ts`, `tests/e2e/render/extraAbsorption.spec.ts` (new), `tests/e2e/render/renderPage.ts`, this log, the task file.
+- Test result: verify command passed (10 new screen tests; all render screen tests). `npm run check` passed: lint + types clean, 159 unit tests, 150 screen tests passed and 6 skipped (one-set-up-only tests).
+- Next round should know: with no contrast the `uExtra` sampler is pointed at the volume texture (a sampler must always have a texture) and `uHasExtra` is false, so it is never read.

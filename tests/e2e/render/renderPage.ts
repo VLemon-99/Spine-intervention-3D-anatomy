@@ -107,3 +107,18 @@ export function meanDifference(canvas: { data: Uint8Array }, reference: { data: 
 export function samePixels(a: { data: Uint8Array }, b: { data: Uint8Array }): boolean {
   return Buffer.from(a.data).equals(Buffer.from(b.data));
 }
+
+/**
+ * Put a contrast (extra absorption) array in the store — or null for none —
+ * through the app's own store module as served by the dev server (as setPose
+ * does). Test-only; it does not take an image.
+ */
+export async function setContrast(page: Page, contrast: Uint8Array | null): Promise<void> {
+  // One character per voxel keeps the hand-over to the page small.
+  const packed = contrast ? Buffer.from(contrast).toString('latin1') : null;
+  await page.evaluate(async (text) => {
+    const storeModule = '/src/core/store.ts';
+    const { store } = (await import(/* @vite-ignore */ storeModule)) as typeof import('../../../src/core/store');
+    store.set({ contrast: text === null ? null : Uint8Array.from(text, (character) => character.charCodeAt(0)) });
+  }, packed);
+}

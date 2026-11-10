@@ -97,7 +97,8 @@ export function createFluoroCanvas(
     if (volume && lastImage) {
       // Taken with the settings as they were at the exposure.
       const { magnification, collimation } = lastImage.settings;
-      drr.take(volume, lastImage.pose, { magnification, collimation });
+      // Contrast belongs to taking the image: whatever is in the store now is in this image.
+      drr.take(volume, lastImage.pose, { magnification, collimation, contrast: store.get().contrast });
       holding = true;
       display();
     } else {

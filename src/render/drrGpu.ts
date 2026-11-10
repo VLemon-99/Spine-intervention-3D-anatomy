@@ -16,7 +16,8 @@
 // a new exposure.
 //
 // The numbers shared with the CPU reference (drrCpu.ts) live in pipeline.ts.
-// Noise, collimation, magnification and flips come in later F2 stories.
+// The store's contrast volume, if any, is a second 3D texture on the same grid
+// whose absorption is added along each ray.
 //
 // Assumes the volume's orientation is the identity (voxel i, j, k axes along
 // patient x, y, z), which holds for the phantom; general orientations are F2.
@@ -42,6 +43,7 @@ import type { CArmPose, Vec3, Volume } from '../core/types';
 import { ROTATIONS, type Orientation } from './orientation';
 import {
   ABSORPTION_PER_MM,
+  EXTRA_ABSORPTION_PER_MM,
   MARCH_STEP_MM,
   MAX_MARCH_STEPS,
   NO_SIGNAL,
@@ -77,6 +79,10 @@ const fragmentShader = /* glsl */ `
   uniform vec3 uBoxMax;
   uniform float uStep;
   uniform float uAbsorptionPerMm;
+  // Optional extra absorption (contrast) on the same grid as the volume.
+  uniform sampler3D uExtra;
+  uniform bool uHasExtra;
+  uniform float uExtraAbsorptionPerMm;
 
   layout(location = 0) out highp vec4 outColor;
 
@@ -122,7 +128,9 @@ const fragmentShader = /* glsl */ `
       float t = tNear + (float(i) + 0.5) * uStep;
       if (t > tFar) break;
       vec3 uvw = (uSource + dir * t - uBoxMin) / (uBoxMax - uBoxMin);
-      total += texture(uVolume, uvw).r * uAbsorptionPerMm * uStep;
+      float perMm = texture(uVolume, uvw).r * uAbsorptionPerMm;
+      if (uHasExtra) perMm += texture(uExtra, uvw).r * uExtraAbsorptionPerMm;
+      total += perMm * uStep;
     }
     float grey = exp(-total);
     outColor = vec4(vec3(grey), 1.0);
@@ -177,6 +185,11 @@ const toVector3 = (v: Vec3): Vector3 => new Vector3(v.x, v.y, v.z);
 export interface TakeOptions {
   magnification: Magnification;
   collimation: Collimation;
+  /**
+   * Extra absorption (contrast) per voxel on the volume's grid, or null for
+   * none. Uploaded again whenever a different array object is passed.
+   */
+  contrast: Uint8Array | null;
 }
 
 /** The display settings the display step uses. */
@@ -211,6 +224,9 @@ export function createDrrGpu(renderer: WebGLRenderer): DrrGpu {
       uBoxMax: { value: new Vector3() },
       uStep: { value: MARCH_STEP_MM },
       uAbsorptionPerMm: { value: ABSORPTION_PER_MM },
+      uExtra: { value: null },
+      uHasExtra: { value: false },
+      uExtraAbsorptionPerMm: { value: EXTRA_ABSORPTION_PER_MM },
     },
     depthTest: false,
     depthWrite: false,
@@ -244,20 +260,35 @@ export function createDrrGpu(renderer: WebGLRenderer): DrrGpu {
   displayScene.add(new Mesh(new PlaneGeometry(2, 2), displayMaterial));
   const camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
-  let uploaded: { volume: Volume; texture: Data3DTexture } | null = null;
-
-  const textureFor = (volume: Volume): Data3DTexture => {
-    if (uploaded?.volume === volume) return uploaded.texture;
-    uploaded?.texture.dispose();
-    const texture = new Data3DTexture(volume.intensity, volume.size.x, volume.size.y, volume.size.z);
+  /** An 8-bit 3D texture on the volume's grid, read voxel by voxel. */
+  const createTexture = (data: Uint8Array, volume: Volume): Data3DTexture => {
+    const texture = new Data3DTexture(data, volume.size.x, volume.size.y, volume.size.z);
     texture.format = RedFormat;
     texture.type = UnsignedByteType;
     texture.minFilter = NearestFilter;
     texture.magFilter = NearestFilter;
     texture.unpackAlignment = 1; // rows of 95 bytes are not 4-byte aligned
     texture.needsUpdate = true;
-    uploaded = { volume, texture };
     return texture;
+  };
+
+  let uploaded: { volume: Volume; texture: Data3DTexture } | null = null;
+  const textureFor = (volume: Volume): Data3DTexture => {
+    if (uploaded?.volume === volume) return uploaded.texture;
+    uploaded?.texture.dispose();
+    uploaded = { volume, texture: createTexture(volume.intensity, volume) };
+    return uploaded.texture;
+  };
+
+  // The contrast texture: kept until a different array (or a different volume) comes along.
+  let uploadedExtra: { data: Uint8Array; volume: Volume; texture: Data3DTexture } | null = null;
+  const extraTextureFor = (data: Uint8Array | null, volume: Volume): Data3DTexture | null => {
+    // An array that does not fit the volume's grid cannot be drawn; treat it as no contrast.
+    if (!data || data.length !== volume.intensity.length) return null;
+    if (uploadedExtra?.data === data && uploadedExtra.volume === volume) return uploadedExtra.texture;
+    uploadedExtra?.texture.dispose();
+    uploadedExtra = { data, volume, texture: createTexture(data, volume) };
+    return uploadedExtra.texture;
   };
 
   return {
@@ -266,6 +297,10 @@ export function createDrrGpu(renderer: WebGLRenderer): DrrGpu {
       const { origin, spacing, size } = volume;
       const u = material.uniforms;
       u.uVolume!.value = textureFor(volume);
+      const extra = extraTextureFor(options.contrast, volume);
+      // With no contrast the sampler still needs a texture; the volume's own is never read through it.
+      u.uExtra!.value = extra ?? u.uVolume!.value;
+      u.uHasExtra!.value = extra !== null;
       u.uSource!.value = toVector3(projection.source);
       u.uDetectorCentre!.value = toVector3(projection.detectorCentre);
       u.uRight!.value = toVector3(projection.detectorRight);

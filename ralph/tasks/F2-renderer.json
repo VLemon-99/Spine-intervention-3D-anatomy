@@ -438,9 +438,9 @@
         "F2-S17",
         "F2-S4"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. A contrast array whose length does not fit the loaded volume is ignored on screen (drawn as no contrast); the CPU reference rejects it with an error."
     },
     {
       "id": "F2-S19",
