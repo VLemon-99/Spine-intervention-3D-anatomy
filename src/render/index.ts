@@ -1,9 +1,10 @@
 // Renderer (DRR, display, fluoro panel) — F2, F7.
 // mount() builds this zone's panel (fluoro-panel): the fluoro canvas with the
-// display controls beside it.
+// display controls beside it and the pose text over its top-left corner.
 import { bus, store } from '../core/store';
 import { createControls } from './controls';
 import { createFluoroCanvas } from './fluoroCanvas';
+import { createPoseReadout } from './poseReadout';
 import { renderSettings } from './settings';
 
 export function mount(element: HTMLElement): void {
@@ -30,6 +31,7 @@ export function mount(element: HTMLElement): void {
   Object.assign(panel.style, { display: 'flex', flexDirection: 'column' });
   panel.append(marker, heading, body);
   element.append(panel);
-  createFluoroCanvas(imageArea, store, bus, renderSettings);
+  const canvas = createFluoroCanvas(imageArea, store, bus, renderSettings);
+  if (canvas) createPoseReadout(imageArea, canvas, store);
   createControls(body, renderSettings);
 }

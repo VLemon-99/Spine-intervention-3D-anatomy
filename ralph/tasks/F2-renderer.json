@@ -462,9 +462,9 @@
       "dependsOn": [
         "F2-S2"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. An angle that rounds to 0 reads as 0 (e.g. 0.4° gives AP). The label is white text on a see-through dark strip so it can be read over both light and dark parts of the picture."
     },
     {
       "id": "F2-S21",

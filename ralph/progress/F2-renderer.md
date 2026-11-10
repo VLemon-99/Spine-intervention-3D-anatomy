@@ -42,6 +42,7 @@
 - Extra absorption tests: to find which pixels' rays sample a blob, render the blob as the extra volume over an EMPTY copy of the grid (`{ ...phantom, intensity: new Uint8Array(n) }`): exactly those pixels are below 1 (`crossesBlob` in `tests/render/extraAbsorption.test.ts`). The test blob is voxels i 72–76, j 50–53, k 60–65 of the phantom grid (soft tissue to the patient's left of the spine).
 - Contrast in screen tests: `setContrast(page, array | null)` in `tests/e2e/render/renderPage.ts` (does not take an image). `fluoroCanvas.ts` reads `store.get().contrast` at the exposure and passes it to `drr.take(..., { contrast })`; `drrGpu.ts` keeps one contrast texture and uploads again only for a different array object (or volume).
 - A small feature (the contrast blob) barely moves the whole-image mean, so compare only the pixels it touches (`crossesBlob` = pixels where the two CPU references differ) as well as the whole image.
+- Things laid over the picture (the pose text; F7's and F10's overlays later): `imageArea` is `position: relative`; `createPoseReadout` in `src/render/poseReadout.ts` places an absolutely positioned element at `canvas.offsetLeft/offsetTop` and re-places it with a `ResizeObserver`. Use `pointer-events: none` so taps reach the canvas.
 
 ## Rounds
 <!--
@@ -160,3 +161,9 @@
 - Files touched: `src/render/drrGpu.ts`, `src/render/fluoroCanvas.ts`, `tests/e2e/render/extraAbsorption.spec.ts` (new), `tests/e2e/render/renderPage.ts`, this log, the task file.
 - Test result: verify command passed (10 new screen tests; all render screen tests). `npm run check` passed: lint + types clean, 159 unit tests, 150 screen tests passed and 6 skipped (one-set-up-only tests).
 - Next round should know: with no contrast the `uExtra` sampler is pointed at the volume texture (a sampler must always have a texture) and `uHasExtra` is false, so it is never read.
+
+## Round — 2026-11-10 17:27 — F2-S19 — done
+- What I did: Added `formatPose(pose)` (`src/render/formatPose.ts`) and the label `pose-readout` over the top-left of the fluoro image (`src/render/poseReadout.ts`). It shows the store's `lastImagePose` as text (two angles only), is empty before the first image, is not flipped/rotated with the picture and lets taps through to the canvas.
+- Files touched: `src/render/formatPose.ts` (new), `src/render/poseReadout.ts` (new), `src/render/index.ts`, `tests/render/formatPose.test.ts` (new), `tests/e2e/render/poseText.spec.ts` (new), this log, the task file.
+- Test result: verify command passed (7 unit tests, 10 screen tests). `npm run check` passed: lint + types clean, 166 unit tests, 160 screen tests passed and 6 skipped (one-set-up-only tests).
+- Next round should know: every story that can be done without the owner is now done. The three left are F2-S13 (blocked — see its notes), and F2-S21 and F2-S20, which are `todo` but depend on F2-S13.
