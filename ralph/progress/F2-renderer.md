@@ -9,6 +9,8 @@
 - A full 512×512 `renderDrrCpu` of the phantom takes about 1 second in Vitest, so a handful of whole images per test file is fine; use `transmissionAt` for single rays.
 - The shader's loop limit comes from `MAX_MARCH_STEPS` in `pipeline.ts` (pasted into the shader text); the CPU march uses the same number.
 - ESLint rejects unused parameters even with a leading underscore; use `void options;` for a parameter kept for later stories.
+- Settings: change them with `renderSettings.set(patch)` (shared instance in `src/render/settings.ts`); shutters can be patched one at a time (`{ collimation: { left: 20 } }`). In screen tests use `setRenderSettings` / `getRenderInfo` from `tests/e2e/render/renderPage.ts`.
+- `tests/render/settings.test.ts` checks that the default `noiseLevel` is 0 (F2-S2's own acceptance text, "0 for now"). F2-S13 changes that default on purpose, so that round must NOT quietly edit the test: its story text allows the screen tests to stay unedited (they read the defaults from the module), but the unit-test line is a human call — block or flag it as the rules require.
 
 ## Rounds
 <!--
@@ -24,3 +26,9 @@
 - Files touched: `src/render/pipeline.ts` (new), `src/render/drrCpu.ts` (new), `src/render/drrGpu.ts`, `tests/render/drrCpu.test.ts` (new), this log, the task file.
 - Test result: verify command passed (11 unit tests, 14 render screen tests). `npm run check` passed: lint + types clean, 94 unit tests, 46 screen tests passed and 6 skipped (the usual one-set-up-only tests).
 - Next round should know: the CPU march copies the shader line for line (box clipping with the same 1e-8 nudge, samples at entry + (i + 0.5) × 0.5 mm, nearest voxel by `floor`, clamped to the grid). `DrrCpuOptions` is an empty interface for later stories to fill. The CPU-vs-GPU comparison has not been run yet — that is F2-S3.
+
+## Round — 2026-11-10 13:06 — F2-S2 — done
+- What I did: Added `src/render/settings.ts` (the `RenderSettings` type, defaults, `applySettingsPatch` validation, `createSettingsStore` and the shared `renderSettings`). `fluoroCanvas.ts` now remembers pose + settings copy + noise seed (image counter) for each exposure and registers the `render` debug getter, so `window.__sim.render()` returns `{ settings, lastImage }`. Added the helper `tests/e2e/render/renderPage.ts` (`setRenderSettings`, `getRenderInfo`). The settings do not change the picture yet.
+- Files touched: `src/render/settings.ts` (new), `src/render/fluoroCanvas.ts`, `tests/render/settings.test.ts` (new), `tests/e2e/render/renderPage.ts` (new), `tests/e2e/render/settings.spec.ts` (new), this log, the task file.
+- Test result: verify command passed (16 unit tests, 8 screen tests, production build has no '__sim'). `npm run check` passed: lint + types clean, 110 unit tests, 54 screen tests passed and 6 skipped (one-set-up-only tests).
+- Next round should know: the image counter goes up on every `exposure` event, also when no volume is loaded. `createFluoroCanvas` takes the settings store as an optional 4th argument (default: the shared one). The GPU draw now uses `lastImage.pose`.

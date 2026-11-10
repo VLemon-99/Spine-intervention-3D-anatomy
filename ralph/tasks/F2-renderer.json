@@ -55,9 +55,9 @@
       "dependsOn": [
         "F2-S1"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. The validating function is applySettingsPatch; the shared store instance is renderSettings."
     },
     {
       "id": "F2-S3",
