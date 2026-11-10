@@ -1,0 +1,532 @@
+{
+  "feature": "F1",
+  "name": "Anatomy data",
+  "branch": "ralph/F1-anatomy",
+  "zone": "anatomy",
+  "dependsOnFeatures": [
+    "F0"
+  ],
+  "stories": [
+    {
+      "id": "F1-S1",
+      "title": "Read NIfTI files (.nii and .nii.gz) in the converter",
+      "description": "Create tools/anatomy/nifti.ts: a small reader for NIfTI-1 files, plain or gzipped (Node's built-in zlib). It returns the volume's size, voxel spacing, the position/direction information from the file header (the sform or qform 'affine'), and the voxel values as numbers with the header's scale and offset applied (scl_slope, scl_inter). Support the data types CT scans and masks use — unsigned 8-bit, signed and unsigned 16-bit, 32-bit float — in both byte orders, and reject anything else (wrong header size or magic text, more than 3 dimensions with size > 1, unsupported type, file shorter than the header says) with a clear error naming the file. Add a test helper in tests/anatomy/ (not in src/ or tools/) that writes a tiny NIfTI file from an array, so tests can build fixtures. Plain TypeScript run in Node (no browser code); only Node's built-in modules, no new dependencies. Tests build their tiny input files in memory or in a temporary folder (never real CT data, nothing downloaded).",
+      "specRefs": [
+        "F1.1"
+      ],
+      "acceptance": [
+        "Unit test: a generated 4×3×2 signed 16-bit .nii file is read back with the right size, spacing and every voxel value",
+        "Unit test: the same file gzipped (.nii.gz) reads back identically",
+        "Unit test: scale and offset in the header are applied (stored 100 with slope 2 and intercept −1024 reads as −824)",
+        "Unit test: 8-bit and 32-bit float files and a big-endian file read back correctly",
+        "Unit test: a file with a wrong magic text, an unsupported data type, or fewer bytes than the header promises is rejected with an error that names the file"
+      ],
+      "verify": "npx vitest run tests/anatomy/nifti.test.ts",
+      "zone": "anatomy",
+      "priority": 1,
+      "dependsOn": [],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F1-S2",
+      "title": "Map CT numbers (Hounsfield units) to 8-bit intensity over a documented window",
+      "description": "Create tools/anatomy/intensity.ts with the function that turns a CT number (HU) into the 8-bit intensity stored in region files: a straight-line mapping over a window, default −1000 HU → 0 and +2000 HU → 255, rounded, clamped outside the window. The window is a named, documented setting that the converter can be given other values for (lower must be below upper, both finite — otherwise a clear error). Plain TypeScript run in Node (no browser code); only Node's built-in modules, no new dependencies.",
+      "specRefs": [
+        "F1.2"
+      ],
+      "acceptance": [
+        "Unit test: with the default window −1000 → 0, +2000 → 255, and +500 → 128 (within 1)",
+        "Unit test: values below the window give 0 and values above give 255",
+        "Unit test: over −1500 … +2500 HU in steps of 1 the result never decreases as HU rises",
+        "Unit test: a custom window (e.g. −200 … +1500) maps its ends to 0 and 255",
+        "Unit test: a window whose lower end is not below its upper end, or NaN, is rejected with a clear error"
+      ],
+      "verify": "npx vitest run tests/anatomy/intensity.test.ts",
+      "zone": "anatomy",
+      "priority": 2,
+      "dependsOn": [],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F1-S3",
+      "title": "Reorder voxels into the app's one standard layout",
+      "description": "Create tools/anatomy/standardLayout.ts. Every region file is written in the standard layout the phantom uses (owner decision 2026-11-10), so no other zone has to deal with file layouts: voxel axis i runs toward the patient's left (+x), j toward the back (+y), k toward the head (+z), i.e. the Volume's orientation is the identity. NIfTI positions are in 'RAS' coordinates (x = patient's right, y = front, z = head), so app x = −NIfTI x, app y = −NIfTI y, app z = NIfTI z. Using the affine from the header, work out which stored axis points along which patient direction, then swap and flip the axes of the voxel array (and the spacing) to the standard layout, and compute the Volume origin (patient position of the centre of voxel (0, 0, 0)). CT and mask volumes go through the same function. If an axis is tilted more than 5° away from every patient axis (an oblique scan), stop with a clear error rather than guess. Plain TypeScript run in Node (no browser code); only Node's built-in modules, no new dependencies. Tests build their tiny input files in memory or in a temporary folder (never real CT data, nothing downloaded).",
+      "specRefs": [
+        "F1.1"
+      ],
+      "acceptance": [
+        "Unit test: one small asymmetric test volume stored in four different axis orders/directions (including the common 'RAS' and 'LPS' ones) gives exactly the same voxel array, spacing and origin after reordering",
+        "Unit test: a voxel known to be at the patient's left-back-head corner ends up at the highest i, j and k",
+        "Unit test: different spacing on each axis follows its axis through the reordering",
+        "Unit test: an affine tilted by 20° is rejected with a clear error; one tilted by 1° is accepted"
+      ],
+      "verify": "npx vitest run tests/anatomy/standardLayout.test.ts",
+      "zone": "anatomy",
+      "priority": 3,
+      "dependsOn": [
+        "F1-S1"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F1-S4",
+      "title": "Map the dataset's masks to our tissue labels through a mapping table",
+      "description": "Create tools/anatomy/label-map.json and tools/anatomy/labels.ts. The input is a CT plus one yes/no mask file per structure, named as in the TotalSegmentator dataset (e.g. vertebrae_L4, sacrum, hip_left, spinal_cord, aorta, inferior_vena_cava, iliac_artery_left, autochthon_left). The table maps each mask name to one of our tissue labels (src/core/labels.ts, read-only) and, for bones, to a vertebral level (used by the next story). Draft mapping: vertebrae, sacrum and hip bones → bone; spinal_cord → thecal sac; aorta and iliac arteries → artery; vena cava and iliac veins → vein; muscles → muscle. Bone voxels become cortical bone at or above a CT-number threshold in the table and cancellous bone below it. Voxels covered by no mask get a fallback label from their CT number, with thresholds in the table: air, skin/fat or muscle (generic soft tissue). Mask names not in the table are ignored and listed in the converter's report; where masks overlap, bone wins, then the table's order. The table carries \"reviewedByOwner\": false (only the owner changes it) and a note that the mask names must be re-checked against the real download in F1.7 (loops have no network access). Plain TypeScript run in Node (no browser code); only Node's built-in modules, no new dependencies. Tests build their tiny input files in memory or in a temporary folder (never real CT data, nothing downloaded).",
+      "specRefs": [
+        "F1.3"
+      ],
+      "acceptance": [
+        "Unit test: label-map.json is valid: every target label is a key of TISSUE, every bone entry has a level from LEVEL_CODES, and reviewedByOwner is false",
+        "Unit test: on a generated fixture (a CT plus masks for two vertebrae, the canal, an artery and a vein) each masked voxel gets the mapped label",
+        "Unit test: bone voxels at or above the threshold are cortical, below it cancellous",
+        "Unit test: unmasked voxels become air, skin/fat or muscle according to their CT number",
+        "Unit test: a mask whose name is not in the table changes nothing and is reported; a mask whose size differs from the CT's is rejected with a clear error"
+      ],
+      "verify": "npx vitest run tests/anatomy/labels.test.ts",
+      "zone": "anatomy",
+      "priority": 4,
+      "dependsOn": [
+        "F1-S3"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F1-S5",
+      "title": "Build the vertebral-level volume for bone voxels",
+      "description": "In tools/anatomy/labels.ts also build the level volume: for every voxel, the level id (LEVEL_IDS in src/core/labels.ts) of the bone it belongs to — C1…C7, T1…T12, L1…L5, sacrum, ilium (both hip bones) — taken from the mapping table, and 0 (NO_LEVEL) for every voxel that is not bone.",
+      "specRefs": [
+        "F1.3"
+      ],
+      "acceptance": [
+        "Unit test on the fixture: every bone voxel (cortical or cancellous) has a level other than 0",
+        "Unit test on the fixture: no non-bone voxel has a level",
+        "Unit test: the voxels of the vertebrae_L4 mask get the id of L4, sacrum → 'sacrum', hip_left and hip_right → 'ilium'",
+        "Unit test: where two bone masks overlap, each voxel still gets exactly one level (the first in the table's order)"
+      ],
+      "verify": "npx vitest run tests/anatomy/levels.test.ts",
+      "zone": "anatomy",
+      "priority": 5,
+      "dependsOn": [
+        "F1-S4"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F1-S6",
+      "title": "Cut the volume down to one region",
+      "description": "Create tools/anatomy/regions.ts with the three regions and their level ranges — cervical C1–T1, thoracic T1–L1, lumbosacral L1–sacrum including both SI joints — and a function that crops the intensity, label and level volumes to a box around a region: the bounding box of the bone voxels of the region's levels (for lumbosacral also the ilium voxels within a documented distance of the sacrum, so both SI joints are inside), plus a documented margin on every side that is limited by the volume's edges, and that always reaches the skin at the back when the scan includes it (needles enter there). The origin is updated so every voxel keeps its patient position. If none of the region's levels is in the scan, stop with a clear error; report which of the region's levels are missing. Plain TypeScript run in Node (no browser code); only Node's built-in modules, no new dependencies. Tests build their tiny input files in memory or in a temporary folder (never real CT data, nothing downloaded).",
+      "specRefs": [
+        "F1.5"
+      ],
+      "acceptance": [
+        "Unit test: the three regions have exactly the level ranges above",
+        "Unit test: on a fixture with five stacked 'vertebrae', cropping to a region covering three of them keeps all their bone voxels and the margin, and drops the far parts of the other two",
+        "Unit test: a voxel has the same patient position (origin + index × spacing) before and after cropping",
+        "Unit test: for lumbosacral, ilium voxels next to the sacrum are inside the crop",
+        "Unit test: a region with none of its levels present is rejected with a clear error; missing levels are reported"
+      ],
+      "verify": "npx vitest run tests/anatomy/regions.test.ts",
+      "zone": "anatomy",
+      "priority": 6,
+      "dependsOn": [
+        "F1-S5"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F1-S7",
+      "title": "Resample a volume to a target voxel size",
+      "description": "Create tools/anatomy/resample.ts: resample a volume in the standard layout to a target voxel spacing (a converter setting, default 1.0 mm on every axis), so region files stay within the 25 MB limit and tablet memory. Intensity uses straight-line (trilinear) interpolation; label and level volumes use the nearest voxel, so no made-up in-between labels appear. The patient position of the anatomy must not shift. Plain TypeScript run in Node (no browser code); only Node's built-in modules, no new dependencies. Tests build their tiny input files in memory or in a temporary folder (never real CT data, nothing downloaded).",
+      "specRefs": [
+        "F1.1",
+        "F1.5"
+      ],
+      "acceptance": [
+        "Unit test: resampling a 2 mm volume to 1 mm doubles the voxel count along each axis (±1) and the header reports 1 mm spacing",
+        "Unit test: a volume already at the target spacing comes back unchanged",
+        "Unit test: the centre of a small bright block is at the same patient position (within half a voxel) before and after",
+        "Unit test: the resampled label and level volumes contain only values that were in the originals",
+        "Unit test: a target spacing that is zero, negative or not a number is rejected with a clear error"
+      ],
+      "verify": "npx vitest run tests/anatomy/resample.test.ts",
+      "zone": "anatomy",
+      "priority": 7,
+      "dependsOn": [
+        "F1-S3"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F1-S8",
+      "title": "Define and write the region file format (JSON header plus gzipped 8-bit data)",
+      "description": "Create src/anatomy/regionFormat.ts (shared by the converter and the browser loader; plain TypeScript with no Node-only or browser-only code) and tools/anatomy/writeRegion.ts. A region is a set of files named after the region: <region>.json (header: format version, region name, size, voxel spacing, origin, orientation — always the identity — and the names and uncompressed byte lengths of the data files), <region>.intensity.bin.gz, <region>.labels.bin.gz and <region>.levels.bin.gz (each 8 bits per voxel, in the Volume's index order i + size.x × (j + size.y × k), gzipped). regionFormat.ts holds the header type and a validator that checks every field by hand (no schema library) and returns clear error messages. writeRegion.ts writes the set into a folder with Node's built-in zlib. Region names are limited to lower-case letters, digits and dashes (they become file names). Tests build their tiny input files in memory or in a temporary folder (never real CT data, nothing downloaded).",
+      "specRefs": [
+        "F1.1"
+      ],
+      "acceptance": [
+        "Unit test: writing a small volume and reading the files back (gunzip + header) gives the same size, spacing, origin and every intensity, label and level value",
+        "Unit test: the header validator accepts the written header and rejects a missing field, a non-positive spacing, a size that does not match the data length, a non-identity orientation, and a region name with other characters",
+        "Unit test: each data file's uncompressed length equals size.x × size.y × size.z"
+      ],
+      "verify": "npx vitest run tests/anatomy/regionFormat.test.ts",
+      "zone": "anatomy",
+      "priority": 8,
+      "dependsOn": [
+        "F1-S3"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F1-S9",
+      "title": "Make the converter command turn a NIfTI folder into a region file set",
+      "description": "Replace the placeholder in tools/anatomy/convert.ts with the real converter (the command npm run anatomy:convert already exists; package.json must not change). The input folder holds ct.nii.gz (or ct.nii), a segmentations/ folder with one mask file per structure, and a small source.json written by hand: { region, sourceDataset, licence, attribution, optional window and voxel spacing }. Steps: read → standard layout → intensity window → labels and levels → crop to the region → resample → write the region file set into the output folder; then print a short report (region, size, spacing, file sizes, ignored masks, missing levels). The usage line and error exit for missing arguments must keep working (tests/anatomy/convert-cli.test.ts stays untouched). Validate everything that comes from outside: both folders and the files must exist, source.json fields are checked, the region must be one of the three known ones; never build a shell command from input. Problems end with a clear message and an error exit code, without half-written output. Plain TypeScript run in Node (no browser code); only Node's built-in modules, no new dependencies. Tests build their tiny input files in memory or in a temporary folder (never real CT data, nothing downloaded).",
+      "specRefs": [
+        "F1.1",
+        "F1.2",
+        "F1.3"
+      ],
+      "acceptance": [
+        "Unit test: running the converter on a generated fixture folder (a tiny CT and masks in a temporary folder) writes a region file set whose header equals the expected header and whose intensity, label and level voxels equal the expected values",
+        "Unit test: run with no arguments it still prints the usage line containing '<input-folder> <output-folder>' and exits with an error code (the existing test passes unchanged)",
+        "Unit test: a missing input folder, a missing ct file, a broken source.json and an unknown region each give a clear message and an error exit code, and write no region files",
+        "Unit test: the report names masks that were ignored because they are not in the mapping table"
+      ],
+      "verify": "npx vitest run tests/anatomy/convert.test.ts tests/anatomy/convert-cli.test.ts",
+      "zone": "anatomy",
+      "priority": 9,
+      "dependsOn": [
+        "F1-S2",
+        "F1-S6",
+        "F1-S7",
+        "F1-S8"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F1-S10",
+      "title": "Find each vertebra's body centre and endplates",
+      "description": "Create tools/anatomy/landmarks.ts. From the label and level volumes, compute for each typical vertebral level present (C3 … L5; see the note on other levels) the body centre and the superior and inferior endplates (centre and tilt direction as a unit vector pointing away from the body), in the shared LevelLandmarks format (src/core/types.ts, read-only). Suggested approach: the body is the part of the level's bone in front of the spinal canal (the canal is where the thecal sac / spinal cord voxels are); the endplates are its top and bottom faces. Results are approximations for the owner to review on real anatomy; tests check them on the phantom, whose true landmarks are known (createPhantomLandmarks). Atypical levels — C1 and C2 (no normal body), sacrum, ilium — are left out for now: the shared format cannot describe them sensibly and the owner has not decided (see the planning questions). Plain TypeScript run in Node (no browser code); only Node's built-in modules, no new dependencies.",
+      "specRefs": [
+        "F1.5"
+      ],
+      "acceptance": [
+        "Unit test on the phantom: for L4 and L5 the computed body centre is within 3 mm of createPhantomLandmarks()",
+        "Unit test on the phantom: each endplate centre is within 3 mm, and each endplate direction within 10°, of the phantom's",
+        "Unit test: at every computed body centre the label is bone and the level volume has that level",
+        "Unit test: a volume with no levels gives an empty list, and C1, C2, sacrum and ilium are skipped without an error"
+      ],
+      "verify": "npx vitest run tests/anatomy/landmarks.test.ts",
+      "zone": "anatomy",
+      "priority": 10,
+      "dependsOn": [
+        "F1-S5"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F1-S11",
+      "title": "Find each vertebra's pedicle centres and the foramen centres",
+      "description": "Extend tools/anatomy/landmarks.ts with, for each level from F1-S10, the left and right pedicle centres (the bone bridges joining the body to the back part of the vertebra, on either side of the canal) and the foramen centres on both sides. A foramen is the opening between this level's pedicle and the pedicle of the level below, beside the canal; it is listed under the level ABOVE it (docs/ARCHITECTURE.md → Landmark levels), so the lowest level in a volume has none. 'left' is the patient's left (+x). Plain TypeScript run in Node (no browser code); only Node's built-in modules, no new dependencies.",
+      "specRefs": [
+        "F1.5"
+      ],
+      "acceptance": [
+        "Unit test on the phantom: the pedicle centres of L4 and L5, left and right, are within 3 mm of createPhantomLandmarks()",
+        "Unit test on the phantom: L4 has a left and a right foramen centre within 3 mm of the phantom's; L5 (the lowest level) has none",
+        "Unit test: left landmarks have a larger x than right ones",
+        "Unit test: no foramen centre lies in a bone voxel"
+      ],
+      "verify": "npx vitest run tests/anatomy/landmarks.test.ts",
+      "zone": "anatomy",
+      "priority": 11,
+      "dependsOn": [
+        "F1-S10"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F1-S12",
+      "title": "Find each vertebra's superior articular process tips",
+      "description": "Extend tools/anatomy/landmarks.ts with the left and right superior articular process tips of each level from F1-S10: the highest points of the bony pillars behind and beside the canal that reach up to the facet joint with the level above. This completes the LevelLandmarks entry; add the function that returns the whole Landmarks object for a region. Plain TypeScript run in Node (no browser code); only Node's built-in modules, no new dependencies.",
+      "specRefs": [
+        "F1.5"
+      ],
+      "acceptance": [
+        "Unit test on the phantom: the superior articular process tips of L4 and L5, left and right, are within 3 mm of createPhantomLandmarks()",
+        "Unit test: every tip lies in or within 1.5 mm of a bone voxel of its own level",
+        "Unit test on the phantom: the complete Landmarks object has the region name, the levels L4 and L5 in head-to-foot order, and every required field of LevelLandmarks"
+      ],
+      "verify": "npx vitest run tests/anatomy/landmarks.test.ts",
+      "zone": "anatomy",
+      "priority": 12,
+      "dependsOn": [
+        "F1-S11"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F1-S13",
+      "title": "Model the epidural space, ligamentum flavum and (if missing) the thecal sac",
+      "description": "Create tools/anatomy/softTissue.ts, the soft-tissue modeller: CT segmentations do not contain these structures, so they are added as approximate shapes. This story: inside the bony canal, label the voxels between the thecal sac and the canal wall as epidural space; at each gap between two neighbouring laminae (the back wall of the canal between two levels) add a ligamentum flavum layer of a set thickness behind the epidural space; and if the volume has no thecal sac voxels at all, first model one as a tube down the middle of the canal. The numbers that shape it live in tools/anatomy/soft-tissue-params.json with \"reviewedByOwner\": false; only the owner changes that flag. The modeller changes tissue labels only, never the intensity (these structures are invisible on X-ray) and never a bone voxel. Tests run on the phantom with its modelled soft tissue removed (helper in tests/anatomy/: ligamentum flavum, epidural space, nerve root, artery, vein and joint-space voxels turned back into muscle; bone, disc, thecal sac and spinal cord kept). Plain TypeScript run in Node (no browser code); only Node's built-in modules, no new dependencies.",
+      "specRefs": [
+        "F1.4"
+      ],
+      "acceptance": [
+        "Unit test on the stripped phantom: after modelling, the straight midline line from the back to the front (PHANTOM_TEST_POINTS.midlineLine) crosses skin → muscle → ligamentum flavum → epidural space → thecal sac, in that order (the F0.4 check)",
+        "Unit test: with the thecal sac and cord also removed, a thecal sac is modelled inside the canal and the same midline order holds",
+        "Unit test: no bone voxel changed its label and the intensity volume is unchanged",
+        "Unit test: soft-tissue-params.json has reviewedByOwner false",
+        "Unit test: running the modeller twice gives the same result as running it once"
+      ],
+      "verify": "npx vitest run tests/anatomy/softTissueCanal.test.ts",
+      "zone": "anatomy",
+      "priority": 13,
+      "dependsOn": [
+        "F1-S12"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F1-S14",
+      "title": "Model the exiting nerve roots at every foramen",
+      "description": "Extend the soft-tissue modeller: for each foramen centre in the landmarks, on both sides, add a nerve-root tube that starts at the thecal sac, passes through the foramen centre and continues outward and slightly downward for a set length, with a set radius. It never replaces bone. The numbers that shape it live in tools/anatomy/soft-tissue-params.json with \"reviewedByOwner\": false; only the owner changes that flag. The modeller changes tissue labels only, never the intensity (these structures are invisible on X-ray) and never a bone voxel. Tests run on the phantom with its modelled soft tissue removed (helper in tests/anatomy/: ligamentum flavum, epidural space, nerve root, artery, vein and joint-space voxels turned back into muscle; bone, disc, thecal sac and spinal cord kept), with the phantom's landmarks. Plain TypeScript run in Node (no browser code); only Node's built-in modules, no new dependencies.",
+      "specRefs": [
+        "F1.4"
+      ],
+      "acceptance": [
+        "Unit test on the stripped phantom: every foramen in the landmarks has nerve-root voxels within 2 mm of its centre, on the left and on the right",
+        "Unit test: each nerve root touches (is within 1.5 mm of) the thecal sac at its inner end",
+        "Unit test: no bone voxel changed its label, and the midline order from F1-S13 still holds",
+        "Unit test: a level without a foramen centre gets no nerve root and causes no error"
+      ],
+      "verify": "npx vitest run tests/anatomy/softTissueNerves.test.ts",
+      "zone": "anatomy",
+      "priority": 14,
+      "dependsOn": [
+        "F1-S13"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F1-S15",
+      "title": "Model the facet joint spaces and the SI joint spaces",
+      "description": "Extend the soft-tissue modeller with joint spaces: non-bone voxels in a narrow gap (a set maximum width) between two DIFFERENT bones. Facet joints: between the bone of one vertebral level and the level directly below, only behind the canal and to its side (so the disc space between the bodies is not counted). SI joints: between sacrum and ilium, on both sides. The numbers that shape it live in tools/anatomy/soft-tissue-params.json with \"reviewedByOwner\": false; only the owner changes that flag. The modeller changes tissue labels only, never the intensity (these structures are invisible on X-ray) and never a bone voxel. Tests run on the phantom with its modelled soft tissue removed (helper in tests/anatomy/: ligamentum flavum, epidural space, nerve root, artery, vein and joint-space voxels turned back into muscle; bone, disc, thecal sac and spinal cord kept) for the facet joints, and on a small generated fixture (a 'sacrum' block and an 'ilium' block on each side with a narrow gap) for the SI joints. Plain TypeScript run in Node (no browser code); only Node's built-in modules, no new dependencies.",
+      "specRefs": [
+        "F1.4"
+      ],
+      "acceptance": [
+        "Unit test on the stripped phantom: joint-space voxels appear on both sides between the L4 and L5 articular pillars",
+        "Unit test: every joint-space voxel lies between two different bones — walking outward from it in opposite directions reaches bone of two different levels within the set width",
+        "Unit test: no voxel in the disc space between the two bodies becomes joint space",
+        "Unit test on the SI fixture: joint-space voxels appear between sacrum and ilium on both sides, and nowhere else",
+        "Unit test: no bone voxel changed its label"
+      ],
+      "verify": "npx vitest run tests/anatomy/softTissueJoints.test.ts",
+      "zone": "anatomy",
+      "priority": 15,
+      "dependsOn": [
+        "F1-S13"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F1-S16",
+      "title": "Model the segmental (radicular) arteries at lumbar levels",
+      "description": "Extend the soft-tissue modeller: at each lumbar level (L1–L5) with a foramen in the landmarks, on both sides, add a thin artery tube that runs around the side of the vertebral body and into the upper front part of the foramen, next to the nerve root. It never replaces bone or nerve root. This is the vessel that makes transforaminal injections risky, so its exact course is clinical content for the owner to review. The numbers that shape it live in tools/anatomy/soft-tissue-params.json with \"reviewedByOwner\": false; only the owner changes that flag. The modeller changes tissue labels only, never the intensity (these structures are invisible on X-ray) and never a bone voxel. Tests run on the phantom with its modelled soft tissue removed (helper in tests/anatomy/: ligamentum flavum, epidural space, nerve root, artery, vein and joint-space voxels turned back into muscle; bone, disc, thecal sac and spinal cord kept), with the phantom's landmarks. Plain TypeScript run in Node (no browser code); only Node's built-in modules, no new dependencies.",
+      "specRefs": [
+        "F1.4"
+      ],
+      "acceptance": [
+        "Unit test on the stripped phantom: the L4 foramen has modelled artery voxels within 4 mm of its centre on the left and on the right",
+        "Unit test: no bone and no nerve-root voxel changed its label",
+        "Unit test: levels outside L1–L5 get no modelled artery",
+        "Unit test: the checks of F1-S13, F1-S14 and F1-S15 still hold after all modelling steps are run together"
+      ],
+      "verify": "npx vitest run tests/anatomy/softTissueArteries.test.ts",
+      "zone": "anatomy",
+      "priority": 16,
+      "dependsOn": [
+        "F1-S14",
+        "F1-S15"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F1-S17",
+      "title": "Define the manifest and landmarks file formats, with validators and the size check",
+      "description": "Create src/anatomy/manifestFormat.ts (shared by the converter and the loader; plain TypeScript, validators written by hand, no schema library). The manifest (public/data/manifest.json) lists each region: name (cervical, thoracic or lumbosacral), the levels it covers, its file names (header, intensity, labels, levels, landmarks), size, voxel spacing, source dataset name, licence and attribution text. The landmarks file (<region>.landmarks.json) holds a Landmarks object (src/core/types.ts) and \"reviewedByOwner\": false. Add validators for both with clear messages, and a function that adds up a region's file sizes and checks the total is 25 MB or less. Commit public/data/manifest.json with an empty region list — the honest state until the real scans are converted with the owner (F1.7). Tests build their tiny input files in memory or in a temporary folder (never real CT data, nothing downloaded).",
+      "specRefs": [
+        "F1.5"
+      ],
+      "acceptance": [
+        "Unit test: a complete example manifest and the phantom's landmarks in file form pass their validators",
+        "Unit test: the validators reject a missing field, an unknown region name, an unknown level name, a point with a non-number coordinate, an empty attribution text, and a file name containing a path separator or '..'",
+        "Unit test: the size check passes at 25 MB and fails just above it",
+        "Unit test: the committed public/data/manifest.json is valid and lists no regions"
+      ],
+      "verify": "npx vitest run tests/anatomy/manifestFormat.test.ts",
+      "zone": "anatomy",
+      "priority": 17,
+      "dependsOn": [
+        "F1-S8",
+        "F1-S12"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F1-S18",
+      "title": "Make the converter run the modeller, write the landmarks file and update the manifest",
+      "description": "Extend tools/anatomy/convert.ts: after labelling, cropping and resampling, compute the landmarks and run the soft-tissue modeller, then write <region>.landmarks.json next to the region files and add or replace this region's entry in the output folder's manifest.json (other regions' entries stay; source dataset, licence and attribution come from source.json). The converter refuses to finish with an error if the region's files total more than 25 MB, telling the user to choose a larger voxel spacing. Loops only ever run this on generated fixtures in temporary folders — never write real or fixture regions into public/data/. Plain TypeScript run in Node (no browser code); only Node's built-in modules, no new dependencies. Tests build their tiny input files in memory or in a temporary folder (never real CT data, nothing downloaded).",
+      "specRefs": [
+        "F1.5",
+        "F1.4",
+        "F1.1"
+      ],
+      "acceptance": [
+        "Unit test: converting the generated fixture writes a manifest and a landmarks file that pass the validators from F1-S17, and every file the manifest names exists in the output folder",
+        "Unit test: converting a second region into the same output folder keeps the first region's manifest entry; converting the first again replaces its entry rather than adding a duplicate",
+        "Unit test: the manifest entry carries the source dataset name, licence and attribution text from source.json",
+        "Unit test: the written label volume contains modelled voxels (epidural space and nerve root) when the fixture has a canal and two vertebrae",
+        "Unit test: with a size limit lowered for the test, an over-size region makes the converter exit with a clear error"
+      ],
+      "verify": "npx vitest run tests/anatomy/convertManifest.test.ts tests/anatomy/convert.test.ts",
+      "zone": "anatomy",
+      "priority": 18,
+      "dependsOn": [
+        "F1-S9",
+        "F1-S16",
+        "F1-S17"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F1-S19",
+      "title": "Load a region in the browser with loadRegion(name)",
+      "description": "Create src/anatomy/loadRegion.ts and export it from src/anatomy/index.ts: listRegions() reads data/manifest.json and returns the regions it offers (an empty list if the manifest is missing or lists none); loadRegion(name) fetches the region's header, data and landmarks files, unpacks the gzipped data with the browser's built-in DecompressionStream (only if the bytes really start with the gzip signature — some web hosts unpack .gz files themselves), validates everything with the validators from F1-S8 and F1-S17, and returns { volume, landmarks } where volume matches the shared Volume type. The name 'phantom' returns the synthetic phantom and its landmarks without any download. The region name must be one the manifest lists (never build a URL from unchecked text). Failures (missing file, wrong length, invalid header) reject with a clear message. loadRegion does not touch the store; putting the result on screen through the region picker is the blocked story F1-S21. The fetch function is passed in or defaulted, so unit tests can supply files from memory. Screen tests serve a tiny generated region with Playwright's page.route (nothing is added to public/data/) and call loadRegion through the dev server's module, as tests/fixtures/simPage.ts does for the store. Tests build their tiny input files in memory or in a temporary folder (never real CT data, nothing downloaded).",
+      "specRefs": [
+        "F1.6"
+      ],
+      "acceptance": [
+        "Unit test (Node, files supplied from memory): loadRegion returns a volume with the header's region name, size, spacing, origin and identity orientation and exactly the written intensity, label and level values, plus the landmarks",
+        "Unit test: listRegions returns the manifest's regions, and an empty list for a missing manifest or one without regions",
+        "Unit test: loadRegion('phantom') returns the synthetic phantom; a name not in the manifest, a data file of the wrong length and an invalid header are each rejected with a clear message",
+        "Screen test (both set-ups): with a tiny region served by page.route, loadRegion in the page returns its size; after the test puts that volume in the store, window.__sim.getState().volume reports its region name and size, and a new image is drawn (the canvas is no longer blank)",
+        "Screen test (both set-ups): with the committed empty manifest, listRegions() in the page returns an empty list"
+      ],
+      "verify": "npx vitest run tests/anatomy/loadRegion.test.ts && npx playwright test tests/e2e/anatomy/loadRegion.spec.ts",
+      "zone": "anatomy",
+      "priority": 19,
+      "dependsOn": [
+        "F1-S17"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F1-S20",
+      "title": "Add the automatic check of the committed anatomy files",
+      "description": "Add a unit test file that checks whatever public/data/manifest.json lists, so it passes today (no regions) and guards the real data once the owner and an interactive session add it (F1.7): the manifest is valid; every file it names exists; each region's files total 25 MB or less and all regions together 100 MB or less; each region's header and landmarks are valid and the data files unpack to the right length; and at every landmark 'body centre' the label is bone and the level volume holds that landmark's level. The interactive F1.7 session adds the final assertion that all three regions are listed. Then run the whole check.",
+      "specRefs": [
+        "F1.7",
+        "F1.5"
+      ],
+      "acceptance": [
+        "Unit test: with the committed empty manifest the check passes",
+        "Unit test: the same checking functions, pointed at a region converted from the generated fixture in a temporary folder, pass; and they fail when a data file is deleted, when a landmark's body centre is moved into soft tissue, and when the size limit (lowered for the test) is exceeded",
+        "npm run check passes (lint, type check, unit tests, screen tests in both set-ups)",
+        "npm run build passes"
+      ],
+      "verify": "npx vitest run tests/anatomy/committedData.test.ts && npm run check && npm run build",
+      "zone": "anatomy",
+      "priority": 20,
+      "dependsOn": [
+        "F1-S18",
+        "F1-S19"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F1-S21",
+      "title": "Load the region chosen in the region picker",
+      "description": "When the learner chooses a region in the region picker, the anatomy zone loads it with loadRegion and puts the volume and landmarks in the store; the list the picker shows comes from listRegions. BLOCKED AT PLANNING: the picker lives in the carm zone (F3.7) and zones may only talk through src/core/, which has no shared place for the list of regions or for 'please load this region'.",
+      "specRefs": [
+        "F1.6",
+        "F3.7"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups): choosing a region from the region picker renders it, and window.__sim.getState().volume reports the loaded region's name and size"
+      ],
+      "verify": "npx playwright test tests/e2e/anatomy/regionPicker.spec.ts",
+      "zone": "anatomy",
+      "priority": 21,
+      "dependsOn": [
+        "F1-S19"
+      ],
+      "status": "blocked",
+      "attempts": 0,
+      "notes": "Blocked at planning (2026-11-10), not by a failed attempt. Needs (1) the owner's OK for a small shared-contract change in an interactive session — for example a store field regions: { name, title }[] filled by the anatomy zone and a bus event regionRequest (region name) emitted by the picker — and (2) F3's region picker (F3-S9) to be merged. Same blocker as F3-S10; do both together, then set to 'todo' or finish interactively."
+    },
+    {
+      "id": "F1-S22",
+      "title": "Convert and commit the three real regions (with the owner)",
+      "description": "Interactive session only, never a loop round: with the owner, choose the scan(s) from the TotalSegmentator dataset (CC BY 4.0), download them into data-raw/ (git-ignored), check the mask names against tools/anatomy/label-map.json, run npm run anatomy:convert for the cervical, thoracic and lumbosacral regions into public/data/, look at the images and the modelled soft tissue together, and commit the converted files. Add the assertion that the manifest lists all three regions to tests/anatomy/committedData.test.ts.",
+      "specRefs": [
+        "F1.7"
+      ],
+      "acceptance": [
+        "The manifest lists cervical, thoracic and lumbosacral, and every file it names exists",
+        "At every landmark 'body centre' the label is bone and the level matches the landmark's level",
+        "Each region is 25 MB or less and the total 100 MB or less",
+        "The owner has looked at each region in the app"
+      ],
+      "verify": "npx vitest run tests/anatomy/committedData.test.ts",
+      "zone": "anatomy",
+      "priority": 22,
+      "dependsOn": [
+        "F1-S20"
+      ],
+      "status": "blocked",
+      "attempts": 0,
+      "notes": "Blocked by design: needs the owner, network access and the real CT data (CLAUDE.md: downloading or converting the real dataset happens only in interactive sessions). Open points to settle in that session: which scan(s); whether the dataset's mask names match the mapping table; the voxel spacing that keeps each region under 25 MB; landmarks for C1, C2 and the sacrum."
+    }
+  ]
+}

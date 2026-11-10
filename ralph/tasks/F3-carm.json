@@ -1,0 +1,248 @@
+{
+  "feature": "F3",
+  "name": "C-arm, table and exposure",
+  "branch": "ralph/F3-carm",
+  "zone": "carm",
+  "dependsOnFeatures": [
+    "F0"
+  ],
+  "stories": [
+    {
+      "id": "F3-S1",
+      "title": "Add the pose limits and a function that clamps a pose to them",
+      "description": "Create src/carm/limits.ts with the allowed range of each pose value (F3.1): oblique −90…+90° (negative = left, positive = right, ±90° = lateral), tilt −40° (caudal) … +40° (cranial), table left/right ±200 mm, head/foot ±400 mm, height ±150 mm. Add clampPose(pose), which returns a pose with every value inside its range (a value that is not a finite number becomes 0), and a small function every later control uses to change the pose in the store through clampPose (e.g. changePose(store, patch)). Plain TypeScript, no browser code, no edits in src/core/.",
+      "specRefs": [
+        "F3.1"
+      ],
+      "acceptance": [
+        "Unit test: values inside the ranges are returned unchanged",
+        "Unit test: each of the five values is clamped at both ends (e.g. oblique 120 → 90, tilt −55 → −40, table left/right 500 → 200, head/foot −900 → −400, height 151 → 150)",
+        "Unit test: NaN and Infinity become 0",
+        "Unit test: changing the pose through the store function stores the clamped pose and a new pose object (so store subscribers are told)"
+      ],
+      "verify": "npx vitest run tests/carm/limits.test.ts",
+      "zone": "carm",
+      "priority": 1,
+      "dependsOn": [],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F3-S2",
+      "title": "Add a slider with a number readout for each of the five pose values",
+      "description": "In the C-arm panel add five sliders (<input type=\"range\">, step 1, ranges from limits.ts) with a label and a number readout each. Test ids: slider-oblique, slider-tilt, slider-table-left-right, slider-table-head-foot, slider-table-height, and readout-oblique … readout-table-height. Readouts show the signed number with its unit ('25°', '-10°', '15 mm'); the slider ends are labelled with their meaning (L / R, CAUD / CRAN, and so on). Moving a slider changes the pose in the store through the clamping function from F3-S1; the sliders and readouts also follow the store when the pose changes elsewhere. Moving a slider must NOT take an image. Add the zone's screen-test helper tests/e2e/carm/controls.ts (not a spec file) with a function that drags a slider handle: mouse drag in the desktop set-up, touch drag in the tablet set-up (Playwright has no built-in touch drag; a CDP session with Input.dispatchTouchEvent touchStart / touchMove / touchEnd works in Chromium). Layout: the C-arm panel is one quarter of the screen (F0 layout; about 500×370 px in the tablet set-up) and will hold five sliders, the Shot and Fluoro buttons, two counters, the region picker and a help button — keep rows compact and put small items side by side. Buttons and slider handles are at least 44×44 px (F12.3 checks this later); F12 owns the final layout.",
+      "specRefs": [
+        "F3.2"
+      ],
+      "acceptance": [
+        "Screen test (desktop: mouse drag; tablet: touch drag): dragging each of the five slider handles changes that value in window.__sim.getState().pose, and the readout shows the same number",
+        "Screen test (both set-ups): dragging a slider all the way to an end gives exactly the limit from F3.1",
+        "Screen test (both set-ups): changing the pose in the store (setPose from tests/fixtures/simPage.ts) moves the slider and its readout to the new value",
+        "Screen test (both set-ups): dragging a slider leaves the shot count unchanged",
+        "Screen test (both set-ups): all five sliders and the Shot button are visible without scrolling the page"
+      ],
+      "verify": "npx playwright test tests/e2e/carm/sliders.spec.ts",
+      "zone": "carm",
+      "priority": 2,
+      "dependsOn": [
+        "F3-S1"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F3-S3",
+      "title": "Add keyboard shortcuts that step each pose value",
+      "description": "Add keyboard shortcuts for the pose. Keep the key list in one file (src/carm/keymap.ts) so it is easy to change and so the help overlay (next story) can list it. Planning choice, the owner may change it (the spec does not name the keys; these avoid the keys reserved for the needle in F5 — W, S, Q, E, arrow keys — and Space and F): J / L = oblique left / right, I / K = tilt cranial / caudal, N / M = table toward the patient's right / left, U / O = table toward the head / feet, Y / H = table up / down. Match keys by their position (event.code), so other keyboard layouts work. Each press steps an angle by 1°, or by 5° with Shift held; table moves are always 5 mm. Results are clamped to the limits. Put the stepping in a plain function (pose, key, shift → new pose) for unit tests. Shortcuts follow the existing spacebar rules in src/carm/index.ts: ignored while the disclaimer is shown and while typing in a text field.",
+      "specRefs": [
+        "F3.2"
+      ],
+      "acceptance": [
+        "Unit test: each of the ten keys changes only its own value, in the documented direction, by 1° (angles) or 5 mm (table)",
+        "Unit test: with Shift an angle key steps 5°; a table key still steps 5 mm",
+        "Unit test: stepping past a limit stays at the limit",
+        "Screen test (desktop only; the tablet set-up has no keyboard and uses the sliders from F3-S2): pressing L three times and Shift+I once gives oblique +3 and tilt +5 in window.__sim.getState().pose, the readouts show the same, and the shot count is unchanged",
+        "Screen test (desktop only): the keys do nothing while the disclaimer is shown"
+      ],
+      "verify": "npx vitest run tests/carm/keymap.test.ts && npx playwright test tests/e2e/carm/shortcuts.spec.ts",
+      "zone": "carm",
+      "priority": 3,
+      "dependsOn": [
+        "F3-S2"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F3-S4",
+      "title": "Add the help overlay listing every keyboard shortcut",
+      "description": "Add a help overlay (test id help-overlay) that lists every shortcut: all pose keys from keymap.ts with their step sizes, Shift for 5°, Space = Shot, F = hold for Fluoro, ? = this help. Build the list from keymap.ts so it cannot go out of date. It opens with the ? key and with an on-screen '?' button (test id help-button), because the tablet has no keyboard; it closes with Escape, with ? again, or with its Close button (test id help-close). While it is open the pose shortcuts and the spacebar still follow their normal rules. Shortcuts follow the existing spacebar rules in src/carm/index.ts: ignored while the disclaimer is shown and while typing in a text field. Layout: the C-arm panel is one quarter of the screen (F0 layout; about 500×370 px in the tablet set-up) and will hold five sliders, the Shot and Fluoro buttons, two counters, the region picker and a help button — keep rows compact and put small items side by side. Buttons and slider handles are at least 44×44 px (F12.3 checks this later); F12 owns the final layout.",
+      "specRefs": [
+        "F3.2"
+      ],
+      "acceptance": [
+        "Screen test (desktop): pressing ? shows the overlay; pressing Escape hides it",
+        "Screen test (both set-ups; click on desktop, tap on tablet): the ? button shows the overlay and the Close button hides it",
+        "Screen test (both set-ups): the overlay text names every key in keymap.ts and also Space, F and ?",
+        "Screen test (desktop): the ? key does nothing while the disclaimer is shown",
+        "Screen test (both set-ups): the ? button is at least 44×44 px"
+      ],
+      "verify": "npx playwright test tests/e2e/carm/help.spec.ts",
+      "zone": "carm",
+      "priority": 4,
+      "dependsOn": [
+        "F3-S3"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F3-S5",
+      "title": "Show the shot count and fluoro time, and reset them when a new case starts",
+      "description": "In the C-arm panel always show the shot count (test id shot-count, a whole number) and the fluoro time (test id fluoro-time, seconds with one decimal, e.g. '0.0 s'), both read from the store and updated whenever it changes. When the bus emits 'caseStart', set both back to zero in the store. Put the reset in a plain function for the unit test. Register a read-only getter with registerDebugGetter('carm', …) so window.__sim.carm() returns { fluoroTimeSeconds, fluoroOn } (fluoroOn is false until F3-S7). No edits in src/core/. Layout: the C-arm panel is one quarter of the screen (F0 layout; about 500×370 px in the tablet set-up) and will hold five sliders, the Shot and Fluoro buttons, two counters, the region picker and a help button — keep rows compact and put small items side by side. Buttons and slider handles are at least 44×44 px (F12.3 checks this later); F12 owns the final layout.",
+      "specRefs": [
+        "F3.6",
+        "F3.3"
+      ],
+      "acceptance": [
+        "Unit test: after shots and fluoro time have been counted, a 'caseStart' event sets shot count and fluoro time to 0 and leaves the pose unchanged",
+        "Screen test (both set-ups): the counters show '0' and '0.0 s' at the start; after two images the shot count shows '2'",
+        "Screen test (both set-ups): after a 'caseStart' event (emitted through the dev server's store module, the same trick as setPose) both counters show zero again and window.__sim.getState().shotCount is 0",
+        "Screen test (both set-ups): window.__sim.carm() returns fluoroTimeSeconds 0 and fluoroOn false",
+        "Screen test (both set-ups): both counters are visible without scrolling the page"
+      ],
+      "verify": "npx vitest run tests/carm/counters.test.ts && npx playwright test tests/e2e/carm/counters.spec.ts",
+      "zone": "carm",
+      "priority": 5,
+      "dependsOn": [
+        "F3-S2"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F3-S6",
+      "title": "Add the continuous-fluoro logic (frames and time counting) as plain functions",
+      "description": "Create src/carm/fluoro.ts, plain TypeScript with the clock passed in (no browser code), so it is unit-testable: start(now), frame(now) and stop(now). While running, each frame records the current pose as the last image pose and emits one 'exposure' event (the renderer redraws on it); frames never change the shot count. The fluoro time in the store grows by the real time between start and stop, measured from the clock values — not by counting frames — so slow frames do not lose time. Starting twice or stopping when not running does nothing. A single shot (takeShot) keeps working as before.",
+      "specRefs": [
+        "F3.4",
+        "F3.6"
+      ],
+      "acceptance": [
+        "Unit test: start at t = 0, frames at 100 ms steps, stop at t = 2000 ms adds 2.0 s (within 0.05 s) to the fluoro time, whatever the number of frames",
+        "Unit test: every frame while running emits exactly one 'exposure' event and sets the last image pose to the pose at that moment; the shot count never changes",
+        "Unit test: a frame call when not running emits nothing; after stop, frames emit nothing",
+        "Unit test: a second start while running, or a stop when not running, changes nothing",
+        "Unit test: two separate holds add up (1.0 s + 0.5 s = 1.5 s)"
+      ],
+      "verify": "npx vitest run tests/carm/fluoro.test.ts",
+      "zone": "carm",
+      "priority": 6,
+      "dependsOn": [
+        "F3-S5"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F3-S7",
+      "title": "Run continuous fluoro while the F key or the on-screen Fluoro pedal is held",
+      "description": "Wire the fluoro logic to the controls: fluoro runs while the F key is held (key repeats ignored) or while the on-screen 'Fluoro' pedal button (test id fluoro-pedal) is held with the mouse or a finger. While running, draw one frame per animation frame (requestAnimationFrame) and show the growing fluoro time; the pedal shows it is active (aria-pressed) and window.__sim.carm().fluoroOn is true. Stop on key-up, pointer-up, pointer-cancel, when the pointer capture is lost, and when the window loses focus or the page is hidden — fluoro must never keep running by itself. The pedal uses pointer events with pointer capture and touch-action: none, and suppresses the long-press menu on tablets. Screen tests move the C-arm with this feature's own controls (a pose key on desktop; on tablet a second touch point on a slider while the first holds the pedal — a CDP session with Input.dispatchTouchEvent accepts several touch points). Shortcuts follow the existing spacebar rules in src/carm/index.ts: ignored while the disclaimer is shown and while typing in a text field. Layout: the C-arm panel is one quarter of the screen (F0 layout; about 500×370 px in the tablet set-up) and will hold five sliders, the Shot and Fluoro buttons, two counters, the region picker and a help button — keep rows compact and put small items side by side. Buttons and slider handles are at least 44×44 px (F12.3 checks this later); F12 owns the final layout.",
+      "specRefs": [
+        "F3.4"
+      ],
+      "acceptance": [
+        "Screen test (desktop): while F is held, changing the pose changes the canvas pixels (read with tests/fixtures/readCanvas.ts at the projected vertebra block centres and other fixed points) without any Shot; the shot count stays the same",
+        "Screen test (desktop): after releasing F, changing the pose again leaves those canvas pixels unchanged",
+        "Screen test (desktop): holding F for about 2 seconds adds that time to window.__sim.carm().fluoroTimeSeconds within 10%, and the fluoro-time counter shows the same value to one decimal",
+        "Screen test (tablet): the same three checks with the Fluoro pedal held by touch",
+        "Screen test (desktop): holding the pedal with the mouse button also runs fluoro, and releasing it stops it",
+        "Screen test (desktop): F does nothing while the disclaimer is shown",
+        "Screen test (both set-ups): the pedal is visible without scrolling the page and at least 44×44 px"
+      ],
+      "verify": "npx playwright test tests/e2e/carm/fluoro.spec.ts",
+      "zone": "carm",
+      "priority": 7,
+      "dependsOn": [
+        "F3-S6",
+        "F3-S3"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F3-S8",
+      "title": "Check last image hold: moving the C-arm without taking an image leaves the picture unchanged",
+      "description": "Add the screen test for F3.5. Take an image, record a fingerprint of the canvas (grey values at a fixed grid of points, read with tests/fixtures/readCanvas.ts), move the C-arm with the sliders (and, on desktop, with a pose key), and check the fingerprint is unchanged while window.__sim.getState().pose has changed and lastImagePose has not. Then take a new image and check the fingerprint does change. The behaviour should already hold; if it does not, fix it inside the carm zone.",
+      "specRefs": [
+        "F3.5",
+        "F3.3"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups): after moving oblique and tilt with the sliders, the canvas fingerprint equals the one before the move, pose differs from lastImagePose, and the shot count is unchanged",
+        "Screen test (both set-ups): one more Shot (spacebar on desktop, tap on tablet) raises the shot count by exactly 1, sets lastImagePose to the new pose and changes the fingerprint"
+      ],
+      "verify": "npx playwright test tests/e2e/carm/lastImageHold.spec.ts",
+      "zone": "carm",
+      "priority": 8,
+      "dependsOn": [
+        "F3-S2"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F3-S9",
+      "title": "Add the region picker, showing 'Phantom' on the phantom-only build",
+      "description": "Add a region picker to the C-arm panel: a drop-down (<select>, test id region-picker) that shows the region currently loaded in the store. On today's phantom-only build it lists exactly one entry, 'Phantom' (for the store volume whose region name is 'phantom'), and it is selected. Keep the list in a small plain function (region names in → picker entries out) so the blocked story F3-S10 can feed it the real regions later. Switching between real regions is NOT part of this story. Layout: the C-arm panel is one quarter of the screen (F0 layout; about 500×370 px in the tablet set-up) and will hold five sliders, the Shot and Fluoro buttons, two counters, the region picker and a help button — keep rows compact and put small items side by side. Buttons and slider handles are at least 44×44 px (F12.3 checks this later); F12 owns the final layout.",
+      "specRefs": [
+        "F3.7"
+      ],
+      "acceptance": [
+        "Unit test: the entries for a build with only the phantom are exactly [{ name: 'phantom', title: 'Phantom' }]",
+        "Screen test (both set-ups): the region picker is visible in the C-arm panel, has exactly one option with the text 'Phantom', and it is selected",
+        "Screen test (both set-ups): window.__sim.getState().volume.region is 'phantom'",
+        "npm run check passes"
+      ],
+      "verify": "npx vitest run tests/carm/regions.test.ts && npx playwright test tests/e2e/carm/regionPicker.spec.ts && npm run check",
+      "zone": "carm",
+      "priority": 9,
+      "dependsOn": [
+        "F3-S5"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F3-S10",
+      "title": "Let the region picker list the manifest's regions and switch between them",
+      "description": "The picker lists the regions the anatomy manifest offers and, when the learner picks one, the app loads it and the next image shows it. BLOCKED AT PLANNING: the picker lives in the carm zone and the loader (loadRegion, F1) in the anatomy zone, and zones may only talk through src/core/. Today there is no shared place for the list of regions or for 'please load this region'.",
+      "specRefs": [
+        "F3.7",
+        "F1.6"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups): with a manifest listing test regions, the picker shows one entry per region",
+        "Screen test (both set-ups): choosing a region loads it; window.__sim.getState().volume reports its name and size, and the next image shows it"
+      ],
+      "verify": "npx playwright test tests/e2e/carm/regionSwitch.spec.ts",
+      "zone": "carm",
+      "priority": 10,
+      "dependsOn": [
+        "F3-S9"
+      ],
+      "status": "blocked",
+      "attempts": 0,
+      "notes": "Blocked at planning (2026-11-10), not by a failed attempt. Needs (1) the owner's OK for a small shared-contract change in an interactive session — for example a store field regions: { name, title }[] filled by the anatomy zone and a bus event regionRequest (region name) emitted by the picker — and (2) F1's loader to be merged. Open question for the owner: should 'Phantom' stay in the list once real regions exist, and which region loads at start? After that, set this story (and F1-S21) to 'todo' or do it interactively."
+    }
+  ]
+}

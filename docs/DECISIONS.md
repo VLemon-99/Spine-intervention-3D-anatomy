@@ -2,6 +2,16 @@
 
 > One entry per meaningful choice, newest at the top. This stops future sessions and loop rounds from quietly undoing past decisions. Loop rounds don't edit this file — they record proposals in their progress log, and an interactive session adds them here after review.
 
+## 2026-11-10 — F1–F3 planning choices
+- **Decision:**
+  - **Display controls live in the fluoro panel (F2):** besides the Invert toggle the spec names, F2 adds magnification buttons (1×, 1.5×, 2×), four collimation sliders, and flip/rotate buttons.
+  - **Invert, flip and rotate act immediately** on the held image, with no new exposure and no change to the shot count. Magnification, collimation and noise belong to taking the image and apply from the next image. The renderer therefore keeps the image as taken and re-displays it.
+  - **The pose text on the image (F2.9) shows the pose the image on screen was taken with**, not the live C-arm pose.
+  - **One standard file layout:** the F1 converter always writes region files in the layout the phantom uses (voxel axes along patient left, back, head). The renderer and every other zone assume it and reject anything else.
+- **Why:** Asked during F1–F3 planning; the owner had no preference, so the recommended options were adopted. Learners can use everything the renderer can do; a learner should not have to spend a shot (radiation score) just to invert or flip the picture; text on a frozen image should describe that image; and standardising once in the converter keeps the needle, tissue, contrast and 3D-view code simple.
+- **Alternatives considered:** Invert as the only control; display changes from the next image; live pose text; every zone handling any stored layout.
+- **Revisit if:** The fluoro panel gets too crowded on tablets (F12.3), or a dataset cannot be brought into the standard layout (e.g. a strongly tilted scan).
+
 ## 2026-11-10 — F0 merge: image orientation, C-arm numbers, disclaimer wording
 - **Decision:**
   - **Image orientation:** at pose (0°, 0°) the image shows the patient's head at the top and the patient's right on the right of the screen, as seen from behind the prone patient's back (from the detector side). Both directions turn with the C-arm. Display flips and rotations (F2.7) are applied on top of this default.
