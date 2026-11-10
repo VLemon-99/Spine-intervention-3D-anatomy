@@ -1,9 +1,12 @@
 // C-arm and table controls, exposure, counters — F3.
 // mount() builds this zone's panel (carm-panel) with the Shot button and the
 // spacebar shortcut (F0.6, F3.3), the pose sliders, pose keys and help
-// overlay (F3.2). Fluoro and counters come later in F3.
+// overlay (F3.2), and the shot / fluoro-time counters (F3.6). Continuous
+// fluoro comes later in F3.
+import { registerDebugGetter } from '../core/debugRegistry';
 import { shortcuts } from '../core/shortcuts';
 import { bus, store } from '../core/store';
+import { buildCounters, resetCountersOnCaseStart } from './counters';
 import { buildHelp, carmShortcutEntries } from './help';
 import { changePose } from './limits';
 import { takeShot } from './shot';
@@ -54,10 +57,15 @@ export function mount(element: HTMLElement): void {
   const headerButtons = document.createElement('div');
   Object.assign(headerButtons.style, { display: 'flex', gap: '8px' });
   headerButtons.append(help.button, shotButton);
-  header.append(heading, headerButtons);
+  header.append(heading, buildCounters(store), headerButtons);
 
   panel.append(marker, header, buildSliders(store), help.overlay);
   element.append(panel);
+
+  // Counters reset when a new case starts (F3.6).
+  resetCountersOnCaseStart(store, bus);
+  // Read-only for screen tests: window.__sim.carm(). fluoroOn comes with F3-S7.
+  registerDebugGetter('carm', () => ({ fluoroTimeSeconds: store.get().fluoroTimeSeconds, fluoroOn: false }));
 
   // Spacebar = one shot. Ignored while the disclaimer is shown (so space can
   // still press 'I understand') and while typing in a text field.

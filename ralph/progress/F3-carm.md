@@ -38,3 +38,9 @@
 - Files touched: src/carm/help.ts, src/carm/index.ts, tests/e2e/carm/help.spec.ts, ralph/tasks/F3-carm.json, ralph/progress/F3-carm.md
 - Test result: verify 11 passed (3 desktop-only tests skipped on tablet); npm run check green (127 unit tests, 90 screen tests passed, 12 skipped by set-up).
 - Next round should know: The C-arm panel title is also 'C-arm', so tests looking for the overlay's 'C-arm' heading must scope to help-group. Header row now holds title, '?' and Shot.
+
+## Round — 2026-11-10 13:20 — F3-S5 — done
+- What I did: Added src/carm/counters.ts: resetCounters(store), resetCountersOnCaseStart(store, bus) (returns an unsubscribe), formatFluoroTime ('0.0 s'), buildCounters(store) with shot-count and fluoro-time outputs kept in step with the store. index.ts puts the counters in the header row (title · counters · ? · Shot), wires the caseStart reset, and registers registerDebugGetter('carm', …) returning { fluoroTimeSeconds, fluoroOn: false }.
+- Files touched: src/carm/counters.ts, src/carm/index.ts, tests/carm/counters.test.ts, tests/e2e/carm/counters.spec.ts, ralph/tasks/F3-carm.json, ralph/progress/F3-carm.md
+- Test result: verify 4 unit + 8 screen tests passed (both set-ups); npm run check green (131 unit tests, 98 screen tests passed, 12 skipped by set-up).
+- Next round should know: F3-S7 must replace the hard-coded fluoroOn: false in the 'carm' debug getter in src/carm/index.ts with the real running state. Screen tests emit bus events by importing '/src/core/store.ts' in page.evaluate (see emitCaseStart in counters.spec.ts).
