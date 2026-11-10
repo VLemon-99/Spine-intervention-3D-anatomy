@@ -6,7 +6,7 @@
 <!-- Reusable learnings for future rounds: gotchas, patterns, commands that work. After the feature is merged, an interactive session promotes the useful ones into CLAUDE.md. -->
 - NIfTI header numbers are 32-bit floats: compare affine/spacing values with `Math.fround(...)` or `toBeCloseTo`, never `toEqual` against plain decimals like 0.8.
 - Build NIfTI test files with `makeNifti` / `writeNifti` from `tests/anatomy/niftiFixture.ts` (path ending `.gz` gets gzipped; options for big-endian, slope/intercept, sform/qform, bad magic, fake 4-D, truncation).
-- `readNifti` returns the file's own axes and the NIfTI RAS+ affine (+x = patient right, +y = front). Our app frame is +x left, +y back — F1-S3 must convert (flip x and y) when reordering.
+- `readNifti` returns the file's own axes and the NIfTI RAS+ affine (+x = patient right, +y = front). Our app frame is +x left, +y back — `tools/anatomy/standardLayout.ts` does that conversion.
 
 ## Rounds
 <!--
@@ -28,3 +28,9 @@
 - Files touched: tools/anatomy/intensity.ts, tests/anatomy/intensity.test.ts, task file, this log.
 - Test result: verify 7/7 passed; `npm run check` green (110 unit tests, 46 screen tests passed).
 - Next round should know: the converter (F1-S9) should call `huVolumeToIntensity(niftiVolume.data, window)` after reordering; take a custom window via `makeHuWindow`. The loop's state file `.claude/ralph-loop.local.md` is listed in `.git/info/exclude` (local only) so it is never committed.
+
+## Round — 2026-11-10 13:14 — F1-S3 — done
+- What I did: plan + apply reordering from a NIfTI RAS affine to the standard layout (i left, j back, k head); origin is the app-frame position of output voxel (0,0,0); oblique (> 5°) scans rejected; 6 unit tests (four storage orders incl. RAS and LPS, corner voxel, per-axis spacing, 20°/1° tilt, shared plan for masks, length check).
+- Files touched: tools/anatomy/standardLayout.ts, tests/anatomy/standardLayout.test.ts, task file, this log.
+- Test result: verify 6/6 passed; `npm run check` green (116 unit tests, 46 screen tests passed).
+- Next round should know: plan once from the CT's size + affine, then `applyLayoutPlan(plan, maskData)` for every mask (check the masks have the same size first). A slightly tilted (≤ 5°) scan is snapped to the axes; the origin comes from the real affine.
