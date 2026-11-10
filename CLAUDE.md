@@ -63,3 +63,19 @@ If my request conflicts with these documents, point it out and ask before procee
 - Never copy text or images from textbooks into the app.
 - Every screen test must pass in both Playwright set-ups (`desktop` and `tablet`).
 - Only the app zone edits `src/app/main.ts`. Changes to `src/core/` are shared-file changes (see `docs/ARCHITECTURE.md`).
+
+### Tool versions (from F0)
+- Stay on TypeScript 6.0.x: typescript-eslint 8.72.x supports only TypeScript < 6.1. Move to TypeScript 7 only when typescript-eslint supports it (an interactive change to `package.json`).
+- `tsconfig.json` type-checks only the folders in its `include` list (`src`, `tests`, `tools`, `*.config.ts`). A new top-level code folder must be added there (a shared-file change).
+
+### Screen tests (from F0)
+- Never start `npm run dev` yourself in a loop round; Playwright's `webServer` starts the dev server.
+- After `page.goto('/')`, get past the disclaimer with `acceptDisclaimer(page)` from `tests/fixtures/acceptDisclaimer.ts` (clicks on desktop, taps on tablet).
+- `window.__sim` is installed asynchronously. Read it through `getSimState(page)` from `tests/fixtures/simPage.ts`, which waits for it; take an image with `takeImage(page)` (spacebar on desktop, tap on Shot on tablet).
+- `setPose(page, …)` in `tests/fixtures/simPage.ts` sets the C-arm pose directly through the store. It is a stop-gap until F3's real controls exist; once they do, new screen tests move the C-arm through the controls.
+- A test for one set-up only: `test.skip(({ hasTouch }) => hasTouch, 'desktop set-up only')` (or `!hasTouch` for tablet) inside a `describe`. Every behaviour still needs a test in both set-ups.
+- To see browser console errors (e.g. shader compile logs), use a throwaway spec with `page.on('console', …)` and delete it afterwards.
+
+### 3D graphics (from F0)
+- A Three.js `ShaderMaterial` with `glslVersion: GLSL3` has no `gl_FragColor`: declare `layout(location = 0) out highp vec4 outColor;` and write to that.
+- An 8-bit `Data3DTexture` whose width is not a multiple of 4 needs `texture.unpackAlignment = 1`, or the image is skewed.

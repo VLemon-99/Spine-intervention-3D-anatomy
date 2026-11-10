@@ -2,6 +2,15 @@
 
 > One entry per meaningful choice, newest at the top. This stops future sessions and loop rounds from quietly undoing past decisions. Loop rounds don't edit this file — they record proposals in their progress log, and an interactive session adds them here after review.
 
+## 2026-11-10 — F0 merge: image orientation, C-arm numbers, disclaimer wording
+- **Decision:**
+  - **Image orientation:** at pose (0°, 0°) the image shows the patient's head at the top and the patient's right on the right of the screen, as seen from behind the prone patient's back (from the detector side). Both directions turn with the C-arm. Display flips and rotations (F2.7) are applied on top of this default.
+  - **C-arm numbers** (typical mobile C-arm, in `src/core/geometry.ts`): source-to-detector 1000 mm, source-to-isocentre 650 mm, 300 mm square detector, 512×512 image (about a 195 mm field at the isocentre). Table offsets: left/right along x (+ = toward the patient's left), head/foot along z (+ = toward the head), height along y (+ = up, toward the back).
+  - **Disclaimer wording** (`src/app/disclaimer.ts`): "For training only — not for clinical use. This simulator approximates fluoroscopic images and needle behaviour for practice. Never use it to plan or guide treatment of a real patient."
+- **Why:** Proposed by the F0 loop and approved by the owner on 2026-11-10 after seeing the first image. The orientation matches looking at the patient's back; the numbers are the typical values chosen at F0 planning; the wording states the training-only limit plainly.
+- **Alternatives considered:** Patient's right on the screen's left (viewing from the front); matching one specific C-arm model.
+- **Revisit if:** Learners expect a different default monitor orientation, a specific C-arm model should be matched, or the About page (F12) needs longer legal text.
+
 ## 2026-11-09 — F0 story review fixes
 - **Decision:**
   - **Oblique sign:** positive oblique = right. The detector (above the prone patient's back) swings toward the patient's right side; at +90° the detector is on the patient's right and the source on the left.
