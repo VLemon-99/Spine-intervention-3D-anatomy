@@ -47,9 +47,9 @@
       "zone": "anatomy",
       "priority": 2,
       "dependsOn": [],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. tools/anatomy/intensity.ts: DEFAULT_HU_WINDOW {lower:-1000, upper:2000}, makeHuWindow(lower, upper) (validates), huToIntensity(hu, window?), huVolumeToIntensity(array, window?) -> Uint8Array. NaN HU maps to 0."
     },
     {
       "id": "F1-S3",
