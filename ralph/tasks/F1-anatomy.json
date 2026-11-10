@@ -212,9 +212,9 @@
       "dependsOn": [
         "F1-S3"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. src/anatomy/regionFormat.ts: REGION_FORMAT_VERSION 1, RegionHeader {formatVersion, region, size, spacing, origin, orientation (identity, as Vec3 list), files {intensity|labels|levels: {name, bytes}}}, validateRegionHeader -> string[], parseRegionHeader (throws), isValidRegionName, headerFileName, dataFileName. tools/anatomy/writeRegion.ts: writeRegion(folder, {region, size, spacing, origin, intensity, labels, levels}) -> {header, paths}."
     },
     {
       "id": "F1-S9",

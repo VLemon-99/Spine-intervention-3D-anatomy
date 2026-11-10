@@ -65,3 +65,9 @@
 - Files touched: tools/anatomy/resample.ts, tests/anatomy/resample.test.ts, task file, this log.
 - Test result: verify 6/6 passed; `npm run check` green (148 unit tests, 46 screen tests passed).
 - Next round should know: resample works on 8-bit intensity (after HU→8-bit). Crop before resampling to save time on real scans; both keep patient positions.
+
+## Round — 2026-11-10 13:26 — F1-S8 — done
+- What I did: region header type + hand-written validator (shared, no Node/browser code) and a Node writer (gzip level 9, header JSON last); 9 unit tests.
+- Files touched: src/anatomy/regionFormat.ts, tools/anatomy/writeRegion.ts, tests/anatomy/regionFormat.test.ts, task file, this log.
+- Test result: verify 9/9 passed; `npm run check` green (157 unit tests, 46 screen tests passed).
+- Next round should know: the validator also checks that each data file name is exactly `<region>.<kind>.bin.gz`. Header orientation is stored as three {x,y,z} objects, matching the shared Volume type, so the loader can copy it.
