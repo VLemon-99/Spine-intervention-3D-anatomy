@@ -93,9 +93,9 @@
       "dependsOn": [
         "F1-S3"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. tools/anatomy/label-map.json (status draft, reviewedByOwner false, entries [{mask, tissue, level?}]) and tools/anatomy/labels.ts: loadLabelMap(), validateLabelMap(obj) -> problems[], labelsFromMasks(ctSize, masks[{name,size,data}], map) -> {labels, ignored}. Ribs and other TotalSegmentator masks not in the table are ignored and reported (ribs have no LEVEL_CODES entry) - owner may want to review in F1.7."
     },
     {
       "id": "F1-S25",

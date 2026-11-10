@@ -7,6 +7,7 @@
 - NIfTI header numbers are 32-bit floats: compare affine/spacing values with `Math.fround(...)` or `toBeCloseTo`, never `toEqual` against plain decimals like 0.8.
 - Build NIfTI test files with `makeNifti` / `writeNifti` from `tests/anatomy/niftiFixture.ts` (path ending `.gz` gets gzipped; options for big-endian, slope/intercept, sform/qform, bad magic, fake 4-D, truncation).
 - `readNifti` returns the file's own axes and the NIfTI RAS+ affine (+x = patient right, +y = front). Our app frame is +x left, +y back — `tools/anatomy/standardLayout.ts` does that conversion.
+- Read JSON tables in tools/ with `readFileSync(new URL('./x.json', import.meta.url))` — tsconfig has no `resolveJsonModule`, so `import x from './x.json'` fails the type check (and tsconfig is a shared file).
 
 ## Rounds
 <!--
@@ -34,3 +35,9 @@
 - Files touched: tools/anatomy/standardLayout.ts, tests/anatomy/standardLayout.test.ts, task file, this log.
 - Test result: verify 6/6 passed; `npm run check` green (116 unit tests, 46 screen tests passed).
 - Next round should know: plan once from the CT's size + affine, then `applyLayoutPlan(plan, maskData)` for every mask (check the masks have the same size first). A slightly tilted (≤ 5°) scan is snapped to the axes; the origin comes from the real affine.
+
+## Round — 2026-11-10 13:16 — F1-S4 — done
+- What I did: draft label table (vertebrae C1–L5, vertebrae_S1/sacrum → sacrum, hip_left/right → ilium, spinal_cord → thecal sac, aorta/iliac arteries, IVC/iliac veins, back/hip muscles) with a validator, and labelsFromMasks (bone wins, then table order; unknown masks reported; size mismatch rejected); 8 unit tests.
+- Files touched: tools/anatomy/label-map.json, tools/anatomy/labels.ts, tests/anatomy/labels.test.ts, task file, this log.
+- Test result: verify 8/8 passed; `npm run check` green (124 unit tests, 46 screen tests passed).
+- Next round should know: masks count as "inside" when value > 0. labelsFromMasks paints lowest priority first so later (higher priority) masks overwrite. F1-S25 adds thresholds to the same JSON — keep validateLabelMap accepting extra fields. Ribs are not in the table (no level code for them).
