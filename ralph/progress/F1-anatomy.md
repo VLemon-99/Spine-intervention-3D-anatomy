@@ -129,3 +129,9 @@
 - Files touched: tools/anatomy/softTissue.ts, tools/anatomy/soft-tissue-params.json, tests/anatomy/softTissueJoints.test.ts (new), task file, this log.
 - Test result: verify 5/5 passed (first run: my new pelvis test's SI box was too tight at the gap's corners, where diagonal gaps are real; widened that test's box by 2 mm at the edges — test written this round); `npm run check` green (206 unit tests, 46 screen tests passed).
 - Next round should know: step order now sac → canal → nerve roots (if landmarks) → joints. Joint spaces replace only air/skin-fat/muscle, so roots and arteries painted earlier stay. F1-S16 adds arteries; put that step before joints or make sure it never overwrites nerve root.
+
+## Round — 2026-11-10 14:09 — F1-S16 — done
+- What I did: lumbar segmental artery step (beside the body → upper front of the foramen), params; 5 unit tests incl. all earlier modelling checks run together.
+- Files touched: tools/anatomy/softTissue.ts, tools/anatomy/soft-tissue-params.json, tests/anatomy/softTissueArteries.test.ts (new), task file, this log.
+- Test result: verify 5/5 passed; `npm run check` green (211 unit tests, 46 screen tests passed).
+- Next round should know: the modeller is complete: modelSoftTissue(vol, landmarks) = sac → canal → nerve roots → arteries → joints. Landmarks must be computed BEFORE modelling (they use bone + sac only), so F1-S18's order is: labels/levels → crop → resample → landmarks → modeller → write.

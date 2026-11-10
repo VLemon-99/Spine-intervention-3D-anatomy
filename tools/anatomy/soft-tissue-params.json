@@ -24,5 +24,13 @@
   "jointSpace": {
     "maxWidthMm": 4,
     "note": "Joint space = non-bone voxels in a straight gap at most this wide between two different bones: a vertebral level and the level directly below it (facet joints, only behind the front of the canal so disc spaces are not counted), or sacrum and ilium (SI joints). Gaps are measured along the volume axes and their diagonals."
+  },
+  "segmentalArtery": {
+    "radiusMm": 1,
+    "besideBodyMm": 3,
+    "foramenFrontMm": 2,
+    "foramenUpMm": 3,
+    "fallbackBodyHalfWidthMm": 15,
+    "note": "Lumbar levels L1–L5 only, each side with a foramen centre: a thin tube from beside the vertebral body (besideBodyMm outside its side wall, level with the body centre) around the side of the body to the upper front part of the foramen (foramenFrontMm in front of and foramenUpMm above the foramen centre). Never replaces bone or nerve root. Clinical content: the course is for the owner to review."
   }
 }

@@ -454,9 +454,9 @@
         "F1-S15",
         "F1-S26"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. softTissue.ts: modelSegmentalArteries(vol, labels, landmarks, params), run after the nerve roots and before the joints. L1-L5 only; per side with a foramen centre F: tube (segmentalArtery.radiusMm 1) from besideBodyMm (3) outside the body side wall (found by walking from the body centre along x; fallback 15 mm half-width) level with the body centre, to a midpoint, to F + (0, -foramenFrontMm 2, +foramenUpMm 3). Replaces only air/skin-fat/muscle/artery. CLINICAL: the course is a rough draft for the owner to review."
     },
     {
       "id": "F1-S17",

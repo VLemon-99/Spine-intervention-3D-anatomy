@@ -14,6 +14,13 @@ export interface SoftTissueParams {
   thecalSac: { radiusMm: number; minCanalAreaMm2: number };
   nerveRoot: { radiusMm: number; lengthBeyondForamenMm: number; downwardAngleDeg: number };
   jointSpace: { maxWidthMm: number };
+  segmentalArtery: {
+    radiusMm: number;
+    besideBodyMm: number;
+    foramenFrontMm: number;
+    foramenUpMm: number;
+    fallbackBodyHalfWidthMm: number;
+  };
 }
 
 const PARAMS_URL = new URL('./soft-tissue-params.json', import.meta.url);
@@ -31,6 +38,9 @@ export function loadSoftTissueParams(): SoftTissueParams {
   positive(p.thecalSac?.minCanalAreaMm2, 'thecalSac.minCanalAreaMm2');
   positive(p.nerveRoot?.radiusMm, 'nerveRoot.radiusMm');
   positive(p.jointSpace?.maxWidthMm, 'jointSpace.maxWidthMm');
+  for (const key of ['radiusMm', 'besideBodyMm', 'foramenFrontMm', 'foramenUpMm', 'fallbackBodyHalfWidthMm'] as const) {
+    positive(p.segmentalArtery?.[key], `segmentalArtery.${key}`);
+  }
   positive(p.nerveRoot?.lengthBeyondForamenMm, 'nerveRoot.lengthBeyondForamenMm');
   if (typeof p.nerveRoot?.downwardAngleDeg !== 'number' || Math.abs(p.nerveRoot.downwardAngleDeg) >= 90) {
     throw new Error('soft-tissue-params.json: nerveRoot.downwardAngleDeg must be a number between -90 and 90');
@@ -49,14 +59,17 @@ const SAC: ReadonlySet<number> = new Set([TISSUE.thecalSac, TISSUE.spinalCord]);
  * Runs every modelling step and returns a copy of the volume with new labels
  * (the intensity array is the same values, untouched). Steps, in order:
  * thecal sac (only if the volume has none), canal (epidural space +
- * ligamentum flavum), nerve roots (needs the landmarks' foramen centres),
- * joint spaces (facet and SI; needs the level volume).
+ * ligamentum flavum), nerve roots and lumbar segmental arteries (both need
+ * the landmarks), joint spaces (facet and SI; needs the level volume).
  */
 export function modelSoftTissue<T extends ModelInput>(vol: T, landmarks?: Landmarks, params: SoftTissueParams = loadSoftTissueParams()): T {
   const labels = vol.labels.slice();
   modelThecalSac(vol, labels, params);
   modelCanal(vol, labels, params);
-  if (landmarks) modelNerveRoots(vol, labels, landmarks, params);
+  if (landmarks) {
+    modelNerveRoots(vol, labels, landmarks, params);
+    modelSegmentalArteries(vol, labels, landmarks, params);
+  }
   modelJointSpaces(vol, labels, params);
   return { ...vol, labels };
 }
@@ -489,4 +502,48 @@ function canalFrontBySlice(vol: ModelInput, labels: Uint8Array): Int32Array | nu
     front[k] = front[best];
   }
   return front;
+}
+
+const LUMBAR: ReadonlySet<string> = new Set(['L1', 'L2', 'L3', 'L4', 'L5']);
+/** Labels a modelled artery may replace (never bone, nerve root or the canal's contents). */
+const ARTERY_MAY_REPLACE: ReadonlySet<number> = new Set([TISSUE.air, TISSUE.skinFat, TISSUE.muscle, TISSUE.artery]);
+
+/**
+ * Segmental (radicular) arteries at L1–L5: on each side with a foramen
+ * centre F, a thin tube from beside the vertebral body (level with its
+ * centre) around the body's side to the upper front part of the foramen.
+ */
+export function modelSegmentalArteries(vol: ModelInput, labels: Uint8Array, landmarks: Landmarks, params: SoftTissueParams): void {
+  const a = params.segmentalArtery;
+  for (const level of landmarks.levels) {
+    if (!LUMBAR.has(level.level)) continue;
+    for (const side of ['left', 'right'] as const) {
+      const f = level.foramenCentre?.[side];
+      if (!f) continue;
+      const sign = side === 'left' ? 1 : -1;
+      const c = level.bodyCentre;
+      const wallX = bodySideWallX(vol, labels, c, sign) ?? c.x + sign * a.fallbackBodyHalfWidthMm;
+      const outside = wallX + sign * a.besideBodyMm;
+      const target = { x: f.x, y: f.y - a.foramenFrontMm, z: f.z + a.foramenUpMm };
+      const path = [
+        { x: outside, y: c.y, z: c.z },
+        { x: outside, y: target.y - a.foramenFrontMm, z: (c.z + target.z) / 2 },
+        target,
+      ];
+      paintTube(vol, labels, path, a.radiusMm, TISSUE.artery, ARTERY_MAY_REPLACE);
+    }
+  }
+}
+
+/** x (mm) of the body's side wall: walk from the body centre along ±x while the voxels are bone. */
+function bodySideWallX(vol: ModelInput, labels: Uint8Array, c: Vec3, sign: number): number | undefined {
+  const { x: nx, y: ny, z: nz } = vol.size;
+  let i = Math.round((c.x - vol.origin.x) / vol.spacing.x);
+  const j = Math.round((c.y - vol.origin.y) / vol.spacing.y);
+  const k = Math.round((c.z - vol.origin.z) / vol.spacing.z);
+  if (i < 0 || j < 0 || k < 0 || i >= nx || j >= ny || k >= nz) return undefined;
+  const row = nx * (j + ny * k);
+  if (!isBone(labels[row + i])) return undefined;
+  while (i + sign >= 0 && i + sign < nx && isBone(labels[row + i + sign])) i += sign;
+  return vol.origin.x + i * vol.spacing.x;
 }
