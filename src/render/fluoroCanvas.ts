@@ -20,8 +20,9 @@ import { Color, WebGLRenderer } from 'three';
 import { IMAGE_SIZE_PX } from '../core/geometry';
 import { registerDebugGetter } from '../core/debugRegistry';
 import type { EventBus, Store } from '../core/store';
-import type { CArmPose } from '../core/types';
+import type { CArmPose, ImageKind } from '../core/types';
 import { createDrrGpu } from './drrGpu';
+import { noiseLevelFor } from './pipeline';
 import { cloneSettings, renderSettings, type RenderSettings, type SettingsStore } from './settings';
 
 /** How the image on screen was taken. */
@@ -30,6 +31,10 @@ export interface LastImage {
   settings: RenderSettings;
   /** Seed of the image's grain: the image counter since page load (1, 2, 3 …). */
   noiseSeed: number;
+  /** 'shot' or 'fluoro' (the store's lastImageKind at the exposure), or null if it was not set. */
+  kind: ImageKind | null;
+  /** The noise level the image was actually taken with: higher than the setting for a fluoro frame. */
+  noiseLevel: number;
 }
 
 const BLANK = new Color(0x000000);
@@ -50,9 +55,16 @@ export function createFluoroCanvas(
     lastImage: lastImage && { ...lastImage, pose: { ...lastImage.pose }, settings: cloneSettings(lastImage.settings) },
   }));
   bus.on('exposure', () => {
-    const { lastImagePose, pose } = store.get();
+    const { lastImagePose, lastImageKind, pose } = store.get();
     imageCount += 1;
-    lastImage = { pose: { ...(lastImagePose ?? pose) }, settings: cloneSettings(settings.get()), noiseSeed: imageCount };
+    const taken = cloneSettings(settings.get());
+    lastImage = {
+      pose: { ...(lastImagePose ?? pose) },
+      settings: taken,
+      noiseSeed: imageCount,
+      kind: lastImageKind,
+      noiseLevel: noiseLevelFor(lastImageKind, taken.noiseLevel),
+    };
   });
 
   const canvas = document.createElement('canvas');
@@ -96,14 +108,14 @@ export function createFluoroCanvas(
     const { volume } = store.get();
     if (volume && lastImage) {
       // Taken with the settings as they were at the exposure.
-      const { magnification, collimation, noiseLevel } = lastImage.settings;
+      const { magnification, collimation } = lastImage.settings;
       // Contrast belongs to taking the image: whatever is in the store now is in this image.
       drr.take(volume, lastImage.pose, {
         magnification,
         collimation,
         contrast: store.get().contrast,
         // Fresh grain for every image; a reloaded page repeats the same sequence of seeds.
-        noise: { seed: lastImage.noiseSeed, level: noiseLevel },
+        noise: { seed: lastImage.noiseSeed, level: lastImage.noiseLevel },
       });
       holding = true;
       display();

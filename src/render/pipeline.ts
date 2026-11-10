@@ -109,3 +109,15 @@ export function defaultNoiseLevel(kind: 'shot' | 'fluoro'): number {
  * about 40% through). A display number that F9 or the owner may tune.
  */
 export const EXTRA_ABSORPTION_PER_MM = 0.3;
+
+/**
+ * The noise level an image is actually taken with (F2.6). A single shot (or an
+ * image of unknown kind) uses the setting as it is. A continuous-fluoro frame
+ * is grainier: the setting × (default fluoro level ÷ default shot level), kept
+ * within 0…1.
+ */
+export function noiseLevelFor(kind: 'shot' | 'fluoro' | null, setting: number): number {
+  if (kind !== 'fluoro') return setting;
+  const ratio = DEFAULT_NOISE_LEVEL.fluoro / DEFAULT_NOISE_LEVEL.shot;
+  return Math.min(1, Math.max(0, setting * ratio));
+}

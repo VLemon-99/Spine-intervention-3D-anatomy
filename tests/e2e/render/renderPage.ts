@@ -1,13 +1,21 @@
 // Screen-test helpers of the render zone (not a spec file).
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import type { CArmPose } from '../../../src/core/types';
+import type { CArmPose, ImageKind } from '../../../src/core/types';
 import type { RenderSettings, RenderSettingsPatch } from '../../../src/render/settings';
 
 /** What window.__sim.render() returns. */
 export interface RenderInfo {
   settings: RenderSettings;
   /** The image on screen: how it was taken. null before the first image. */
-  lastImage: { pose: CArmPose; settings: RenderSettings; noiseSeed: number } | null;
+  lastImage: {
+    pose: CArmPose;
+    settings: RenderSettings;
+    noiseSeed: number;
+    /** 'shot', 'fluoro', or null if the store did not say. */
+    kind: ImageKind | null;
+    /** The noise level the image was actually taken with. */
+    noiseLevel: number;
+  } | null;
 }
 
 type RenderHook = { __sim: { render(): RenderInfo } };
@@ -121,4 +129,19 @@ export async function setContrast(page: Page, contrast: Uint8Array | null): Prom
     const { store } = (await import(/* @vite-ignore */ storeModule)) as typeof import('../../../src/core/store');
     store.set({ contrast: text === null ? null : Uint8Array.from(text, (character) => character.charCodeAt(0)) });
   }, packed);
+}
+
+/**
+ * Make one continuous-fluoro frame of the current pose, the way the C-arm
+ * zone does it (F3): set lastImagePose and lastImageKind 'fluoro' in the
+ * store, then emit 'exposure' — through the app's own store module as served
+ * by the dev server. Test-only; it does not count as a shot.
+ */
+export async function takeFluoroFrame(page: Page): Promise<void> {
+  await page.evaluate(async () => {
+    const storeModule = '/src/core/store.ts';
+    const { store, bus } = (await import(/* @vite-ignore */ storeModule)) as typeof import('../../../src/core/store');
+    store.set({ lastImagePose: { ...store.get().pose }, lastImageKind: 'fluoro' });
+    bus.emit('exposure');
+  });
 }

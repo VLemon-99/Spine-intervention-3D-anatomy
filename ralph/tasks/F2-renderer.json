@@ -485,9 +485,9 @@
       "dependsOn": [
         "F2-S13"
       ],
-      "status": "blocked",
+      "status": "done",
       "attempts": 0,
-      "notes": "BLOCKED 2026-11-10 — waits for F2-S13, which needs the owner's decision (see F2-S13's notes). This story adds more grain for fluoro frames on screen and cannot start before the grain itself (F2-S13) is in the on-screen image. Nothing else stands in its way. TO UNBLOCK: after F2-S13 is unblocked, set this story back to 'todo' as well. Earlier note: Unblocked at the 2026-11-10 story review: the shared contract now has store.lastImageKind (src/core/store.ts); takeShot already sets 'shot', and F3-S6 sets 'fluoro' for fluoro frames."
+      "notes": "Done 2026-11-10 (interactive session, after F2-S13 was unblocked). The rule is noiseLevelFor(kind, setting) in src/render/pipeline.ts."
     },
     {
       "id": "F2-S20",

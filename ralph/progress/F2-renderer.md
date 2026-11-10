@@ -45,6 +45,7 @@
 - Things laid over the picture (the pose text; F7's and F10's overlays later): `imageArea` is `position: relative`; `createPoseReadout` in `src/render/poseReadout.ts` places an absolutely positioned element at `canvas.offsetLeft/offsetTop` and re-places it with a `ResizeObserver`. Use `pointer-events: none` so taps reach the canvas.
 - GPU grain = CPU grain: the shader runs the same mulberry32 sum as `src/core/random.ts` on unsigned integers (state = seed × 262144 + pixel index + 0x6D2B79F5), so `renderDrrCpu(..., { noise: { seed: lastImage.noiseSeed, level } })` matches the canvas to well under 1 grey level.
 - Measuring grain on the phantom: use a strip of 3 columns × 61 rows around the projection of (30, 0, 0) (`softTissueSpread` in `tests/e2e/render/noise.spec.ts`); along the rows the phantom is uniform there, across the columns it changes by about 1 grey level per pixel.
+- Fluoro frames in screen tests: `takeFluoroFrame(page)` in `tests/e2e/render/renderPage.ts` (sets `lastImagePose` + `lastImageKind: 'fluoro'` and emits `exposure`; not a shot). `window.__sim.render().lastImage` now also has `kind` and `noiseLevel` (the level actually used).
 
 ## Rounds
 <!--
@@ -181,3 +182,9 @@
 - Files touched: `src/render/drrGpu.ts`, `src/render/fluoroCanvas.ts`, `src/render/settings.ts`, `tests/render/settings.test.ts` (the approved line + its import), `tests/e2e/render/noise.spec.ts` (new), this log, the task file.
 - Test result: verify command passed (16 new screen tests; all render screen tests, none of the earlier ones edited). `npm run check` passed: lint + types clean, 166 unit tests, 176 screen tests passed and 6 skipped (one-set-up-only tests).
 - Next round should know: `TakeOptions.noise = { seed, level }`. F2-S21 only has to change which level is passed for a fluoro frame.
+
+## Round — 2026-11-10 21:55 — F2-S21 — done (interactive session)
+- What I did: Added `noiseLevelFor(kind, setting)` to `pipeline.ts` (a fluoro frame uses setting × default fluoro ÷ default shot, capped at 1; a shot or unknown kind uses the setting). `fluoroCanvas.ts` reads `store.lastImageKind` at the exposure, takes the image with that level and reports `{ kind, noiseLevel }` in `lastImage`. Added the `takeFluoroFrame` test helper. No edits in `src/core/` or `src/carm/`.
+- Files touched: `src/render/pipeline.ts`, `src/render/fluoroCanvas.ts`, `tests/render/noiseLevel.test.ts` (new), `tests/e2e/render/fluoroNoise.spec.ts` (new), `tests/e2e/render/renderPage.ts`, this log, the task file.
+- Test result: verify command passed (6 unit tests, 6 new screen tests, all render screen tests). `npm run check` passed: lint + types clean, 172 unit tests, 182 screen tests passed and 6 skipped (one-set-up-only tests).
+- Next round should know: only F2-S20 (the all-settings check) is left.
