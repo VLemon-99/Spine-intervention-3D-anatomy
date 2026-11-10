@@ -26,9 +26,9 @@
       "zone": "all",
       "priority": 1,
       "dependsOn": [],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-09. Added @types/node (exact) and @eslint/js (exact) beyond the listed deps: @types/node lets tests and configs read files with node:fs under the type check; @eslint/js supplies the recommended base rules for the flat config. TypeScript is 6.0.3, not 7.x, because typescript-eslint 8.72.1 supports only TypeScript < 6.1."
     },
     {
       "id": "F0-S2",
@@ -51,9 +51,9 @@
       "dependsOn": [
         "F0-S1"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-09. Screen tests live in tests/e2e/app/smoke.spec.ts. Chromium launch flags: --use-angle=swiftshader --enable-unsafe-swiftshader --ignore-gpu-blocklist; WebGL2 works in both set-ups."
     },
     {
       "id": "F0-S3",
@@ -74,9 +74,9 @@
       "dependsOn": [
         "F0-S1"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-09. Added dev dependency tsx 4.23.15 (exact). tsconfig.json include now has tools/ so tools/anatomy/convert.ts is type-checked; ESLint already lints the whole repo."
     },
     {
       "id": "F0-S4",
@@ -108,9 +108,9 @@
       "dependsOn": [
         "F0-S1"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-09. Choices for the owner/reviewer to check in types.ts: points are {x,y,z} objects (Vec3); level codes in Landmarks/TissueEvent are strings ('L4'), with numeric ids only in the level volume (LEVEL_IDS: C1=1 … L5=24, sacrum=25, ilium=26); table offsets: tableLeftRight along x (+ = patient's left), tableHeadFoot along z (+ = head), tableHeight along y (+ = up/posterior) — F0-S8 should follow this; NeedleState.hubAngles is {pitch, yaw} relative to the down-the-beam start direction; bevelAngle is the hub notch clock angle (0 = 12 o'clock); AttemptRecord is a union: quiz records cannot carry procedureId/shots/fluoroTimeSeconds; unsafe is on both kinds; TissueEvent.compartment uses ContrastCompartment (epidural, intrathecal, intraArticular, softTissue, intravascular)."
     },
     {
       "id": "F0-S5",
@@ -135,9 +135,9 @@
       "dependsOn": [
         "F0-S4"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-09. 'None' is null in the store. The contrast absorption volume is a Uint8Array on the volume's grid (8-bit, like the other volumes); F9/F2 may need to revisit precision in an interactive session. src/core/store.ts exports createStore/createEventBus plus the app's shared instances store and bus."
     },
     {
       "id": "F0-S6",
@@ -163,9 +163,9 @@
       "dependsOn": [
         "F0-S4"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-09. Phantom is 95³ voxels of 1 mm, centred on the origin (voxel centres on whole mm, −47…+47). Upper block (L4) is entirely at z > 0, lower block (L5) at z < 0. Full layout is documented at the top of src/core/phantom.ts. Intensity is all zero until F0-S7."
     },
     {
       "id": "F0-S7",
@@ -194,9 +194,9 @@
       "dependsOn": [
         "F0-S6"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-09. Intensity is one 8-bit value per tissue (air 0, skin/fat 70, muscle 90, cancellous 170, cortical 230, others 75–100). Landmarks come from createPhantomLandmarks(); endplate normals point away from the body (superior +z, inferior −z)."
     },
     {
       "id": "F0-S8",
@@ -223,9 +223,9 @@
         "F0-S5",
         "F0-S6"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-09. Constants: source-to-detector 1000 mm, source-to-isocentre 650 mm, 300 mm square detector, 512×512 image (≈195 mm field at the isocentre). Image orientation choice for owner review: at pose (0°, 0°) image up = head and image right = patient's right (seen from behind the prone patient's back, from the detector side); display flips are F2.7. Tilt is applied before oblique."
     },
     {
       "id": "F0-S9",
@@ -246,9 +246,9 @@
       "dependsOn": [
         "F0-S2"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-09. Other zones check the disclaimer with isDisclaimerShown() from src/app/disclaimer.ts, or the attribute data-disclaimer=\"shown\" on <html> (no import needed). Disclaimer wording is drafted; the owner may want to review it."
     },
     {
       "id": "F0-S10",
@@ -274,9 +274,9 @@
         "F0-S7",
         "F0-S9"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-09. Layout: src/app/index.ts mount() builds a 2×2 grid of slots (fluoro, carm, needle, view3d) plus a hidden slot for zones without a panel; main.ts hands each slot to its zone's mount(). Panels are covered by the disclaimer overlay until accepted. F12.3 owns the real layout (portrait stacking, 44 px targets)."
     },
     {
       "id": "F0-S11",
@@ -300,9 +300,9 @@
         "F0-S5",
         "F0-S10"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-09. getState() returns { pose, shotCount, lastImagePose, volume: { region, size } | null } as a structuredClone copy. Zones call registerDebugGetter(name, getter) from src/core/debugRegistry.ts; the value appears as window.__sim.<name>() (copied). main.ts installs the hook with a dynamic import inside if (import.meta.env.DEV)."
     },
     {
       "id": "F0-S12",
@@ -329,9 +329,9 @@
       "dependsOn": [
         "F0-S11"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-09. takeShot(store, bus) in src/carm/shot.ts. The spacebar handler reads <html data-disclaimer=\"shown\"> (no import from src/app/), ignores keys while typing in text fields, ignores key repeats, and calls preventDefault on space keydown and keyup so the page does not scroll and a focused button does not fire a second shot. Desktop-only/tablet-only screen tests are skipped in the other set-up (6 skipped)."
     },
     {
       "id": "F0-S13",
@@ -353,9 +353,9 @@
         "F0-S10",
         "F0-S12"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-09. src/render/fluoroCanvas.ts: Three.js WebGLRenderer with preserveDrawingBuffer on a 512×512 canvas (fluoro-canvas); black until the first exposure, flat grey fill on each 'exposure'. tests/fixtures/readCanvas.ts copies the canvas into a 2D canvas and returns mean-RGB grey values; (x, y) are geometry.ts pixel positions (y from the top). The production build now warns that the bundle is over 500 kB (Three.js); the build still passes."
     },
     {
       "id": "F0-S14",
@@ -379,9 +379,9 @@
         "F0-S8",
         "F0-S13"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-09. src/render/drrGpu.ts: Data3DTexture (R8, nearest, unpackAlignment 1) + GLSL3 ShaderMaterial on a full-screen quad; rays built from createProjection(pose) exactly like geometry.ts; 0.5 mm march; dark (0.1) if any intensity > 0, else light (0.9). Assumes identity volume orientation (true for the phantom). Screen tests set the pose through the dev server's store module (tests/fixtures/simPage.ts setPose) because C-arm controls come in F3. The four corner rays miss the phantom's box entirely at the default pose (≈195 mm field vs 95 mm phantom), so 'only air' holds trivially; the unit test also checks the centre ray hits tissue so the sampler is proven to work."
     },
     {
       "id": "F0-S15",
@@ -401,9 +401,9 @@
       "dependsOn": [
         "F0-S14"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-09. Shader sums intensity/255 × ABSORPTION_PER_MM (0.025 per mm) × step along each ray; grey = exp(−total). Bone dark, soft tissue grey, air white (255). ABSORPTION_PER_MM is a display setting in src/render/drrGpu.ts that F2 can tune."
     }
   ]
 }
