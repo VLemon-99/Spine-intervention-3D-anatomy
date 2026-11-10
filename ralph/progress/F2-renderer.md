@@ -19,6 +19,8 @@
 - Fluoro panel layout: `src/render/index.ts` has a row (`body`) with the picture on the left and `createControls` (`src/render/controls.ts`, test id `fluoro-controls`) as a wrapping column on the right. New buttons go into that column; `createToggle(...)` builds an on/off button that follows the settings. On the tablet the panel is about 500×370 px and the picture about 325 px square, so roughly 110 px of width is free for controls before the picture starts to shrink.
 - Screen-test helpers for controls in `tests/e2e/render/renderPage.ts`: `press(page, testId)` (click on desktop, tap on tablet) and `expectOnScreen(page, locator)` (inside the window with the page not scrolled; returns the box for the 44 px check).
 - To look at the layout, a throwaway spec with `page.screenshot(...)` into the scratchpad works (delete the spec afterwards); never start the dev server by hand.
+- Magnification: `detectorPosition(pixel, m)` in `pipeline.ts` is step 1. A patient point appears at image pixel `centre + (project(point) − centre) × m`. `bodyWidth(pose, m)` in `tests/render/magnification.test.ts` measures the upper vertebra body's dark band along its row with 512 single rays (fast) — the same idea works on a canvas row for the GPU stories.
+- Pose (0°, 0°): the source is under the table, so a NEGATIVE `tableHeight` moves the anatomy closer to the source (larger picture).
 
 ## Rounds
 <!--
@@ -58,3 +60,9 @@
 - Files touched: `src/render/controls.ts` (new), `src/render/index.ts`, `tests/e2e/render/invertToggle.spec.ts` (new), `tests/e2e/render/renderPage.ts` (helpers `press`, `expectOnScreen`), this log, the task file.
 - Test result: verify command passed (8 screen tests). `npm run check` passed: lint + types clean, 113 unit tests, 78 screen tests passed and 6 skipped (one-set-up-only tests).
 - Next round should know: the button is 64×44 px minimum. Its test also checks that the picture stays at least 200 px and that the button does not lie on top of it — later control stories should keep that true (the collimation sliders will probably need the fold-out group).
+
+## Round — 2026-11-10 13:18 — F2-S6 — done
+- What I did: Added `options.magnification` (1, 1.5 or 2; anything else throws) to `renderDrrCpu` and `transmissionAt`, as step 1: `detectorPosition(pixel, m)` in `pipeline.ts`. Moved the list `MAGNIFICATIONS` and the `Magnification` type into `pipeline.ts` (settings.ts re-exports them) so there is one list.
+- Files touched: `src/render/pipeline.ts`, `src/render/drrCpu.ts`, `src/render/settings.ts`, `tests/render/magnification.test.ts` (new), this log, the task file.
+- Test result: verify command passed (6 unit tests). `npm run check` passed: lint + types clean, 119 unit tests, 78 screen tests passed and 6 skipped (one-set-up-only tests).
+- Next round should know: the GPU image does not use magnification yet (F2-S7): add a uniform and apply the same formula to the pixel position before building the ray, in the shader that TAKES the image.

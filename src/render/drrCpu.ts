@@ -3,18 +3,27 @@
 // A slow but simple version of the GPU image (drrGpu.ts), in plain TypeScript
 // with no browser code, so unit tests can check the maths and screen tests can
 // compare the GPU image with it. It follows the ORDER OF STEPS at the top of
-// pipeline.ts; so far step 2 (absorption, without the extra volume) and step 5
-// (invert).
+// pipeline.ts; so far step 1 (magnification), step 2 (absorption, without the
+// extra volume) and step 5 (invert).
 //
 // Sampling is the same as in the GPU shader: the ray is clipped to the
 // volume's box, samples are taken at entry + (i + 0.5) × step, and each sample
 // reads the nearest voxel.
 import { IMAGE_SIZE_PX, createProjection, type Pixel, type Projection } from '../core/geometry';
 import type { CArmPose, Vec3, Volume } from '../core/types';
-import { ABSORPTION_PER_MM, MARCH_STEP_MM, MAX_MARCH_STEPS } from './pipeline';
+import {
+  ABSORPTION_PER_MM,
+  MAGNIFICATIONS,
+  MARCH_STEP_MM,
+  MAX_MARCH_STEPS,
+  detectorPosition,
+  type Magnification,
+} from './pipeline';
 
 /** Options of the CPU reference. Later F2 stories add to this. */
 export interface DrrCpuOptions {
+  /** Step 1: 1, 1.5 or 2 (default 1). Structures appear this much larger around the image centre. */
+  magnification?: Magnification;
   /** Display step 5: value → 1 − value (more absorption = lighter). */
   invert?: boolean;
 }
@@ -86,12 +95,21 @@ function march(volume: Volume, projection: Projection, pixel: Pixel): number {
   return Math.exp(-total);
 }
 
+/** The magnification to use; anything but 1, 1.5 or 2 is an error. */
+function magnificationOf(options: DrrCpuOptions): Magnification {
+  const m = options.magnification ?? 1;
+  if (!MAGNIFICATIONS.includes(m)) {
+    throw new Error(`Unsupported magnification ${String(m)}: it must be 1, 1.5 or 2.`);
+  }
+  return m;
+}
+
 /** The display steps that change a pixel's value (step 5, invert). */
 const display = (value: number, options: DrrCpuOptions): number => (options.invert ? 1 - value : value);
 
 /**
  * Fraction of the X-rays (0…1) that gets through the volume along the ray of
- * one image pixel position (e.g. { x: 255.5, y: 255.5 } for the centre of
+ * one image pixel position (after magnification; e.g. { x: 255.5, y: 255.5 } for the centre of
  * pixel (255, 255)), shown inverted if options.invert is set. For checking
  * single rays quickly.
  */
@@ -102,19 +120,22 @@ export function transmissionAt(
   options: DrrCpuOptions = {},
 ): number {
   assertStandardLayout(volume);
-  return display(march(volume, projection, pixel), options);
+  const magnification = magnificationOf(options);
+  return display(march(volume, projection, detectorPosition(pixel, magnification)), options);
 }
 
 /** The whole 512×512 reference image of `volume` at `pose`. */
 export function renderDrrCpu(volume: Volume, pose: CArmPose, options: DrrCpuOptions = {}): DrrImage {
   assertStandardLayout(volume);
+  const magnification = magnificationOf(options);
   const projection = createProjection(pose);
   const width = IMAGE_SIZE_PX;
   const height = IMAGE_SIZE_PX;
   const data = new Float32Array(width * height);
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
-      data[x + width * y] = display(march(volume, projection, { x: x + 0.5, y: y + 0.5 }), options);
+      const onDetector = detectorPosition({ x: x + 0.5, y: y + 0.5 }, magnification);
+      data[x + width * y] = display(march(volume, projection, onDetector), options);
     }
   }
   return { width, height, data };

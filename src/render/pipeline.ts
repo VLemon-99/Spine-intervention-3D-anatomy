@@ -26,6 +26,8 @@
 // Each later F2 story switches on one of these steps; this file gains the
 // numbers they need (EXTRA_ABSORPTION_PER_MM, NO_SIGNAL, noise levels).
 
+import { IMAGE_SIZE_PX, type Pixel } from '../core/geometry';
+
 /** Distance between samples along each ray, mm (half a phantom voxel). */
 export const MARCH_STEP_MM = 0.5;
 
@@ -38,3 +40,19 @@ export const ABSORPTION_PER_MM = 0.025;
 
 /** Most samples taken along one ray (the GPU shader's fixed loop limit). */
 export const MAX_MARCH_STEPS = 4096;
+
+/** The magnification settings on offer. */
+export const MAGNIFICATIONS = [1, 1.5, 2] as const;
+export type Magnification = (typeof MAGNIFICATIONS)[number];
+
+/**
+ * Step 1: the detector position that image pixel position `pixel` looks at,
+ * at magnification m. Structures appear m times larger around the image centre.
+ */
+export function detectorPosition(pixel: Pixel, magnification: number): Pixel {
+  const centre = IMAGE_SIZE_PX / 2;
+  return {
+    x: centre + (pixel.x - centre) / magnification,
+    y: centre + (pixel.y - centre) / magnification,
+  };
+}

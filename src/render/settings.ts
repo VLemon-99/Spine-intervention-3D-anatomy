@@ -9,7 +9,9 @@
 // The settings live in a small store that belongs to the render zone; the
 // app uses the one shared instance `renderSettings`.
 
-export type Magnification = 1 | 1.5 | 2;
+import { MAGNIFICATIONS, type Magnification } from './pipeline';
+
+export { MAGNIFICATIONS, type Magnification };
 export type Rotation = 0 | 90 | 180 | 270;
 
 /** Each shutter: the percentage of the field it covers from that edge, 0–50. */
@@ -40,7 +42,6 @@ export type RenderSettingsPatch = Partial<Omit<RenderSettings, 'collimation'>> &
   collimation?: Partial<Collimation>;
 };
 
-export const MAGNIFICATIONS: readonly Magnification[] = [1, 1.5, 2];
 export const ROTATIONS: readonly Rotation[] = [0, 90, 180, 270];
 export const COLLIMATION_MAX_PERCENT = 50;
 const EDGES = ['left', 'right', 'top', 'bottom'] as const;

@@ -147,9 +147,9 @@
       "dependsOn": [
         "F2-S1"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. The formula lives in detectorPosition(pixel, m) in pipeline.ts; the list of allowed magnifications (MAGNIFICATIONS) moved there too and settings.ts re-exports it."
     },
     {
       "id": "F2-S7",
