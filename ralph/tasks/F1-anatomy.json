@@ -241,9 +241,9 @@
         "F1-S7",
         "F1-S8"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. Logic in tools/anatomy/convertCore.ts (USAGE, readSourceInfo, convertFolder(in, out) -> ConvertReport {source, header, files, ignoredMasks, missingLevels}, formatReport, runConvertCli(args, out) -> exit code); tools/anatomy/convert.ts only calls runConvertCli. Output folder must already exist; files are written to a .partial-* scratch folder inside it and moved into place only when everything succeeded. Masks must match the CT size and affine. For F1.7: readNifti keeps a Float32 copy of each mask, so a full-size real CT with ~100 masks is read one mask at a time (each turned into 0/1 bytes straight away) — watch memory on very large scans."
     },
     {
       "id": "F1-S10",

@@ -8,6 +8,8 @@
 - Build NIfTI test files with `makeNifti` / `writeNifti` from `tests/anatomy/niftiFixture.ts` (path ending `.gz` gets gzipped; options for big-endian, slope/intercept, sform/qform, bad magic, fake 4-D, truncation).
 - `readNifti` returns the file's own axes and the NIfTI RAS+ affine (+x = patient right, +y = front). Our app frame is +x left, +y back — `tools/anatomy/standardLayout.ts` does that conversion.
 - Read JSON tables in tools/ with `readFileSync(new URL('./x.json', import.meta.url))` — tsconfig has no `resolveJsonModule`, so `import x from './x.json'` fails the type check (and tsconfig is a shared file).
+- ESLint here has `preserve-caught-error`: when re-throwing inside a `catch`, pass `{ cause: e }` to `new Error(...)`.
+- Converter logic is in `tools/anatomy/convertCore.ts` so tests can call `runConvertCli(args, { log, error })` without spawning a process; `convert.ts` just sets `process.exitCode`.
 
 ## Rounds
 <!--
@@ -71,3 +73,9 @@
 - Files touched: src/anatomy/regionFormat.ts, tools/anatomy/writeRegion.ts, tests/anatomy/regionFormat.test.ts, task file, this log.
 - Test result: verify 9/9 passed; `npm run check` green (157 unit tests, 46 screen tests passed).
 - Next round should know: the validator also checks that each data file name is exactly `<region>.<kind>.bin.gz`. Header orientation is stored as three {x,y,z} objects, matching the shared Volume type, so the loader can copy it.
+
+## Round — 2026-11-10 13:30 — F1-S9 — done
+- What I did: real converter (source.json checks, ct + segmentations reading, standard layout, HU window, labels/levels, crop, resample, write via scratch folder then move, report); convert.ts reduced to the CLI entry; 9 unit tests incl. a full fixture compared voxel by voxel against hand-worked expectations.
+- Files touched: tools/anatomy/convertCore.ts (new), tools/anatomy/convert.ts, tests/anatomy/convert.test.ts, task file, this log.
+- Test result: verify 9/9 passed (convert-cli.test.ts untouched and passing); first `npm run check` failed lint (preserve-caught-error) — fixed; then green (165 unit tests, 46 screen tests passed).
+- Next round should know: ConvertReport.source carries sourceDataset/licence/attribution for the manifest (F1-S18). F1-S18 should add the modeller and landmarks between labels and writing, inside convertFolder.
