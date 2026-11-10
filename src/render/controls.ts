@@ -1,7 +1,7 @@
 // The display controls of the fluoro panel (docs/SPEC.md F2.3–F2.7): compact
 // buttons beside the canvas that change the render settings. So far: Invert
-// the magnification buttons (1×, 1.5×, 2×) and the four collimation sliders
-// (in a fold-out group, closed at first, to save space).
+// Rotate, the magnification buttons (1×, 1.5×, 2×), Flip ↔ and Flip ↕, and the
+// four collimation sliders (in a fold-out group, closed at first, to save space).
 //
 // Rules for every control here (F12 owns the final layout):
 // - at least 44×44 px, so it can be tapped on a tablet;
@@ -12,6 +12,7 @@
 import {
   COLLIMATION_MAX_PERCENT,
   MAGNIFICATIONS,
+  ROTATIONS,
   type Collimation,
   type RenderSettings,
   type SettingsStore,
@@ -143,16 +144,66 @@ export function createControls(parent: HTMLElement, settings: SettingsStore): HT
     minHeight: '0',
   });
 
-  controls.append(
+  /** A row of buttons that share the column's width equally. */
+  const row = (label: string, ...buttons: HTMLElement[]): HTMLElement => {
+    const group = document.createElement('div');
+    group.setAttribute('role', 'group');
+    group.setAttribute('aria-label', label);
+    Object.assign(group.style, { display: 'flex', gap: '4px' });
+    for (const button of buttons) Object.assign(button.style, { flex: '1 1 0', minWidth: '44px', padding: '0 2px' });
+    group.append(...buttons);
+    return group;
+  };
+
+  const invert = createToggle(
+    settings,
+    'invert-toggle',
+    'Invert',
+    'Swap light and dark (no new image needed)',
+    (s) => s.invert,
+    () => settings.set({ invert: !settings.get().invert }),
+  );
+
+  // Rotate: each press turns the picture 90° clockwise (270° wraps to 0°); it shows the angle.
+  const rotate = document.createElement('button');
+  rotate.type = 'button';
+  rotate.dataset.testid = 'rotate-button';
+  rotate.title = 'Turn the picture 90° clockwise (no new image needed)';
+  Object.assign(rotate.style, BUTTON_STYLE, { background: '#f2f4f7', color: '#10151c', lineHeight: '16px' });
+  const rotateAngle = document.createElement('span');
+  rotateAngle.style.display = 'block';
+  rotate.append('Rotate', rotateAngle);
+  const showAngle = (s: Readonly<RenderSettings>): void => {
+    rotateAngle.textContent = `${s.rotation}°`;
+  };
+  showAngle(settings.get());
+  settings.subscribe(showAngle);
+  rotate.addEventListener('click', () => {
+    const next = ROTATIONS[(ROTATIONS.indexOf(settings.get().rotation) + 1) % ROTATIONS.length];
+    settings.set({ rotation: next });
+  });
+
+  const flips = row(
+    'Flip the picture',
     createToggle(
       settings,
-      'invert-toggle',
-      'Invert',
-      'Swap light and dark (no new image needed)',
-      (s) => s.invert,
-      () => settings.set({ invert: !settings.get().invert }),
+      'flip-horizontal',
+      'Flip ↔',
+      'Mirror the picture left-right (no new image needed)',
+      (s) => s.flipHorizontal,
+      () => settings.set({ flipHorizontal: !settings.get().flipHorizontal }),
+    ),
+    createToggle(
+      settings,
+      'flip-vertical',
+      'Flip ↕',
+      'Mirror the picture up-down (no new image needed)',
+      (s) => s.flipVertical,
+      () => settings.set({ flipVertical: !settings.get().flipVertical }),
     ),
   );
+
+  controls.append(row('Invert and rotate', invert, rotate));
 
   // Magnification: three buttons in a row; the one in use is pressed. It takes
   // effect on the next image.
@@ -172,7 +223,7 @@ export function createControls(parent: HTMLElement, settings: SettingsStore): HT
     Object.assign(button.style, { minWidth: '44px', padding: '0 2px' });
     magnification.append(button);
   }
-  controls.append(magnification, ...createCollimationGroup(settings));
+  controls.append(magnification, flips, ...createCollimationGroup(settings));
   parent.append(controls);
   return controls;
 }

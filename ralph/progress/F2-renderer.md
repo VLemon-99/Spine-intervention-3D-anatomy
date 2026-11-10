@@ -38,6 +38,7 @@
 - Image directions at pose (0°, 0°): the patient's LEFT (+x) is on the LEFT half of the image (x < 256), the head (+z) at the top. A small blob's shadow has only a few different values, so follow a whole image (`expectMoved` in `tests/render/orientation.test.ts`), not one "unique" pixel.
 - The "mean difference ≤ 3% (7.65 grey levels)" limit is LOOSE on the phantom, because most of the picture is air: a picture with the wrong orientation is only about 7.5 off, with the wrong magnification or shutters somewhat more. A correct GPU image is about 0.05 off. So in every CPU-match test also demand something stricter (e.g. the canvas at least four times closer than the wrong picture would be), and use exact pixel checks where possible.
 - For orientation tests use a pose whose picture is not symmetric (e.g. oblique 30, tilt 15, tableLeftRight 20, tableHeadFoot −15); at the default pose the phantom is nearly left-right symmetric and a missing flip could go unnoticed.
+- Controls column rows are now: [Invert | Rotate], [1× | 1.5× | 2×], [Flip ↔ | Flip ↕], [Collimation], and the slider group when open. `row(label, ...buttons)` in `createControls` builds a row of equal-width buttons. With the slider group open this fills the tablet panel's height almost completely — any further control needs a different place (F12 owns the final layout).
 
 ## Rounds
 <!--
@@ -138,3 +139,9 @@
 - Files touched: `src/render/drrGpu.ts`, `src/render/fluoroCanvas.ts`, `tests/e2e/render/orientation.spec.ts` (new), this log, the task file.
 - Test result: verify command passed (16 new screen tests; all render screen tests) after I reworked a safety check in my own new test (it compared with the 7.65 limit a difference that is really 7.5; the renderer was right). `npm run check` passed: lint + types clean, 153 unit tests, 130 screen tests passed and 6 skipped (one-set-up-only tests).
 - Next round should know: no flip/rotate buttons yet (F2-S16) — see the Lessons entry on the controls column: put the three buttons in ONE row.
+
+## Round — 2026-11-10 17:11 — F2-S16 — done
+- What I did: Added the buttons Flip ↔ (`flip-horizontal`), Flip ↕ (`flip-vertical`), both with `aria-pressed`, and Rotate (`rotate-button`, +90° clockwise per press, wraps to 0°, shows the angle). They change the settings, so the picture changes at once. Rotate moved into the first row beside Invert to save height.
+- Files touched: `src/render/controls.ts`, `tests/e2e/render/orientationButtons.spec.ts` (new), this log, the task file.
+- Test result: verify command passed (10 screen tests). `npm run check` passed: lint + types clean, 153 unit tests, 140 screen tests passed and 6 skipped (one-set-up-only tests).
+- Next round should know: the Invert button is now half the column wide (68 px), still at least 44×44 px; all earlier control tests pass unchanged.
