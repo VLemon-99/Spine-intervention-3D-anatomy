@@ -245,9 +245,9 @@
         "F2-S9",
         "F2-S7"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. With Invert on the covered area is uniformly white (Invert comes after collimation in the order of steps) — see the F2-S9 note."
     },
     {
       "id": "F2-S11",

@@ -26,6 +26,8 @@
 - The controls column is now about 140 px wide (the row of three 44 px magnification buttons). A group of buttons in a row: a `<div role="group">` with `display: flex` inside the column. `bodyWidthOnCanvas(page, m)` in `tests/e2e/render/magnificationButtons.spec.ts` measures a structure's width on the canvas.
 - Collimation rule: `isCollimated(x, y, collimation)` in `pipeline.ts` (whole pixel numbers). A pixel is covered when its distance from an edge, in pixels, is less than percent / 100 × 512. For `{ left: 20, right: 10, top: 30, bottom: 0 }` the open rectangle is columns 103…459 and rows 154…511. In the shader use the same test on `floor(gl_FragCoord)`-style whole pixel numbers BEFORE the magnification step changes px/py.
 - Invert after collimation: inverted covered pixels are 1 − NO_SIGNAL = white, still perfectly uniform.
+- GPU collimation: the shutter widths are worked out in TypeScript (percent / 100 × 512, the same sum as `isCollimated`) and sent as pixels in `uShutterPx`; the shader tests whole pixel numbers and returns `uNoSignal` early, before any marching. Later steps of taking the image (noise) must stay AFTER that early return so covered pixels get none.
+- ESLint (`no-useless-assignment`) rejects `let { a, b } = …` when one of them is re-assigned but not read again; use two separately named results instead.
 
 ## Rounds
 <!--
@@ -89,3 +91,9 @@
 - Files touched: `src/render/pipeline.ts`, `src/render/drrCpu.ts`, `src/render/settings.ts`, `tests/render/collimation.test.ts` (new), this log, the task file.
 - Test result: verify command passed (8 unit tests). `npm run check` passed: lint + types clean, 127 unit tests, 92 screen tests passed and 6 skipped (one-set-up-only tests).
 - Next round should know: the GPU image does not collimate yet (F2-S10). Proposal for the owner (not decided): with Invert on, the covered area is white because Invert comes after collimation in the documented order of steps.
+
+## Round — 2026-11-10 13:33 — F2-S10 — done
+- What I did: The shader that takes the image now applies the four shutters exactly as the CPU reference does (covered pixels = `NO_SIGNAL`, decided before the ray is marched). `fluoroCanvas.ts` passes the shutters remembered for the exposure, so changing them shows on the next image only.
+- Files touched: `src/render/drrGpu.ts`, `src/render/fluoroCanvas.ts`, `tests/e2e/render/collimation.spec.ts` (new), this log, the task file.
+- Test result: verify command passed (10 new screen tests; all 78 render screen tests). First `npm run check` failed on one lint error in the new test file (an unused re-assignment); fixed, then it passed: lint + types clean, 127 unit tests, 102 screen tests passed and 6 skipped (one-set-up-only tests).
+- Next round should know: no sliders yet (F2-S11). `coveredAndOpen(canvas)` in `collimation.spec.ts` shows how to check that covered pixels have one single value.

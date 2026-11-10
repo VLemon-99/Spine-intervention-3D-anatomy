@@ -94,8 +94,9 @@ export function createFluoroCanvas(
   bus.on('exposure', () => {
     const { volume } = store.get();
     if (volume && lastImage) {
-      // Taken with the settings as they were at the exposure (magnification).
-      drr.take(volume, lastImage.pose, { magnification: lastImage.settings.magnification });
+      // Taken with the settings as they were at the exposure.
+      const { magnification, collimation } = lastImage.settings;
+      drr.take(volume, lastImage.pose, { magnification, collimation });
       holding = true;
       display();
     } else {

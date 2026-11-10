@@ -33,12 +33,20 @@ import {
   ShaderMaterial,
   UnsignedByteType,
   Vector3,
+  Vector4,
   WebGLRenderTarget,
   type WebGLRenderer,
 } from 'three';
 import { IMAGE_SIZE_PX, createProjection } from '../core/geometry';
 import type { CArmPose, Vec3, Volume } from '../core/types';
-import { ABSORPTION_PER_MM, MARCH_STEP_MM, MAX_MARCH_STEPS, type Magnification } from './pipeline';
+import {
+  ABSORPTION_PER_MM,
+  MARCH_STEP_MM,
+  MAX_MARCH_STEPS,
+  NO_SIGNAL,
+  type Collimation,
+  type Magnification,
+} from './pipeline';
 
 export { ABSORPTION_PER_MM, MARCH_STEP_MM };
 
@@ -61,6 +69,9 @@ const fragmentShader = /* glsl */ `
   uniform float uPixelSize;
   uniform float uImageSize;
   uniform float uMagnification;
+  // Shutter widths in pixels, from each edge: left, right, top, bottom.
+  uniform vec4 uShutterPx;
+  uniform float uNoSignal;
   uniform vec3 uBoxMin;
   uniform vec3 uBoxMax;
   uniform float uStep;
@@ -72,6 +83,16 @@ const fragmentShader = /* glsl */ `
     // Pixel position in geometry.ts terms: x from the left, y from the TOP.
     float px = gl_FragCoord.x;
     float py = uImageSize - gl_FragCoord.y;
+    // Step 4, collimation (decided first, so covered pixels are not marched):
+    // a pixel is covered when its whole-pixel distance from an edge is less
+    // than that shutter's width. Covered pixels get the fixed no-signal value.
+    float column = floor(px);
+    float row = floor(py);
+    float last = uImageSize - 1.0;
+    if (column < uShutterPx.x || last - column < uShutterPx.y || row < uShutterPx.z || last - row < uShutterPx.w) {
+      outColor = vec4(vec3(uNoSignal), 1.0);
+      return;
+    }
     float half_ = uImageSize * 0.5;
     // Step 1, magnification: the pixel looks at centre + (p - centre) / m.
     px = half_ + (px - half_) / uMagnification;
@@ -129,6 +150,7 @@ const toVector3 = (v: Vec3): Vector3 => new Vector3(v.x, v.y, v.z);
 /** The settings that belong to taking the image. */
 export interface TakeOptions {
   magnification: Magnification;
+  collimation: Collimation;
 }
 
 /** The display settings the display step uses. */
@@ -157,6 +179,8 @@ export function createDrrGpu(renderer: WebGLRenderer): DrrGpu {
       uPixelSize: { value: 1 },
       uImageSize: { value: IMAGE_SIZE_PX },
       uMagnification: { value: 1 },
+      uShutterPx: { value: new Vector4() },
+      uNoSignal: { value: NO_SIGNAL },
       uBoxMin: { value: new Vector3() },
       uBoxMax: { value: new Vector3() },
       uStep: { value: MARCH_STEP_MM },
@@ -216,6 +240,10 @@ export function createDrrGpu(renderer: WebGLRenderer): DrrGpu {
       u.uPixelSize!.value = projection.pixelSizeMm;
       u.uImageSize!.value = projection.width;
       u.uMagnification!.value = options.magnification;
+      // The same sum as isCollimated() in pipeline.ts: percent / 100 × image size.
+      const shutterPx = (percent: number): number => (percent / 100) * projection.width;
+      const { left, right, top, bottom } = options.collimation;
+      u.uShutterPx!.value = new Vector4(shutterPx(left), shutterPx(right), shutterPx(top), shutterPx(bottom));
       // The box spans from the outer face of the first voxel to that of the last.
       u.uBoxMin!.value = new Vector3(origin.x - spacing.x / 2, origin.y - spacing.y / 2, origin.z - spacing.z / 2);
       u.uBoxMax!.value = new Vector3(
