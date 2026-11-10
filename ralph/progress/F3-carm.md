@@ -26,3 +26,9 @@
 - Files touched: src/carm/sliders.ts, src/carm/index.ts, tests/e2e/carm/controls.ts, tests/e2e/carm/sliders.spec.ts, ralph/tasks/F3-carm.json, ralph/progress/F3-carm.md
 - Test result: verify 30/30 passed (both set-ups); npm run check green (93 unit tests, 76 screen tests passed, 6 skipped by set-up).
 - Next round should know: Slider rows are 44 px tall with a 2 px gap; header row 44 px. Roughly 80 px of the tablet panel (~372 px tall) is left for counters, pedal, region picker and help button — put those side by side in the header or one extra row. Range inputs have touch-action: none.
+
+## Round — 2026-11-10 13:15 — F3-S3 — done
+- What I did: Added src/carm/keymap.ts with POSE_KEYS (code, label, field, sign, kind, action) for J/L, I/K, N/M, U/O, Y/H, stepSize() and stepPose(pose, code, shift) (clamped; null for non-pose keys). Wired a keydown listener in src/carm/index.ts: same rules as the spacebar (disclaimer, typing), ignores Ctrl/Alt/Meta combinations, key repeat keeps stepping, goes through changePose.
+- Files touched: src/carm/keymap.ts, src/carm/index.ts, tests/carm/keymap.test.ts, tests/e2e/carm/shortcuts.spec.ts, ralph/tasks/F3-carm.json, ralph/progress/F3-carm.md
+- Test result: verify 34 unit + 3 desktop screen tests passed (3 skipped on tablet by design); npm run check green (127 unit tests, 79 screen tests passed, 9 skipped by set-up).
+- Next round should know: The help overlay (F3-S4) can build its 'C-arm' group from POSE_KEYS (label + action) and stepSize(). stepPose returns CArmPose | null, so tests need ?. before indexing (tsc strict).

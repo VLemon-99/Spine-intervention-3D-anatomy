@@ -3,7 +3,9 @@
 // spacebar shortcut (F0.6, F3.3) and the pose sliders (F3.2). Fluoro and
 // counters come later in F3.
 import { bus, store } from '../core/store';
+import { changePose } from './limits';
 import { takeShot } from './shot';
+import { stepPose } from './keymap';
 import { buildSliders } from './sliders';
 
 /** True while the training disclaimer is on screen (set by the app zone on <html>). */
@@ -62,5 +64,17 @@ export function mount(element: HTMLElement): void {
   window.addEventListener('keyup', (event) => {
     if (!isSpace(event) || disclaimerShown() || isTyping(event.target)) return;
     event.preventDefault();
+  });
+
+  // Pose keys (src/carm/keymap.ts): same rules as the spacebar. Keys with
+  // Ctrl, Alt or Meta are left to the browser (e.g. Ctrl+L). Holding a key
+  // repeats the step.
+  window.addEventListener('keydown', (event) => {
+    if (event.ctrlKey || event.altKey || event.metaKey) return;
+    if (disclaimerShown() || isTyping(event.target)) return;
+    const next = stepPose(store.get().pose, event.code, event.shiftKey);
+    if (!next) return;
+    event.preventDefault();
+    changePose(store, next);
   });
 }
