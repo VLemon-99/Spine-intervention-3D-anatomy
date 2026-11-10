@@ -92,3 +92,9 @@
 - Files touched: tools/anatomy/landmarks.ts, tests/anatomy/landmarks.test.ts, tests/anatomy/pelvisFixture.ts (new), task file, this log.
 - Test result: verify 11/11 passed; `npm run check` green (176 unit tests, 46 screen tests passed).
 - Next round should know: pelvis fixture is 121×81×111 voxels (1 mm, origin (−60, −40, −70)); building it takes well under a second. Its S1 SAP pillars top out at z −4 (tips (±15, 18, −4)); L5's pillars run −2…23 (facet gap z −3). findLevelParts skips a level whose pedicles can't be found on both sides.
+
+## Round — 2026-11-10 13:43 — F1-S12 — done
+- What I did: superior articular process tips and the whole Landmarks object (computeLandmarks); 3 new unit tests (phantom tips vs truth, tips on own-level bone on phantom + pelvis fixture, complete object), earlier 11 unchanged.
+- Files touched: tools/anatomy/landmarks.ts, tests/anatomy/landmarks.test.ts, task file, this log.
+- Test result: verify 14/14 passed; `npm run check` green (179 unit tests, 46 screen tests passed).
+- Next round should know: F1-S23 extends computeLandmarks with optional `sacrum` and `iliacCrest` and a report (e.g. return { landmarks, report } from a new function, keeping computeLandmarks' current return so earlier tests stay unchanged). canalBeside/CanalBox can be reused for the sacrum's canal.

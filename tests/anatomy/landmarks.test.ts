@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { isBone, LEVEL_IDS, TISSUE } from '../../src/core/labels';
 import { createPhantom, createPhantomLandmarks } from '../../src/core/phantom';
 import type { Vec3, Volume } from '../../src/core/types';
-import { findBodyLandmarks, findLevelParts } from '../../tools/anatomy/landmarks';
+import { computeLandmarks, findBodyLandmarks, findLevelParts } from '../../tools/anatomy/landmarks';
 import { createPelvisFixture, PELVIS_TRUTH } from './pelvisFixture';
 
 const phantom = createPhantom();
@@ -137,5 +137,57 @@ describe('findLevelParts: pedicles and foramina', () => {
       expect(isBone(pelvis.labels[voxelAt(pelvis, f!)])).toBe(false);
       expect(dist(l5.pedicleCentre[side], PELVIS_TRUTH.l5.pedicleCentre[side])).toBeLessThanOrEqual(3);
     }
+  });
+});
+
+describe('superior articular process tips and the whole Landmarks object', () => {
+  const landmarks = computeLandmarks(phantom);
+
+  it('puts the L4 and L5 superior articular process tips within 3 mm of the phantom’s', () => {
+    for (const level of ['L4', 'L5'] as const) {
+      const got = landmarks.levels.find((l) => l.level === level)!;
+      const want = truth.levels.find((l) => l.level === level)!;
+      for (const side of ['left', 'right'] as const) {
+        expect(
+          dist(got.superiorArticularProcessTip[side], want.superiorArticularProcessTip[side]),
+          `${level} ${side}`,
+        ).toBeLessThanOrEqual(3);
+      }
+    }
+  });
+
+  it('keeps every tip in or within 1.5 mm of a bone voxel of its own level', () => {
+    for (const vol of [phantom, createPelvisFixture()]) {
+      for (const l of computeLandmarks(vol).levels) {
+        for (const side of ['left', 'right'] as const) {
+          const p = l.superiorArticularProcessTip[side];
+          let nearest = Infinity;
+          for (let v = 0; v < vol.labels.length; v++) {
+            if (vol.levels![v] !== LEVEL_IDS[l.level] || !isBone(vol.labels[v])) continue;
+            const i = v % vol.size.x;
+            const j = Math.floor(v / vol.size.x) % vol.size.y;
+            const k = Math.floor(v / (vol.size.x * vol.size.y));
+            const q = { x: vol.origin.x + i, y: vol.origin.y + j, z: vol.origin.z + k };
+            nearest = Math.min(nearest, dist(p, q));
+          }
+          expect(nearest, `${vol.region} ${l.level} ${side}`).toBeLessThanOrEqual(1.5);
+        }
+      }
+    }
+  });
+
+  it('gives the complete Landmarks object: region name, L4 then L5, and every required field', () => {
+    expect(landmarks.region).toBe('phantom');
+    expect(landmarks.levels.map((l) => l.level)).toEqual(['L4', 'L5']);
+    const isVec = (p: unknown) =>
+      typeof p === 'object' && p !== null && ['x', 'y', 'z'].every((a) => Number.isFinite((p as Record<string, number>)[a]));
+    for (const l of landmarks.levels) {
+      expect(isVec(l.bodyCentre)).toBe(true);
+      expect(isVec(l.pedicleCentre.left) && isVec(l.pedicleCentre.right)).toBe(true);
+      for (const plate of [l.superiorEndplate, l.inferiorEndplate]) expect(isVec(plate.centre) && isVec(plate.normal)).toBe(true);
+      expect(isVec(l.superiorArticularProcessTip.left) && isVec(l.superiorArticularProcessTip.right)).toBe(true);
+    }
+    expect(landmarks.levels[0].foramenCentre).toBeDefined();
+    expect(landmarks.levels[1].foramenCentre).toBeUndefined();
   });
 });

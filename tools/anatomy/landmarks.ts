@@ -3,7 +3,7 @@
 // sits at origin + (i, j, k) × spacing in patient mm (+x left, +y back, +z head).
 // Results are approximations for the owner to review on real anatomy.
 import { isBone, LEVEL_CODES, LEVEL_IDS, TISSUE, type LevelCode } from '../../src/core/labels';
-import type { Endplate, LevelLandmarks, Sided, Vec3, Volume } from '../../src/core/types';
+import type { Endplate, Landmarks, LevelLandmarks, Sided, Vec3, Volume } from '../../src/core/types';
 
 /** Levels with a typical vertebral body (C1 and C2 are left out for now; sacrum and ilium have their own landmarks). */
 export const TYPICAL_LEVELS: readonly LevelCode[] = LEVEL_CODES.filter(
@@ -353,4 +353,61 @@ function range(values: readonly number[]): [number, number] {
     if (v > hi) hi = v;
   }
   return [lo, hi];
+}
+
+// ── Superior articular processes and the whole Landmarks object (F1-S12) ────
+
+/** How far (mm) beyond the canal's side wall the articular pillars may lie. */
+export const ARTICULAR_REACH_MM = 20;
+
+/**
+ * Tip of the superior articular process on each side: the highest voxels of
+ * the level's bone behind (+y of) the canal and beside it (not over its
+ * midline, where the lamina and spinous process are). The tip is the middle of
+ * those highest voxels, kept on one of them.
+ */
+function superiorArticularTips(vol: VolumeGrid, bone: readonly number[], canal: CanalBox): Sided<Vec3> | undefined {
+  const reach = canal.halfWidth + ARTICULAR_REACH_MM / vol.spacing.x;
+  const sides: Sided<{ top: number; voxels: number[] }> = { left: { top: -1, voxels: [] }, right: { top: -1, voxels: [] } };
+  for (const v of bone) {
+    const [i, j, k] = ijk(vol, v);
+    if (j <= canal.jMax) continue;
+    const dx = i - canal.centreX;
+    if (Math.abs(dx) <= canal.halfWidth || Math.abs(dx) > reach) continue;
+    const side = dx > 0 ? sides.left : sides.right;
+    if (k > side.top) {
+      side.top = k;
+      side.voxels = [v];
+    } else if (k === side.top) side.voxels.push(v);
+  }
+  if (sides.left.voxels.length === 0 || sides.right.voxels.length === 0) return undefined;
+  return { left: centreInside(vol, sides.left.voxels), right: centreInside(vol, sides.right.voxels) };
+}
+
+/** Complete LevelLandmarks for every typical level present (C3 … L5), head to foot. */
+export function findLevelLandmarks(vol: VolumeGrid): LevelLandmarks[] {
+  const byLevel = boneVoxelsByLevel(vol);
+  const out: LevelLandmarks[] = [];
+  for (const parts of findLevelParts(vol)) {
+    const bone = byLevel.get(LEVEL_IDS[parts.level])!;
+    const canal = canalBeside(vol, bone, bodyVoxels(vol, bone));
+    const tips = superiorArticularTips(vol, bone, canal);
+    if (!tips) continue;
+    const { level, bodyCentre, pedicleCentre, superiorEndplate, inferiorEndplate, foramenCentre } = parts;
+    out.push({
+      level,
+      bodyCentre,
+      pedicleCentre,
+      superiorEndplate,
+      inferiorEndplate,
+      superiorArticularProcessTip: tips,
+      ...(foramenCentre ? { foramenCentre } : {}),
+    });
+  }
+  return out;
+}
+
+/** The whole Landmarks object for a region volume. */
+export function computeLandmarks(vol: VolumeGrid & { region: string }): Landmarks {
+  return { region: vol.region, levels: findLevelLandmarks(vol) };
 }

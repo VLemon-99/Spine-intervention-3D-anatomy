@@ -310,9 +310,9 @@
       "dependsOn": [
         "F1-S11"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. landmarks.ts: superior articular tips = highest level-bone voxels behind the canal (j > canal back) and beside it (past its side wall, up to ARTICULAR_REACH_MM 20), middle of those top voxels snapped onto one; findLevelLandmarks(vol) -> complete LevelLandmarks[]; computeLandmarks(vol) -> Landmarks {region, levels}. A level whose tips cannot be found on both sides is left out."
     },
     {
       "id": "F1-S23",
