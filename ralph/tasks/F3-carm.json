@@ -31,7 +31,7 @@
     {
       "id": "F3-S2",
       "title": "Add a slider with a number readout for each of the five pose values",
-      "description": "In the C-arm panel add five sliders (<input type=\"range\">, step 1, ranges from limits.ts) with a label and a number readout each. Test ids: slider-oblique, slider-tilt, slider-table-left-right, slider-table-head-foot, slider-table-height, and readout-oblique … readout-table-height. Readouts show the signed number with its unit ('25°', '-10°', '15 mm'); the slider ends are labelled with their meaning (L / R, CAUD / CRAN, and so on). Moving a slider changes the pose in the store through the clamping function from F3-S1; the sliders and readouts also follow the store when the pose changes elsewhere. Moving a slider must NOT take an image. Add the zone's screen-test helper tests/e2e/carm/controls.ts (not a spec file) with a function that drags a slider handle: mouse drag in the desktop set-up, touch drag in the tablet set-up (Playwright has no built-in touch drag; a CDP session with Input.dispatchTouchEvent touchStart / touchMove / touchEnd works in Chromium). Layout: the C-arm panel is one quarter of the screen (F0 layout; about 500×370 px in the tablet set-up) and will hold five sliders, the Shot and Fluoro buttons, two counters, the region picker and a help button — keep rows compact and put small items side by side. Buttons and slider handles are at least 44×44 px (F12.3 checks this later); F12 owns the final layout.",
+      "description": "In the C-arm panel add five sliders (<input type=\"range\">, step 1, ranges from limits.ts) with a label and a number readout each. Test ids: slider-oblique, slider-tilt, slider-table-left-right, slider-table-head-foot, slider-table-height, and readout-oblique … readout-table-height. Readouts show the signed number with its unit ('25°', '-10°', '15 mm'); the slider ends are labelled with their meaning (L / R, CAUD / CRAN, and so on). Moving a slider changes the pose in the store through the clamping function from F3-S1; the sliders and readouts also follow the store when the pose changes elsewhere. Moving a slider must NOT take an image. Add the zone's screen-test helper tests/e2e/carm/controls.ts (not a spec file) with a function that drags a slider handle: mouse drag in the desktop set-up, touch drag in the tablet set-up (Playwright has no built-in touch drag; a CDP session with Input.dispatchTouchEvent touchStart / touchMove / touchEnd works in Chromium). Layout: the C-arm panel is one quarter of the screen (F0 layout; about 500×370 px in the tablet set-up) and will hold five sliders, the Shot and Fluoro buttons, two counters, the region picker and a help button — keep rows compact and put small items side by side. Every button and every slider's touch area (the box of its <input> element) is at least 44 px wide and 44 px tall, and this zone's own screen tests check it (F12 cannot fix another zone's panel); F12 owns the final layout.",
       "specRefs": [
         "F3.2"
       ],
@@ -40,7 +40,9 @@
         "Screen test (both set-ups): dragging a slider all the way to an end gives exactly the limit from F3.1",
         "Screen test (both set-ups): changing the pose in the store (setPose from tests/fixtures/simPage.ts) moves the slider and its readout to the new value",
         "Screen test (both set-ups): dragging a slider leaves the shot count unchanged",
-        "Screen test (both set-ups): all five sliders and the Shot button are visible without scrolling the page"
+        "Screen test (both set-ups): all five sliders and the Shot button are visible without scrolling the page",
+        "Screen test (both set-ups): the oblique slider's ends are labelled 'L' and 'R', the tilt slider's 'CAUD' and 'CRAN', and each table slider has a visible label at both ends",
+        "Screen test (both set-ups): each of the five sliders' touch area (the box of its <input> element) is at least 44 px wide and 44 px tall"
       ],
       "verify": "npx playwright test tests/e2e/carm/sliders.spec.ts",
       "zone": "carm",
@@ -79,14 +81,15 @@
     {
       "id": "F3-S4",
       "title": "Add the help overlay listing every keyboard shortcut",
-      "description": "Add a help overlay (test id help-overlay) that lists every shortcut: all pose keys from keymap.ts with their step sizes, Shift for 5°, Space = Shot, F = hold for Fluoro, ? = this help. Build the list from keymap.ts so it cannot go out of date. It opens with the ? key and with an on-screen '?' button (test id help-button), because the tablet has no keyboard; it closes with Escape, with ? again, or with its Close button (test id help-close). While it is open the pose shortcuts and the spacebar still follow their normal rules. Shortcuts follow the existing spacebar rules in src/carm/index.ts: ignored while the disclaimer is shown and while typing in a text field. Layout: the C-arm panel is one quarter of the screen (F0 layout; about 500×370 px in the tablet set-up) and will hold five sliders, the Shot and Fluoro buttons, two counters, the region picker and a help button — keep rows compact and put small items side by side. Buttons and slider handles are at least 44×44 px (F12.3 checks this later); F12 owns the final layout.",
+      "description": "Add a help overlay (test id help-overlay) that lists every shortcut: all pose keys from keymap.ts with their step sizes, Shift for 5°, Space = Shot, F = hold for Fluoro, ? = this help. The overlay shows the shared shortcut list from src/core/shortcuts.ts (read-only; added 2026-11-10 so that F5 can add the needle keys later without touching this zone): this zone registers one group, 'C-arm', built from keymap.ts plus the entries for Shift, Space, F and ?, and the overlay lists every registered group under its heading and follows later registrations. It opens with the ? key and with an on-screen '?' button (test id help-button), because the tablet has no keyboard; it closes with Escape, with ? again, or with its Close button (test id help-close). While it is open the pose shortcuts and the spacebar still follow their normal rules. Shortcuts follow the existing spacebar rules in src/carm/index.ts: ignored while the disclaimer is shown and while typing in a text field. Layout: the C-arm panel is one quarter of the screen (F0 layout; about 500×370 px in the tablet set-up) and will hold five sliders, the Shot and Fluoro buttons, two counters, the region picker and a help button — keep rows compact and put small items side by side. Every button and every slider's touch area (the box of its <input> element) is at least 44 px wide and 44 px tall, and this zone's own screen tests check it (F12 cannot fix another zone's panel); F12 owns the final layout.",
       "specRefs": [
         "F3.2"
       ],
       "acceptance": [
-        "Screen test (desktop): pressing ? shows the overlay; pressing Escape hides it",
+        "Screen test (desktop): pressing ? shows the overlay; pressing ? again hides it; pressing ? and then Escape also hides it",
         "Screen test (both set-ups; click on desktop, tap on tablet): the ? button shows the overlay and the Close button hides it",
         "Screen test (both set-ups): the overlay text names every key in keymap.ts and also Space, F and ?",
+        "Screen test (both set-ups): a group registered by the test through the dev server's shortcuts module (as another zone will do) appears in the overlay under its own heading",
         "Screen test (desktop): the ? key does nothing while the disclaimer is shown",
         "Screen test (both set-ups): the ? button is at least 44×44 px"
       ],
@@ -103,7 +106,7 @@
     {
       "id": "F3-S5",
       "title": "Show the shot count and fluoro time, and reset them when a new case starts",
-      "description": "In the C-arm panel always show the shot count (test id shot-count, a whole number) and the fluoro time (test id fluoro-time, seconds with one decimal, e.g. '0.0 s'), both read from the store and updated whenever it changes. When the bus emits 'caseStart', set both back to zero in the store. Put the reset in a plain function for the unit test. Register a read-only getter with registerDebugGetter('carm', …) so window.__sim.carm() returns { fluoroTimeSeconds, fluoroOn } (fluoroOn is false until F3-S7). No edits in src/core/. Layout: the C-arm panel is one quarter of the screen (F0 layout; about 500×370 px in the tablet set-up) and will hold five sliders, the Shot and Fluoro buttons, two counters, the region picker and a help button — keep rows compact and put small items side by side. Buttons and slider handles are at least 44×44 px (F12.3 checks this later); F12 owns the final layout.",
+      "description": "In the C-arm panel always show the shot count (test id shot-count, a whole number) and the fluoro time (test id fluoro-time, seconds with one decimal, e.g. '0.0 s'), both read from the store and updated whenever it changes. When the bus emits 'caseStart', set both back to zero in the store. Put the reset in a plain function for the unit test. Register a read-only getter with registerDebugGetter('carm', …) so window.__sim.carm() returns { fluoroTimeSeconds, fluoroOn } (fluoroOn is false until F3-S7). No edits in src/core/. Layout: the C-arm panel is one quarter of the screen (F0 layout; about 500×370 px in the tablet set-up) and will hold five sliders, the Shot and Fluoro buttons, two counters, the region picker and a help button — keep rows compact and put small items side by side. Every button and every slider's touch area (the box of its <input> element) is at least 44 px wide and 44 px tall, and this zone's own screen tests check it (F12 cannot fix another zone's panel); F12 owns the final layout.",
       "specRefs": [
         "F3.6",
         "F3.3"
@@ -128,7 +131,7 @@
     {
       "id": "F3-S6",
       "title": "Add the continuous-fluoro logic (frames and time counting) as plain functions",
-      "description": "Create src/carm/fluoro.ts, plain TypeScript with the clock passed in (no browser code), so it is unit-testable: start(now), frame(now) and stop(now). While running, each frame records the current pose as the last image pose and emits one 'exposure' event (the renderer redraws on it); frames never change the shot count. The fluoro time in the store grows by the real time between start and stop, measured from the clock values — not by counting frames — so slow frames do not lose time. Starting twice or stopping when not running does nothing. A single shot (takeShot) keeps working as before.",
+      "description": "Create src/carm/fluoro.ts, plain TypeScript with the clock passed in (no browser code), so it is unit-testable: start(now), frame(now) and stop(now). While running, each frame records the current pose as the last image pose, sets the store's lastImageKind to 'fluoro' (shared contract, 2026-11-10; a single shot sets 'shot') and emits one 'exposure' event (the renderer redraws on it); frames never change the shot count. The fluoro time in the store grows during the hold: each frame adds the real time since the previous frame (or since start), and stop adds the rest, so the total is the real time between start and stop, measured from the clock values — not by counting frames — and slow frames do not lose time. Starting twice or stopping when not running does nothing. A single shot (takeShot) keeps working as before.",
       "specRefs": [
         "F3.4",
         "F3.6"
@@ -138,7 +141,9 @@
         "Unit test: every frame while running emits exactly one 'exposure' event and sets the last image pose to the pose at that moment; the shot count never changes",
         "Unit test: a frame call when not running emits nothing; after stop, frames emit nothing",
         "Unit test: a second start while running, or a stop when not running, changes nothing",
-        "Unit test: two separate holds add up (1.0 s + 0.5 s = 1.5 s)"
+        "Unit test: two separate holds add up (1.0 s + 0.5 s = 1.5 s)",
+        "Unit test: after a start at t = 0 and one frame at t = 500 ms the fluoro time is already 0.5 s (within 0.05 s), before any stop",
+        "Unit test: each frame sets lastImageKind to 'fluoro'; a single shot afterwards sets it back to 'shot'"
       ],
       "verify": "npx vitest run tests/carm/fluoro.test.ts",
       "zone": "carm",
@@ -152,19 +157,17 @@
     },
     {
       "id": "F3-S7",
-      "title": "Run continuous fluoro while the F key or the on-screen Fluoro pedal is held",
-      "description": "Wire the fluoro logic to the controls: fluoro runs while the F key is held (key repeats ignored) or while the on-screen 'Fluoro' pedal button (test id fluoro-pedal) is held with the mouse or a finger. While running, draw one frame per animation frame (requestAnimationFrame) and show the growing fluoro time; the pedal shows it is active (aria-pressed) and window.__sim.carm().fluoroOn is true. Stop on key-up, pointer-up, pointer-cancel, when the pointer capture is lost, and when the window loses focus or the page is hidden — fluoro must never keep running by itself. The pedal uses pointer events with pointer capture and touch-action: none, and suppresses the long-press menu on tablets. Screen tests move the C-arm with this feature's own controls (a pose key on desktop; on tablet a second touch point on a slider while the first holds the pedal — a CDP session with Input.dispatchTouchEvent accepts several touch points). Shortcuts follow the existing spacebar rules in src/carm/index.ts: ignored while the disclaimer is shown and while typing in a text field. Layout: the C-arm panel is one quarter of the screen (F0 layout; about 500×370 px in the tablet set-up) and will hold five sliders, the Shot and Fluoro buttons, two counters, the region picker and a help button — keep rows compact and put small items side by side. Buttons and slider handles are at least 44×44 px (F12.3 checks this later); F12 owns the final layout.",
+      "title": "Run continuous fluoro while the F key is held (desktop)",
+      "description": "Wire the fluoro logic to the keyboard: fluoro runs while the F key is held (key repeats ignored). While running, draw one frame per animation frame (requestAnimationFrame) and show the growing fluoro time; window.__sim.carm().fluoroOn is true. Take the start and stop times from the key events' own time stamps (event.timeStamp), not from when the handler happens to run, because frames are slow on the test machine's software GPU. Stop on key-up, when the window loses focus and when the page is hidden — fluoro must never keep running by itself. Screen tests move the C-arm with a pose key. The timing test holds F for about 3 seconds and compares the added fluoro time with the time between the keydown and keyup events as seen in the page (the test adds its own listeners that record event.timeStamp), not with the test's own stopwatch. The tablet set-up has no keyboard; the on-screen pedal and the tablet tests are the next story (F3-S11). Shortcuts follow the existing spacebar rules in src/carm/index.ts: ignored while the disclaimer is shown and while typing in a text field.",
       "specRefs": [
         "F3.4"
       ],
       "acceptance": [
         "Screen test (desktop): while F is held, changing the pose changes the canvas pixels (read with tests/fixtures/readCanvas.ts at the projected vertebra block centres and other fixed points) without any Shot; the shot count stays the same",
         "Screen test (desktop): after releasing F, changing the pose again leaves those canvas pixels unchanged",
-        "Screen test (desktop): holding F for about 2 seconds adds that time to window.__sim.carm().fluoroTimeSeconds within 10%, and the fluoro-time counter shows the same value to one decimal",
-        "Screen test (tablet): the same three checks with the Fluoro pedal held by touch",
-        "Screen test (desktop): holding the pedal with the mouse button also runs fluoro, and releasing it stops it",
-        "Screen test (desktop): F does nothing while the disclaimer is shown",
-        "Screen test (both set-ups): the pedal is visible without scrolling the page and at least 44×44 px"
+        "Screen test (desktop): holding F for about 3 seconds adds the time between the keydown and keyup events (as recorded in the page) to window.__sim.carm().fluoroTimeSeconds within 10%, and the fluoro-time counter shows the same value to one decimal",
+        "Screen test (desktop): while F is held, a window 'blur' event stops fluoro: fluoroOn becomes false and the fluoro time stops growing",
+        "Screen test (desktop): F does nothing while the disclaimer is shown"
       ],
       "verify": "npx playwright test tests/e2e/carm/fluoro.spec.ts",
       "zone": "carm",
@@ -178,9 +181,36 @@
       "notes": ""
     },
     {
+      "id": "F3-S11",
+      "title": "Run continuous fluoro while the on-screen Fluoro pedal is held (mouse and touch)",
+      "description": "Add the on-screen 'Fluoro' pedal button (test id fluoro-pedal; split out of F3-S7 at the 2026-11-10 story review): fluoro runs while it is held with the mouse or a finger, using the same start/stop code as the F key. The pedal shows it is active (aria-pressed). It uses pointer events with pointer capture and touch-action: none, and suppresses the long-press menu on tablets. Stop on pointer-up, pointer-cancel, when the pointer capture is lost, and when the page is hidden. Take the start and stop times from the pointer events' time stamps. Tablet screen tests move the C-arm with a second touch point on a slider while the first holds the pedal (a CDP session with Input.dispatchTouchEvent accepts several touch points; extend tests/e2e/carm/controls.ts). The timing test holds for about 3 seconds and compares with the time between the pointerdown and pointerup events as recorded in the page. Layout: the C-arm panel is one quarter of the screen (F0 layout; about 500×370 px in the tablet set-up) — keep rows compact; every button and every slider's touch area (the box of its <input> element) is at least 44 px wide and 44 px tall, and this zone's own screen tests check it (F12 cannot fix another zone's panel); F12 owns the final layout.",
+      "specRefs": [
+        "F3.4"
+      ],
+      "acceptance": [
+        "Screen test (tablet): while the pedal is held by touch, changing the pose changes the canvas pixels without any Shot, and the shot count stays the same",
+        "Screen test (tablet): after releasing the pedal, changing the pose again leaves those canvas pixels unchanged",
+        "Screen test (tablet): holding the pedal for about 3 seconds adds the time between the pointerdown and pointerup events (as recorded in the page) to window.__sim.carm().fluoroTimeSeconds within 10%, and the fluoro-time counter shows the same value to one decimal",
+        "Screen test (desktop): holding the pedal with the mouse button also runs fluoro (fluoroOn true, aria-pressed 'true'), and releasing it stops it",
+        "Screen test (both set-ups): while the pedal is held, a 'pointercancel' event on it stops fluoro",
+        "Screen test (both set-ups): the pedal is visible without scrolling the page and at least 44×44 px",
+        "The F-key tests of F3-S7 still pass unchanged"
+      ],
+      "verify": "npx playwright test tests/e2e/carm/fluoroPedal.spec.ts tests/e2e/carm/fluoro.spec.ts",
+      "zone": "carm",
+      "priority": 8,
+      "dependsOn": [
+        "F3-S7",
+        "F3-S2"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
       "id": "F3-S8",
       "title": "Check last image hold: moving the C-arm without taking an image leaves the picture unchanged",
-      "description": "Add the screen test for F3.5. Take an image, record a fingerprint of the canvas (grey values at a fixed grid of points, read with tests/fixtures/readCanvas.ts), move the C-arm with the sliders (and, on desktop, with a pose key), and check the fingerprint is unchanged while window.__sim.getState().pose has changed and lastImagePose has not. Then take a new image and check the fingerprint does change. The behaviour should already hold; if it does not, fix it inside the carm zone.",
+      "description": "Add the screen test for F3.5. Take an image, record a fingerprint of the canvas (grey values at a fixed grid of points, read with tests/fixtures/readCanvas.ts), move the C-arm with the sliders (and, on desktop, with a pose key), and check the fingerprint is unchanged while window.__sim.getState().pose has changed and lastImagePose has not. Then take a new image and check the fingerprint does change. The behaviour should already hold. If it does not, do not fix it here: the held image belongs to the render zone, so mark this story blocked and explain what you saw.",
       "specRefs": [
         "F3.5",
         "F3.3"
@@ -191,9 +221,10 @@
       ],
       "verify": "npx playwright test tests/e2e/carm/lastImageHold.spec.ts",
       "zone": "carm",
-      "priority": 8,
+      "priority": 9,
       "dependsOn": [
-        "F3-S2"
+        "F3-S2",
+        "F3-S3"
       ],
       "status": "todo",
       "attempts": 0,
@@ -202,19 +233,18 @@
     {
       "id": "F3-S9",
       "title": "Add the region picker, showing 'Phantom' on the phantom-only build",
-      "description": "Add a region picker to the C-arm panel: a drop-down (<select>, test id region-picker) that shows the region currently loaded in the store. On today's phantom-only build it lists exactly one entry, 'Phantom' (for the store volume whose region name is 'phantom'), and it is selected. Keep the list in a small plain function (region names in → picker entries out) so the blocked story F3-S10 can feed it the real regions later. Switching between real regions is NOT part of this story. Layout: the C-arm panel is one quarter of the screen (F0 layout; about 500×370 px in the tablet set-up) and will hold five sliders, the Shot and Fluoro buttons, two counters, the region picker and a help button — keep rows compact and put small items side by side. Buttons and slider handles are at least 44×44 px (F12.3 checks this later); F12 owns the final layout.",
+      "description": "Add a region picker to the C-arm panel: a drop-down (<select>, test id region-picker) that shows the region currently loaded in the store. On today's phantom-only build it lists exactly one entry, 'Phantom' (for the store volume whose region name is 'phantom'), and it is selected. Keep the list in a small plain function (the store's regions list and the loaded region's name in → picker entries out: the listed regions, plus the loaded region if it is not among them — titled 'Phantom' for 'phantom') so F3-S10 can use it for the real regions. Switching between real regions is NOT part of this story. Layout: the C-arm panel is one quarter of the screen (F0 layout; about 500×370 px in the tablet set-up) and will hold five sliders, the Shot and Fluoro buttons, two counters, the region picker and a help button — keep rows compact and put small items side by side. Every button and every slider's touch area (the box of its <input> element) is at least 44 px wide and 44 px tall, and this zone's own screen tests check it (F12 cannot fix another zone's panel); F12 owns the final layout.",
       "specRefs": [
         "F3.7"
       ],
       "acceptance": [
         "Unit test: the entries for a build with only the phantom are exactly [{ name: 'phantom', title: 'Phantom' }]",
         "Screen test (both set-ups): the region picker is visible in the C-arm panel, has exactly one option with the text 'Phantom', and it is selected",
-        "Screen test (both set-ups): window.__sim.getState().volume.region is 'phantom'",
-        "npm run check passes"
+        "Screen test (both set-ups): window.__sim.getState().volume.region is 'phantom'"
       ],
-      "verify": "npx vitest run tests/carm/regions.test.ts && npx playwright test tests/e2e/carm/regionPicker.spec.ts && npm run check",
+      "verify": "npx vitest run tests/carm/regions.test.ts && npx playwright test tests/e2e/carm/regionPicker.spec.ts",
       "zone": "carm",
-      "priority": 9,
+      "priority": 10,
       "dependsOn": [
         "F3-S5"
       ],
@@ -224,25 +254,29 @@
     },
     {
       "id": "F3-S10",
-      "title": "Let the region picker list the manifest's regions and switch between them",
-      "description": "The picker lists the regions the anatomy manifest offers and, when the learner picks one, the app loads it and the next image shows it. BLOCKED AT PLANNING: the picker lives in the carm zone and the loader (loadRegion, F1) in the anatomy zone, and zones may only talk through src/core/. Today there is no shared place for the list of regions or for 'please load this region'.",
+      "title": "Let the region picker list the regions on offer and ask for the one the learner picks",
+      "description": "Use the shared contract added on 2026-11-10 (src/core/, read-only here): store.regions holds the regions on offer as { name, title } entries (filled by the anatomy zone, F1), and the bus event 'regionRequest' carries a region name. The picker lists store.regions (plus the loaded region if it is not among them, e.g. 'Phantom') and follows the store when the list or the loaded volume changes. When the learner picks an entry other than the loaded region, emit exactly one 'regionRequest' with its name; the picker itself loads nothing and keeps showing the region that is actually loaded (the store's volume) until a new volume arrives. Picking a region does not take an image and does not change the counters. F1's loader may not be merged yet, so the tests fill store.regions, listen on the bus and put a new volume in the store themselves, through the dev server's store module. No edits in src/core/ or src/anatomy/. This is the feature's last loop story: run the whole check.",
       "specRefs": [
         "F3.7",
         "F1.6"
       ],
       "acceptance": [
-        "Screen test (both set-ups): with a manifest listing test regions, the picker shows one entry per region",
-        "Screen test (both set-ups): choosing a region loads it; window.__sim.getState().volume reports its name and size, and the next image shows it"
+        "Unit test: for regions cervical and lumbosacral with 'phantom' loaded, the entries are those two followed by Phantom; with 'lumbosacral' loaded there are exactly the two",
+        "Screen test (both set-ups): after the test puts two regions in store.regions, the picker shows one option per region plus 'Phantom', and 'Phantom' is still selected",
+        "Screen test (both set-ups): choosing a region emits exactly one 'regionRequest' with its name; the shot count and the canvas are unchanged",
+        "Screen test (both set-ups): when the test then puts a volume with that region name in the store, the picker shows that region as selected",
+        "Screen test (both set-ups): the picker's touch area is at least 44 px tall",
+        "npm run check passes"
       ],
-      "verify": "npx playwright test tests/e2e/carm/regionSwitch.spec.ts",
+      "verify": "npx vitest run tests/carm/regions.test.ts && npx playwright test tests/e2e/carm/regionSwitch.spec.ts && npm run check",
       "zone": "carm",
-      "priority": 10,
+      "priority": 11,
       "dependsOn": [
         "F3-S9"
       ],
-      "status": "blocked",
+      "status": "todo",
       "attempts": 0,
-      "notes": "Blocked at planning (2026-11-10), not by a failed attempt. Needs (1) the owner's OK for a small shared-contract change in an interactive session — for example a store field regions: { name, title }[] filled by the anatomy zone and a bus event regionRequest (region name) emitted by the picker — and (2) F1's loader to be merged. Open question for the owner: should 'Phantom' stay in the list once real regions exist, and which region loads at start? After that, set this story (and F1-S21) to 'todo' or do it interactively."
+      "notes": "Unblocked at the 2026-11-10 story review: the shared contract now has store.regions and the bus event 'regionRequest' (src/core/store.ts). Still open for the owner: should 'Phantom' stay in the list once real regions exist, and which region loads at start (F12)? The end-to-end check with F1's loader is F1-S27."
     }
   ]
 }

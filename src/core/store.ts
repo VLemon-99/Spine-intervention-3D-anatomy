@@ -1,7 +1,7 @@
 // Central store for the state that crosses zones, plus a small typed event bus.
 // Plain TypeScript, no browser code. The 3D view only reads the store.
 
-import type { CArmPose, Landmarks, Mode, NeedleState, TissueEvent, Volume } from './types';
+import type { CArmPose, ImageKind, Landmarks, Mode, NeedleState, RegionEntry, TissueEvent, Volume } from './types';
 
 export interface SimState {
   /** Current C-arm and table position. */
@@ -12,6 +12,11 @@ export interface SimState {
   fluoroTimeSeconds: number;
   /** Pose of the image on screen, or null before the first image. */
   lastImagePose: CArmPose | null;
+  /**
+   * How the image on screen was taken, or null before the first image. Set by
+   * the C-arm zone together with lastImagePose, before it emits 'exposure'.
+   */
+  lastImageKind: ImageKind | null;
   mode: Mode;
   /** Loaded anatomy (its region name is volume.region), or null before loading. */
   volume: Volume | null;
@@ -24,6 +29,11 @@ export interface SimState {
    * (same size and index order), or null when there is no contrast.
    */
   contrast: Uint8Array | null;
+  /**
+   * Anatomy regions the learner can switch to, filled by the anatomy zone
+   * from the manifest. Empty until then (and on a build without real regions).
+   */
+  regions: RegionEntry[];
 }
 
 export type StateListener = (state: Readonly<SimState>) => void;
@@ -43,11 +53,13 @@ export function initialState(): SimState {
     shotCount: 0,
     fluoroTimeSeconds: 0,
     lastImagePose: null,
+    lastImageKind: null,
     mode: 'freeplay',
     volume: null,
     landmarks: null,
     needle: null,
     contrast: null,
+    regions: [],
   };
 }
 
@@ -79,6 +91,11 @@ export interface BusEvents {
   caseStart: undefined;
   /** Something happened at the needle tip (F6.3, F9.6). */
   tissueEvent: TissueEvent;
+  /**
+   * The learner picked a region in the region picker (payload: its name).
+   * The anatomy zone loads it and puts the volume and landmarks in the store.
+   */
+  regionRequest: string;
 }
 
 export type BusEventName = keyof BusEvents;

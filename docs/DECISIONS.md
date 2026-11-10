@@ -2,6 +2,19 @@
 
 > One entry per meaningful choice, newest at the top. This stops future sessions and loop rounds from quietly undoing past decisions. Loop rounds don't edit this file — they record proposals in their progress log, and an interactive session adds them here after review.
 
+## 2026-11-10 — F1–F3 story review: shared-contract additions and story fixes
+- **Decision:**
+  - **Shared contract (`src/core/`) extended before the loops start:** `store.lastImageKind` (`'shot'` / `'fluoro'`), `store.regions` plus the bus event `regionRequest`, optional `Landmarks.sacrum` and `Landmarks.iliacCrest`, and a shared shortcut list (`src/core/shortcuts.ts`) that the help overlay shows.
+  - **Sacrum and iliac crests get landmarks** (S1 superior endplate, S1 superior articular process tips, top of each iliac crest), and **the L5–S1 foramen is found and listed under L5**. The lumbosacral region is cut wide enough to include both iliac crests. C1/C2 landmarks, the sacral hiatus and SI-joint points stay open.
+  - **"44 px" for sliders means the slider's touch area**, and each zone tests its own panel.
+  - **Pose text shows the two angles only**, not the table position.
+  - **Render-zone image tests may keep `setPose`** for exact poses after F3's controls exist.
+  - **Fluoro frames use more grain** by scaling the noise setting with the ratio of the two default levels.
+  - **Story IDs stay stable:** new stories from splits get new numbers at the end (F1-S23…S27, F3-S11) and only the priority order changes.
+- **Why:** The review found that the real lumbosacral region would have had no L5 nerve root (L5–S1 is a very common injection level), that three stories were blocked on one small shared change, that four stories were too big for one loop round, and that a browser test cannot measure a standard slider's handle. The owner approved all nine fixes and asked for sacrum and iliac crest landmarks.
+- **Alternatives considered:** Leaving the three stories blocked until after the loops; an "integration" task file; custom-built sliders with a measurable handle; renumbering all stories.
+- **Revisit if:** The lumbosacral region with both crests does not fit in 25 MB at 1 mm; F10 needs more pelvic landmarks; F5's keys do not fit the shortcut list's shape.
+
 ## 2026-11-10 — F1–F3 planning choices
 - **Decision:**
   - **Display controls live in the fluoro panel (F2):** besides the Invert toggle the spec names, F2 adds magnification buttons (1×, 1.5×, 2×), four collimation sliders, and flip/rotate buttons.

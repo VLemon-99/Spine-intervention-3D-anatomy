@@ -33,3 +33,12 @@ describe('takeShot (no browser page)', () => {
     expect(seen).toBe(1);
   });
 });
+
+describe('takeShot image kind (shared-contract change 2026-11-10)', () => {
+  it("marks the image on screen as a single shot ('shot')", () => {
+    const store = createStore();
+    store.set({ lastImageKind: 'fluoro' });
+    takeShot(store, createEventBus());
+    expect(store.get().lastImageKind).toBe('shot');
+  });
+});
