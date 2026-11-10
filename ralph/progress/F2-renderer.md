@@ -33,6 +33,7 @@
 - Noise rule (step 3): value + g × 2 × `NOISE_AMPLITUDE` × level, clamped to 0…1, where g is evenly spread over −0.5…0.5 with mean 0 (`addNoise` / `grainAt` in `src/render/noise.ts`). The shader needs its own seeded g with the same range and the same scaling; at the shot default (0.04) that is at most ±2.5 grey levels, standard deviation about 1.5.
 - Vitest's default time limit is 5 s per test: more than about five whole 512×512 CPU images in ONE test needs a longer limit as the test's last argument (e.g. `30_000`), or fewer images.
 - In the uniform-slab image the middle 100×100 pixels are exactly equal without noise (standard deviation exactly 0), so spread tests can use `toBe(0)`.
+- When writing a note into the task file with a script, load the file as JSON afterwards BEFORE committing (`python3 -c "import json; json.load(open('ralph/tasks/F2-renderer.json'))"`), and chain the commit with `&&` so it cannot run after a failed step.
 
 ## Rounds
 <!--
@@ -114,3 +115,10 @@
 - Files touched: `src/render/noise.ts` (new), `src/render/pipeline.ts`, `src/render/drrCpu.ts`, `tests/render/noise.test.ts` (new), this log, the task file.
 - Test result: verify command passed (11 unit tests) after I cut one of my new tests from 12 whole images to 6 and gave it a 30 s limit (it had timed out at 5 s; nothing was wrong with the values). `npm run check` passed: lint + types clean, 138 unit tests, 114 screen tests passed and 6 skipped (one-set-up-only tests).
 - Next round should know: the default `settings.noiseLevel` is still 0 and the GPU has no grain yet (F2-S13). See the Lessons entry about `tests/render/settings.test.ts` before changing that default.
+
+## Round — 2026-11-10 13:43 — F2-S13 — blocked
+- What I did: Ran the baseline (green) and picked F2-S13. Before writing code I checked the conflict noted in Lessons: the story changes the default `settings.noiseLevel` from 0 to the shot default, but the existing unit test `tests/render/settings.test.ts` (from F2-S2, acceptance text "noiseLevel 0 for now") checks that the default is exactly 0. A loop round may not edit an existing test to make it pass, and there is no honest way to meet both (starting the app at the shot level while leaving `defaultRenderSettings()` at 0 would break the F2-S2 screen test that compares the two, and would dodge the story's wording). So I blocked the story without writing code.
+- Files touched: this log, the task file (status `blocked`, notes say exactly what the owner needs to decide).
+- Test result: baseline `npm run check` passed: 138 unit tests, 114 screen tests passed and 6 skipped. No code changed.
+- Mistake this round: my first commit of the blocked status (5th commit from the top at the time, "F2-S13: blocked …") contained a task file that was not valid JSON (a stray backslash in the note) and no log entry, because the script failed halfway and the commit still ran. Fixed in the next commit; no code or test was affected.
+- Next round should know: F2-S21 and F2-S20 depend on F2-S13 and cannot start until it is unblocked. Still open and not affected: F2-S14, S15, S16, S17, S18, S19. When F2-S13 is unblocked, the plan is: one uniform `uNoiseLevel` and one `uNoiseSeed` in the shader that takes the image, a seeded hash giving g in −0.5…0.5, value + g × 2 × NOISE_AMPLITUDE × level clamped to 0…1, placed after the collimation early return; `fluoroCanvas.ts` passes `lastImage.settings.noiseLevel` and `lastImage.noiseSeed`.
