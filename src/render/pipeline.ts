@@ -84,3 +84,20 @@ export function isCollimated(x: number, y: number, collimation: Collimation): bo
     covered(last - y, collimation.bottom)
   );
 }
+
+/**
+ * Step 3: the most the grain can change a pixel's value (0…1 scale) at noise
+ * level 1. At level L a pixel changes by at most ± NOISE_AMPLITUDE × L.
+ */
+export const NOISE_AMPLITUDE = 0.25;
+
+/**
+ * Default noise levels: a continuous-fluoro frame is grainier than a single
+ * shot. A look-and-feel choice the owner may tune; the shot level is kept
+ * small (about ± 2.5 grey levels of 255).
+ */
+export const DEFAULT_NOISE_LEVEL = { shot: 0.04, fluoro: 0.1 } as const;
+
+export function defaultNoiseLevel(kind: 'shot' | 'fluoro'): number {
+  return DEFAULT_NOISE_LEVEL[kind];
+}

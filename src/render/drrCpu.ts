@@ -4,13 +4,14 @@
 // with no browser code, so unit tests can check the maths and screen tests can
 // compare the GPU image with it. It follows the ORDER OF STEPS at the top of
 // pipeline.ts; so far step 1 (magnification), step 2 (absorption, without the
-// extra volume), step 4 (collimation) and step 5 (invert).
+// extra volume), step 3 (noise), step 4 (collimation) and step 5 (invert).
 //
 // Sampling is the same as in the GPU shader: the ray is clipped to the
 // volume's box, samples are taken at entry + (i + 0.5) × step, and each sample
 // reads the nearest voxel.
 import { IMAGE_SIZE_PX, createProjection, type Pixel, type Projection } from '../core/geometry';
 import type { CArmPose, Vec3, Volume } from '../core/types';
+import { addNoise, type NoiseOptions } from './noise';
 import {
   ABSORPTION_PER_MM,
   MAGNIFICATIONS,
@@ -27,6 +28,8 @@ import {
 export interface DrrCpuOptions {
   /** Step 1: 1, 1.5 or 2 (default 1). Structures appear this much larger around the image centre. */
   magnification?: Magnification;
+  /** Step 3: seeded grain (default: none). Collimated pixels get none. */
+  noise?: NoiseOptions;
   /** Step 4: the four shutters, each 0–50 % of the image from its edge (default: all open). */
   collimation?: Collimation;
   /** Display step 5: value → 1 − value (more absorption = lighter). */
@@ -123,6 +126,20 @@ function collimationOf(options: DrrCpuOptions): Collimation {
   return c;
 }
 
+const NO_NOISE: NoiseOptions = { seed: 0, level: 0 };
+
+/** The grain to use; a level outside 0…1 or a seed that is not a finite number is an error. */
+function noiseOf(options: DrrCpuOptions): NoiseOptions {
+  const noise = options.noise ?? NO_NOISE;
+  if (!Number.isFinite(noise.seed)) {
+    throw new Error(`Unsupported noise: the seed is ${String(noise.seed)}, but it must be a finite number.`);
+  }
+  if (!Number.isFinite(noise.level) || noise.level < 0 || noise.level > 1) {
+    throw new Error(`Unsupported noise: the level is ${String(noise.level)}, but it must be a number from 0 to 1.`);
+  }
+  return noise;
+}
+
 /** The display steps that change a pixel's value (step 5, invert). */
 const display = (value: number, options: DrrCpuOptions): number => (options.invert ? 1 - value : value);
 
@@ -141,8 +158,12 @@ export function transmissionAt(
   assertStandardLayout(volume);
   const magnification = magnificationOf(options);
   const collimation = collimationOf(options);
-  if (isCollimated(Math.floor(pixel.x), Math.floor(pixel.y), collimation)) return display(NO_SIGNAL, options);
-  return display(march(volume, projection, detectorPosition(pixel, magnification)), options);
+  const noise = noiseOf(options);
+  const x = Math.floor(pixel.x);
+  const y = Math.floor(pixel.y);
+  if (isCollimated(x, y, collimation)) return display(NO_SIGNAL, options);
+  const value = march(volume, projection, detectorPosition(pixel, magnification));
+  return display(addNoise(value, noise, x, y), options);
 }
 
 /** The whole 512×512 reference image of `volume` at `pose`. */
@@ -150,6 +171,7 @@ export function renderDrrCpu(volume: Volume, pose: CArmPose, options: DrrCpuOpti
   assertStandardLayout(volume);
   const magnification = magnificationOf(options);
   const collimation = collimationOf(options);
+  const noise = noiseOf(options);
   const projection = createProjection(pose);
   const width = IMAGE_SIZE_PX;
   const height = IMAGE_SIZE_PX;
@@ -161,7 +183,7 @@ export function renderDrrCpu(volume: Volume, pose: CArmPose, options: DrrCpuOpti
         continue;
       }
       const onDetector = detectorPosition({ x: x + 0.5, y: y + 0.5 }, magnification);
-      data[x + width * y] = display(march(volume, projection, onDetector), options);
+      data[x + width * y] = display(addNoise(march(volume, projection, onDetector), noise, x, y), options);
     }
   }
   return { width, height, data };

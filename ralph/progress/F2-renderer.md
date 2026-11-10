@@ -30,6 +30,9 @@
 - ESLint (`no-useless-assignment`) rejects `let { a, b } = …` when one of them is re-assigned but not read again; use two separately named results instead.
 - Controls column: fixed 140 px wide, 4 px gaps. Rows so far: Invert, the magnification row, the Collimation button, and (when open) the 2×2 slider group (about 120 px high). On the tablet about 325 px of height is available: with the group open about 264 px is used, so ONE more 44 px row fits while it is open. F2-S16's three buttons should share one row (three 44 px buttons, like the magnification row) rather than take three rows.
 - Sliders: Playwright's `click`/`tap` with `{ position }` on an `<input type="range">` moves it in both set-ups (`pressTrack` in `collimationSliders.spec.ts`). Screen tests of the sliders must first open the group with `press(page, 'collimation-toggle')`.
+- Noise rule (step 3): value + g × 2 × `NOISE_AMPLITUDE` × level, clamped to 0…1, where g is evenly spread over −0.5…0.5 with mean 0 (`addNoise` / `grainAt` in `src/render/noise.ts`). The shader needs its own seeded g with the same range and the same scaling; at the shot default (0.04) that is at most ±2.5 grey levels, standard deviation about 1.5.
+- Vitest's default time limit is 5 s per test: more than about five whole 512×512 CPU images in ONE test needs a longer limit as the test's last argument (e.g. `30_000`), or fewer images.
+- In the uniform-slab image the middle 100×100 pixels are exactly equal without noise (standard deviation exactly 0), so spread tests can use `toBe(0)`.
 
 ## Rounds
 <!--
@@ -105,3 +108,9 @@
 - Files touched: `src/render/controls.ts`, `tests/e2e/render/collimationSliders.spec.ts` (new), this log, the task file.
 - Test result: verify command passed (12 screen tests). `npm run check` passed: lint + types clean, 127 unit tests, 114 screen tests passed and 6 skipped (one-set-up-only tests).
 - Next round should know: the group is closed after page load. Each slider's `<input>` box is 67×44 px on the tablet.
+
+## Round — 2026-11-10 13:41 — F2-S12 — done
+- What I did: Added `src/render/noise.ts` (`grainAt`, `addNoise`) and `options.noise { seed, level }` to `renderDrrCpu` / `transmissionAt` as step 3 (collimated pixels get none; bad seed or level throws). Added `NOISE_AMPLITUDE`, `DEFAULT_NOISE_LEVEL = { shot: 0.04, fluoro: 0.1 }` and `defaultNoiseLevel(kind)` to `pipeline.ts`. The CPU grain takes its numbers from `src/core/random.ts` (read only).
+- Files touched: `src/render/noise.ts` (new), `src/render/pipeline.ts`, `src/render/drrCpu.ts`, `tests/render/noise.test.ts` (new), this log, the task file.
+- Test result: verify command passed (11 unit tests) after I cut one of my new tests from 12 whole images to 6 and gave it a 30 s limit (it had timed out at 5 s; nothing was wrong with the values). `npm run check` passed: lint + types clean, 138 unit tests, 114 screen tests passed and 6 skipped (one-set-up-only tests).
+- Next round should know: the default `settings.noiseLevel` is still 0 and the GPU has no grain yet (F2-S13). See the Lessons entry about `tests/render/settings.test.ts` before changing that default.

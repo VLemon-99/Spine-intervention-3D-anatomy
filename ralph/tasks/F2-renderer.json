@@ -293,9 +293,9 @@
       "dependsOn": [
         "F2-S9"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. Draft numbers the owner may tune (pipeline.ts): DEFAULT_NOISE_LEVEL shot 0.04, fluoro 0.1; NOISE_AMPLITUDE 0.25 (at level 1 a pixel changes by at most ±25% of full brightness). The grain is evenly spread and does not depend on the pixel brightness."
     },
     {
       "id": "F2-S13",
