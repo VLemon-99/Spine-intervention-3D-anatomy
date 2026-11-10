@@ -11,6 +11,7 @@
 - ESLint here has `preserve-caught-error`: when re-throwing inside a `catch`, pass `{ cause: e }` to `new Error(...)`.
 - Converter logic is in `tools/anatomy/convertCore.ts` so tests can call `runConvertCli(args, { log, error })` without spawning a process; `convert.ts` just sets `process.exitCode`.
 - Don't use `Math.min(...list)` / `Math.max(...list)` on voxel lists: real vertebrae have ~100k voxels and spreading that many arguments can overflow the stack. `landmarks.ts` has a `range(values)` loop helper.
+- typescript-eslint flags unused destructured names even with a leading `_` (e.g. `({ a: _a, ...rest })`); build the object another way.
 
 ## Rounds
 <!--
@@ -116,3 +117,9 @@
 - Files touched: tools/anatomy/softTissue.ts, tools/anatomy/soft-tissue-params.json, tests/anatomy/softTissueSac.test.ts (new), task file, this log.
 - Test result: verify 11/11 passed; `npm run check` green (195 unit tests, 46 screen tests passed).
 - Next round should know: step order in modelSoftTissue is sac → canal; nerve roots (F1-S14), joints (F1-S15) and arteries (F1-S16) come after. Only GENERIC labels (air, skin/fat, muscle, epidural, LF) are overwritten by these steps.
+
+## Round — 2026-11-10 14:00 — F1-S14 — done
+- What I did: nerve-root step in the modeller (sac → foramen → outward/downward), tube painter, params; 6 unit tests.
+- Files touched: tools/anatomy/softTissue.ts, tools/anatomy/soft-tissue-params.json, tests/anatomy/softTissueNerves.test.ts (new), task file, this log.
+- Test result: verify 6/6 passed; first `npm run check` failed lint on an unused `_f` in the new test — rewrote that line; then green (201 unit tests, 46 screen tests passed).
+- Next round should know: paintTube(vol, labels, [points], radius, label, mayReplace) is ready for the arteries (F1-S16). sacVoxels scans the whole volume once per call; fine for now.

@@ -4,7 +4,7 @@
 // The numbers live in tools/anatomy/soft-tissue-params.json (draft, for the owner to review).
 import { readFileSync } from 'node:fs';
 import { isBone, TISSUE } from '../../src/core/labels';
-import type { Landmarks, Volume } from '../../src/core/types';
+import type { Landmarks, Vec3, Volume } from '../../src/core/types';
 
 export interface SoftTissueParams {
   status: string;
@@ -12,6 +12,7 @@ export interface SoftTissueParams {
   canal: { maxAreaMm2: number };
   ligamentumFlavum: { thicknessMm: number };
   thecalSac: { radiusMm: number; minCanalAreaMm2: number };
+  nerveRoot: { radiusMm: number; lengthBeyondForamenMm: number; downwardAngleDeg: number };
 }
 
 const PARAMS_URL = new URL('./soft-tissue-params.json', import.meta.url);
@@ -27,6 +28,11 @@ export function loadSoftTissueParams(): SoftTissueParams {
   positive(p.ligamentumFlavum?.thicknessMm, 'ligamentumFlavum.thicknessMm');
   positive(p.thecalSac?.radiusMm, 'thecalSac.radiusMm');
   positive(p.thecalSac?.minCanalAreaMm2, 'thecalSac.minCanalAreaMm2');
+  positive(p.nerveRoot?.radiusMm, 'nerveRoot.radiusMm');
+  positive(p.nerveRoot?.lengthBeyondForamenMm, 'nerveRoot.lengthBeyondForamenMm');
+  if (typeof p.nerveRoot?.downwardAngleDeg !== 'number' || Math.abs(p.nerveRoot.downwardAngleDeg) >= 90) {
+    throw new Error('soft-tissue-params.json: nerveRoot.downwardAngleDeg must be a number between -90 and 90');
+  }
   if (typeof p.reviewedByOwner !== 'boolean') throw new Error('soft-tissue-params.json: reviewedByOwner must be true or false');
   return p;
 }
@@ -41,12 +47,13 @@ const SAC: ReadonlySet<number> = new Set([TISSUE.thecalSac, TISSUE.spinalCord]);
  * Runs every modelling step and returns a copy of the volume with new labels
  * (the intensity array is the same values, untouched). Steps, in order:
  * thecal sac (only if the volume has none), canal (epidural space +
- * ligamentum flavum).
+ * ligamentum flavum), nerve roots (needs the landmarks' foramen centres).
  */
-export function modelSoftTissue<T extends ModelInput>(vol: T, _landmarks?: Landmarks, params: SoftTissueParams = loadSoftTissueParams()): T {
+export function modelSoftTissue<T extends ModelInput>(vol: T, landmarks?: Landmarks, params: SoftTissueParams = loadSoftTissueParams()): T {
   const labels = vol.labels.slice();
   modelThecalSac(vol, labels, params);
   modelCanal(vol, labels, params);
+  if (landmarks) modelNerveRoots(vol, labels, landmarks, params);
   return { ...vol, labels };
 }
 
@@ -265,4 +272,104 @@ function largestHole(
     sj += Math.floor(p / nx);
   }
   return { mask, centre: { i: si / best.length, j: sj / best.length } };
+}
+
+/** Labels a nerve root may replace: generic tissue and the modelled canal contents (never bone, sac or cord). */
+const ROOT_MAY_REPLACE: ReadonlySet<number> = new Set([...GENERIC, TISSUE.nerveRoot]);
+
+/**
+ * Exiting nerve roots: for each foramen centre F (each side, each level), a
+ * tube from the nearest thecal-sac voxel S through F, then on outward (away
+ * from S in x) and downward for nerveRoot.lengthBeyondForamenMm.
+ */
+export function modelNerveRoots(vol: ModelInput, labels: Uint8Array, landmarks: Landmarks, params: SoftTissueParams): void {
+  const sac = sacVoxels(vol, labels);
+  if (sac.length === 0) return;
+  const { radiusMm, lengthBeyondForamenMm, downwardAngleDeg } = params.nerveRoot;
+  const down = (downwardAngleDeg * Math.PI) / 180;
+  for (const level of landmarks.levels) {
+    for (const side of ['left', 'right'] as const) {
+      const f = level.foramenCentre?.[side];
+      if (!f) continue;
+      const s = nearestPoint(sac, f);
+      const outward = Math.sign(f.x - s.x) || (side === 'left' ? 1 : -1);
+      const end = {
+        x: f.x + outward * lengthBeyondForamenMm * Math.cos(down),
+        y: f.y,
+        z: f.z - lengthBeyondForamenMm * Math.sin(down),
+      };
+      paintTube(vol, labels, [s, f, end], radiusMm, TISSUE.nerveRoot, ROOT_MAY_REPLACE);
+    }
+  }
+}
+
+function sacVoxels(vol: ModelInput, labels: Uint8Array): Vec3[] {
+  const out: Vec3[] = [];
+  const { x: nx, y: ny } = vol.size;
+  for (let v = 0; v < labels.length; v++) {
+    if (labels[v] !== TISSUE.thecalSac) continue;
+    const i = v % nx;
+    const j = Math.floor(v / nx) % ny;
+    const k = Math.floor(v / (nx * ny));
+    out.push(voxelPosition(vol, i, j, k));
+  }
+  return out;
+}
+
+function voxelPosition(vol: ModelInput, i: number, j: number, k: number): Vec3 {
+  return { x: vol.origin.x + i * vol.spacing.x, y: vol.origin.y + j * vol.spacing.y, z: vol.origin.z + k * vol.spacing.z };
+}
+
+function nearestPoint(points: readonly Vec3[], p: Vec3): Vec3 {
+  let best = points[0];
+  let bestD = Infinity;
+  for (const q of points) {
+    const d = (q.x - p.x) ** 2 + (q.y - p.y) ** 2 + (q.z - p.z) ** 2;
+    if (d < bestD) {
+      bestD = d;
+      best = q;
+    }
+  }
+  return best;
+}
+
+/** Distance from p to the segment a–b (mm). */
+function distToSegment(p: Vec3, a: Vec3, b: Vec3): number {
+  const ab = { x: b.x - a.x, y: b.y - a.y, z: b.z - a.z };
+  const len2 = ab.x ** 2 + ab.y ** 2 + ab.z ** 2;
+  const t = len2 > 0 ? Math.max(0, Math.min(1, ((p.x - a.x) * ab.x + (p.y - a.y) * ab.y + (p.z - a.z) * ab.z) / len2)) : 0;
+  return Math.hypot(p.x - (a.x + t * ab.x), p.y - (a.y + t * ab.y), p.z - (a.z + t * ab.z));
+}
+
+/** Labels every allowed voxel within `radius` mm of the polyline. */
+export function paintTube(
+  vol: ModelInput,
+  labels: Uint8Array,
+  path: readonly Vec3[],
+  radius: number,
+  label: number,
+  mayReplace: ReadonlySet<number>,
+): void {
+  const { x: nx, y: ny, z: nz } = vol.size;
+  const toIndex = (value: number, o: number, s: number, n: number, round: (x: number) => number) =>
+    Math.max(0, Math.min(n - 1, round((value - o) / s)));
+  for (let n = 0; n + 1 < path.length; n++) {
+    const a = path[n];
+    const b = path[n + 1];
+    const lo = [Math.min(a.x, b.x) - radius, Math.min(a.y, b.y) - radius, Math.min(a.z, b.z) - radius];
+    const hi = [Math.max(a.x, b.x) + radius, Math.max(a.y, b.y) + radius, Math.max(a.z, b.z) + radius];
+    const i0 = toIndex(lo[0], vol.origin.x, vol.spacing.x, nx, Math.floor);
+    const i1 = toIndex(hi[0], vol.origin.x, vol.spacing.x, nx, Math.ceil);
+    const j0 = toIndex(lo[1], vol.origin.y, vol.spacing.y, ny, Math.floor);
+    const j1 = toIndex(hi[1], vol.origin.y, vol.spacing.y, ny, Math.ceil);
+    const k0 = toIndex(lo[2], vol.origin.z, vol.spacing.z, nz, Math.floor);
+    const k1 = toIndex(hi[2], vol.origin.z, vol.spacing.z, nz, Math.ceil);
+    for (let k = k0; k <= k1; k++)
+      for (let j = j0; j <= j1; j++)
+        for (let i = i0; i <= i1; i++) {
+          const v = i + nx * (j + ny * k);
+          if (!mayReplace.has(labels[v])) continue;
+          if (distToSegment(voxelPosition(vol, i, j, k), a, b) <= radius) labels[v] = label;
+        }
+  }
 }

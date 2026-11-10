@@ -405,9 +405,9 @@
       "dependsOn": [
         "F1-S13"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. softTissue.ts: modelNerveRoots(vol, labels, landmarks, params) (third step, only when landmarks are given) and a reusable paintTube(vol, labels, path, radiusMm, label, mayReplace). Root = tube (nerveRoot.radiusMm 2) from the nearest thecal-sac voxel through the foramen centre, then outward and 30° downward for 15 mm. Replaces generic tissue, epidural and LF only."
     },
     {
       "id": "F1-S15",
