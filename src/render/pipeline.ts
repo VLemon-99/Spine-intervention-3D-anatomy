@@ -101,3 +101,11 @@ export const DEFAULT_NOISE_LEVEL = { shot: 0.04, fluoro: 0.1 } as const;
 export function defaultNoiseLevel(kind: 'shot' | 'fluoro'): number {
   return DEFAULT_NOISE_LEVEL[kind];
 }
+
+/**
+ * Step 2: absorption per mm of a voxel of the extra absorption volume at full
+ * strength (255) — used for contrast (F2.8, F9). Chosen so a few millimetres
+ * of full-strength contrast is clearly darker than soft tissue (3 mm lets
+ * about 40% through). A display number that F9 or the owner may tune.
+ */
+export const EXTRA_ABSORPTION_PER_MM = 0.3;

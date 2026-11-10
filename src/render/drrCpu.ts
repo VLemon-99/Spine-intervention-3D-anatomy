@@ -3,7 +3,7 @@
 // A slow but simple version of the GPU image (drrGpu.ts), in plain TypeScript
 // with no browser code, so unit tests can check the maths and screen tests can
 // compare the GPU image with it. It follows the ORDER OF STEPS at the top of
-// pipeline.ts; so far step 1 (magnification), step 2 (absorption, without the
+// pipeline.ts: step 1 (magnification), step 2 (absorption, with the optional
 // extra volume), step 3 (noise), step 4 (collimation), step 5 (invert) and
 // step 6 (flips and rotation).
 //
@@ -16,6 +16,7 @@ import { addNoise, type NoiseOptions } from './noise';
 import { orientPixel, unorientPixel, type Orientation, type Rotation } from './orientation';
 import {
   ABSORPTION_PER_MM,
+  EXTRA_ABSORPTION_PER_MM,
   MAGNIFICATIONS,
   MARCH_STEP_MM,
   MAX_MARCH_STEPS,
@@ -30,6 +31,11 @@ import {
 export interface DrrCpuOptions {
   /** Step 1: 1, 1.5 or 2 (default 1). Structures appear this much larger around the image centre. */
   magnification?: Magnification;
+  /**
+   * Step 2: extra absorption (contrast) per voxel, on the same grid as the
+   * volume (same size and index order). Default: none.
+   */
+  extraAbsorption?: Uint8Array;
   /** Step 3: seeded grain (default: none). Collimated pixels get none. */
   noise?: NoiseOptions;
   /** Step 4: the four shutters, each 0–50 % of the image from its edge (default: all open). */
@@ -75,7 +81,7 @@ function assertStandardLayout(volume: Volume): void {
 const safe = (d: number): number => (Math.abs(d) < 1e-8 ? 1e-8 : d);
 
 /** The march along one ray, after the layout check. */
-function march(volume: Volume, projection: Projection, pixel: Pixel): number {
+function march(volume: Volume, projection: Projection, pixel: Pixel, extra: Uint8Array | null): number {
   const { origin, spacing, size, intensity } = volume;
   const { origin: source, direction: dir } = projection.unproject(pixel);
 
@@ -105,8 +111,10 @@ function march(volume: Volume, projection: Projection, pixel: Pixel): number {
     const i = Math.min(size.x - 1, Math.max(0, Math.floor((source.x + dir.x * t - minX) / spacing.x)));
     const j = Math.min(size.y - 1, Math.max(0, Math.floor((source.y + dir.y * t - minY) / spacing.y)));
     const k = Math.min(size.z - 1, Math.max(0, Math.floor((source.z + dir.z * t - minZ) / spacing.z)));
-    const value = intensity[i + size.x * (j + size.y * k)] ?? 0;
-    total += (value / 255) * ABSORPTION_PER_MM * MARCH_STEP_MM;
+    const index = i + size.x * (j + size.y * k);
+    let perMm = ((intensity[index] ?? 0) / 255) * ABSORPTION_PER_MM;
+    if (extra) perMm += ((extra[index] ?? 0) / 255) * EXTRA_ABSORPTION_PER_MM;
+    total += perMm * MARCH_STEP_MM;
   }
   return Math.exp(-total);
 }
@@ -132,6 +140,19 @@ function collimationOf(options: DrrCpuOptions): Collimation {
     }
   }
   return c;
+}
+
+/** The extra absorption volume to use, or null; one of the wrong length is an error. */
+function extraOf(volume: Volume, options: DrrCpuOptions): Uint8Array | null {
+  const extra = options.extraAbsorption;
+  if (!extra) return null;
+  if (extra.length !== volume.intensity.length) {
+    throw new Error(
+      `Unsupported extra absorption volume: it has ${extra.length} values, but the volume '${volume.region}' ` +
+        `has ${volume.intensity.length} voxels. Both must be on the same grid.`,
+    );
+  }
+  return extra;
 }
 
 const NO_NOISE: NoiseOptions = { seed: 0, level: 0 };
@@ -181,12 +202,13 @@ export function transmissionAt(
   const magnification = magnificationOf(options);
   const collimation = collimationOf(options);
   const noise = noiseOf(options);
+  const extra = extraOf(volume, options);
   // Step 6 backwards: which position of the image as taken is shown at this pixel.
   pixel = unorientPixel(pixel, orientationOf(options), IMAGE_SIZE_PX);
   const x = Math.floor(pixel.x);
   const y = Math.floor(pixel.y);
   if (isCollimated(x, y, collimation)) return display(NO_SIGNAL, options);
-  const value = march(volume, projection, detectorPosition(pixel, magnification));
+  const value = march(volume, projection, detectorPosition(pixel, magnification), extra);
   return display(addNoise(value, noise, x, y), options);
 }
 
@@ -196,6 +218,7 @@ export function renderDrrCpu(volume: Volume, pose: CArmPose, options: DrrCpuOpti
   const magnification = magnificationOf(options);
   const collimation = collimationOf(options);
   const noise = noiseOf(options);
+  const extra = extraOf(volume, options);
   const orientation = orientationOf(options);
   const projection = createProjection(pose);
   const width = IMAGE_SIZE_PX;
@@ -208,7 +231,7 @@ export function renderDrrCpu(volume: Volume, pose: CArmPose, options: DrrCpuOpti
         continue;
       }
       const onDetector = detectorPosition({ x: x + 0.5, y: y + 0.5 }, magnification);
-      data[x + width * y] = display(addNoise(march(volume, projection, onDetector), noise, x, y), options);
+      data[x + width * y] = display(addNoise(march(volume, projection, onDetector, extra), noise, x, y), options);
     }
   }
   if (isUnchanged(orientation)) return { width, height, data };

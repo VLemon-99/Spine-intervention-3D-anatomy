@@ -39,6 +39,7 @@
 - The "mean difference ≤ 3% (7.65 grey levels)" limit is LOOSE on the phantom, because most of the picture is air: a picture with the wrong orientation is only about 7.5 off, with the wrong magnification or shutters somewhat more. A correct GPU image is about 0.05 off. So in every CPU-match test also demand something stricter (e.g. the canvas at least four times closer than the wrong picture would be), and use exact pixel checks where possible.
 - For orientation tests use a pose whose picture is not symmetric (e.g. oblique 30, tilt 15, tableLeftRight 20, tableHeadFoot −15); at the default pose the phantom is nearly left-right symmetric and a missing flip could go unnoticed.
 - Controls column rows are now: [Invert | Rotate], [1× | 1.5× | 2×], [Flip ↔ | Flip ↕], [Collimation], and the slider group when open. `row(label, ...buttons)` in `createControls` builds a row of equal-width buttons. With the slider group open this fills the tablet panel's height almost completely — any further control needs a different place (F12 owns the final layout).
+- Extra absorption tests: to find which pixels' rays sample a blob, render the blob as the extra volume over an EMPTY copy of the grid (`{ ...phantom, intensity: new Uint8Array(n) }`): exactly those pixels are below 1 (`crossesBlob` in `tests/render/extraAbsorption.test.ts`). The test blob is voxels i 72–76, j 50–53, k 60–65 of the phantom grid (soft tissue to the patient's left of the spine).
 
 ## Rounds
 <!--
@@ -145,3 +146,9 @@
 - Files touched: `src/render/controls.ts`, `tests/e2e/render/orientationButtons.spec.ts` (new), this log, the task file.
 - Test result: verify command passed (10 screen tests). `npm run check` passed: lint + types clean, 153 unit tests, 140 screen tests passed and 6 skipped (one-set-up-only tests).
 - Next round should know: the Invert button is now half the column wide (68 px), still at least 44×44 px; all earlier control tests pass unchanged.
+
+## Round — 2026-11-10 17:15 — F2-S17 — done
+- What I did: Added `options.extraAbsorption` (a `Uint8Array` on the volume's grid; a wrong length throws) to `renderDrrCpu` / `transmissionAt`: each sample adds extra / 255 × `EXTRA_ABSORPTION_PER_MM` per mm (step 2). Added `EXTRA_ABSORPTION_PER_MM = 0.3` to `pipeline.ts`.
+- Files touched: `src/render/pipeline.ts`, `src/render/drrCpu.ts`, `tests/render/extraAbsorption.test.ts` (new), this log, the task file.
+- Test result: verify command passed (6 unit tests). `npm run check` passed: lint + types clean, 159 unit tests, 140 screen tests passed and 6 skipped (one-set-up-only tests).
+- Next round should know: the GPU image has no extra volume yet (F2-S18): a second 3D texture sampled at the same `uvw`, added inside the same loop line, uploaded again whenever `store.get().contrast` is a different array object.

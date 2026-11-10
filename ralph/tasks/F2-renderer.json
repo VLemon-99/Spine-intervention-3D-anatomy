@@ -412,9 +412,9 @@
       "dependsOn": [
         "F2-S1"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. Draft number the owner or F9 may tune: EXTRA_ABSORPTION_PER_MM = 0.3 (3 mm of full-strength contrast lets about 40% of the X-rays through)."
     },
     {
       "id": "F2-S18",
