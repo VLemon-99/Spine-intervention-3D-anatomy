@@ -3,7 +3,7 @@
 // sits at origin + (i, j, k) × spacing in patient mm (+x left, +y back, +z head).
 // Results are approximations for the owner to review on real anatomy.
 import { isBone, LEVEL_CODES, LEVEL_IDS, TISSUE, type LevelCode } from '../../src/core/labels';
-import type { Endplate, Landmarks, LevelLandmarks, Sided, Vec3, Volume } from '../../src/core/types';
+import type { Endplate, Landmarks, LevelLandmarks, SacrumLandmarks, Sided, Vec3, Volume } from '../../src/core/types';
 
 /** Levels with a typical vertebral body (C1 and C2 are left out for now; sacrum and ilium have their own landmarks). */
 export const TYPICAL_LEVELS: readonly LevelCode[] = LEVEL_CODES.filter(
@@ -407,7 +407,98 @@ export function findLevelLandmarks(vol: VolumeGrid): LevelLandmarks[] {
   return out;
 }
 
-/** The whole Landmarks object for a region volume. */
+/** The whole Landmarks object for a region volume (see computeRegionLandmarks for the report). */
 export function computeLandmarks(vol: VolumeGrid & { region: string }): Landmarks {
-  return { region: vol.region, levels: findLevelLandmarks(vol) };
+  return computeRegionLandmarks(vol).landmarks;
+}
+
+// ── Sacrum and iliac crests (F1-S23) ────────────────────────────────────────
+
+/** Only the top of the sacrum (S1) is used: bone within this distance (mm) below the sacrum's highest voxel. */
+export const S1_DEPTH_MM = 35;
+
+/** The S1 endplate is fitted on body columns within this many canal half-widths of the canal's midline (keeps the sacral wings out). */
+const S1_BODY_HALF_WIDTHS = 2;
+
+export interface LandmarkResult {
+  landmarks: Landmarks;
+  /** Plain-language notes for the converter's report (e.g. a crest cut off by the volume's edge). */
+  notes: string[];
+}
+
+/** Landmarks of the region plus notes: levels, and the sacrum and iliac crests when present. */
+export function computeRegionLandmarks(vol: VolumeGrid & { region: string }): LandmarkResult {
+  const notes: string[] = [];
+  const landmarks: Landmarks = { region: vol.region, levels: findLevelLandmarks(vol) };
+  const byLevel = boneVoxelsByLevel(vol);
+  const sacrumBone = byLevel.get(LEVEL_IDS.sacrum);
+  let midlineX: number | undefined;
+  if (sacrumBone && sacrumBone.length > 0) {
+    const found = findSacrum(vol, sacrumBone);
+    midlineX = found.midlineX;
+    if (found.sacrum) landmarks.sacrum = found.sacrum;
+    else notes.push('Sacrum landmarks could not be found (no clear S1 top face or articular processes).');
+  }
+  const ilium = byLevel.get(LEVEL_IDS.ilium);
+  if (ilium && ilium.length > 0) {
+    const crest = findIliacCrests(vol, ilium, midlineX ?? canalMidline(vol) ?? (vol.size.x - 1) / 2, notes);
+    if (crest) landmarks.iliacCrest = crest;
+  }
+  return { landmarks, notes };
+}
+
+function findSacrum(vol: VolumeGrid, sacrumBone: readonly number[]): { sacrum?: SacrumLandmarks; midlineX: number } {
+  const top = range(sacrumBone.map((v) => ijk(vol, v)[2]))[1];
+  const lowest = top - S1_DEPTH_MM / vol.spacing.z;
+  const s1 = sacrumBone.filter((v) => ijk(vol, v)[2] >= lowest);
+  const body = bodyVoxels(vol, s1);
+  const canal = canalBeside(vol, s1, body.length ? body : s1);
+  const midlineX = canal.centreX;
+  const core = body.filter((v) => Math.abs(ijk(vol, v)[0] - canal.centreX) <= S1_BODY_HALF_WIDTHS * canal.halfWidth);
+  const ends = core.length ? fitEndplates(vol, core) : null;
+  const tips = superiorArticularTips(vol, s1, canal);
+  if (!ends || !tips) return { midlineX };
+  return { sacrum: { superiorEndplate: ends.superiorEndplate, superiorArticularProcessTip: tips }, midlineX };
+}
+
+/** Mean i of all canal voxels, if any. */
+function canalMidline(vol: VolumeGrid): number | undefined {
+  let sum = 0;
+  let n = 0;
+  for (let v = 0; v < vol.labels.length; v++) {
+    if (CANAL_LABELS.has(vol.labels[v])) {
+      sum += v % vol.size.x;
+      n++;
+    }
+  }
+  return n ? sum / n : undefined;
+}
+
+/**
+ * Highest (+z) hip-bone point on each side of the midline (voxel i). Left out,
+ * with a note, when either side is missing or a hip bone reaches the volume's
+ * top edge (its crest is cut off).
+ */
+function findIliacCrests(vol: VolumeGrid, ilium: readonly number[], midlineX: number, notes: string[]): Sided<Vec3> | undefined {
+  const topK = vol.size.z - 1;
+  const sides: Sided<{ top: number; voxels: number[] }> = { left: { top: -1, voxels: [] }, right: { top: -1, voxels: [] } };
+  for (const v of ilium) {
+    const [i, , k] = ijk(vol, v);
+    const side = i > midlineX ? sides.left : sides.right;
+    if (k > side.top) {
+      side.top = k;
+      side.voxels = [v];
+    } else if (k === side.top) side.voxels.push(v);
+  }
+  for (const name of ['left', 'right'] as const) {
+    if (sides[name].voxels.length === 0) {
+      notes.push(`Iliac crests left out: no ${name} hip bone in the volume.`);
+      return undefined;
+    }
+    if (sides[name].top === topK) {
+      notes.push(`Iliac crests left out: the ${name} hip bone reaches the top edge of the volume, so its crest is cut off.`);
+      return undefined;
+    }
+  }
+  return { left: centreInside(vol, sides.left.voxels), right: centreInside(vol, sides.right.voxels) };
 }

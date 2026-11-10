@@ -98,3 +98,9 @@
 - Files touched: tools/anatomy/landmarks.ts, tests/anatomy/landmarks.test.ts, task file, this log.
 - Test result: verify 14/14 passed; `npm run check` green (179 unit tests, 46 screen tests passed).
 - Next round should know: F1-S23 extends computeLandmarks with optional `sacrum` and `iliacCrest` and a report (e.g. return { landmarks, report } from a new function, keeping computeLandmarks' current return so earlier tests stay unchanged). canalBeside/CanalBox can be reused for the sacrum's canal.
+
+## Round — 2026-11-10 13:46 — F1-S23 — done
+- What I did: sacrum landmarks (S1 superior endplate, S1 SAP tips) and iliac crest points with a notes list (crest cut off / side missing); 5 new unit tests on the pelvis fixture and phantom, earlier 14 unchanged.
+- Files touched: tools/anatomy/landmarks.ts, tests/anatomy/landmarks.test.ts, task file, this log.
+- Test result: verify 19/19 passed; `npm run check` green (184 unit tests, 46 screen tests passed).
+- Next round should know: the converter (F1-S18) should call computeRegionLandmarks and print its notes in the report. On real data the S1 endplate is tilted ~40°; the plane fit handles tilt but only the owner can judge the result.

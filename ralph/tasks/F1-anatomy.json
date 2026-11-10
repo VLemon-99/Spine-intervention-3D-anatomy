@@ -335,9 +335,9 @@
       "dependsOn": [
         "F1-S12"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. landmarks.ts: computeRegionLandmarks(vol) -> {landmarks, notes}; computeLandmarks now returns its .landmarks. Sacrum: top S1_DEPTH_MM (35) of sacrum bone; endplate = plane fit on body columns within 2 canal half-widths of the midline (keeps the wings out); SAP tips as for vertebrae. Iliac crest: highest ilium voxels each side of the sacral canal midline (else any canal, else the volume centre); left out with a note if a side is missing or touches the top edge."
     },
     {
       "id": "F1-S13",

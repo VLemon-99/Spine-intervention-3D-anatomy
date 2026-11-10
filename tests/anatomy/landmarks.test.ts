@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { isBone, LEVEL_IDS, TISSUE } from '../../src/core/labels';
 import { createPhantom, createPhantomLandmarks } from '../../src/core/phantom';
 import type { Vec3, Volume } from '../../src/core/types';
-import { computeLandmarks, findBodyLandmarks, findLevelParts } from '../../tools/anatomy/landmarks';
+import { computeLandmarks, computeRegionLandmarks, findBodyLandmarks, findLevelParts } from '../../tools/anatomy/landmarks';
 import { createPelvisFixture, PELVIS_TRUTH } from './pelvisFixture';
 
 const phantom = createPhantom();
@@ -189,5 +189,59 @@ describe('superior articular process tips and the whole Landmarks object', () =>
     }
     expect(landmarks.levels[0].foramenCentre).toBeDefined();
     expect(landmarks.levels[1].foramenCentre).toBeUndefined();
+  });
+});
+
+describe('sacrum and iliac crest landmarks', () => {
+  const pelvis = createPelvisFixture();
+  const { landmarks, notes } = computeRegionLandmarks(pelvis);
+
+  it('finds the S1 superior endplate within 3 mm and 10° of the fixture’s, pointing up as a unit vector', () => {
+    const plate = landmarks.sacrum!.superiorEndplate;
+    expect(dist(plate.centre, PELVIS_TRUTH.sacrum.superiorEndplate.centre)).toBeLessThanOrEqual(3);
+    expect(angleDeg(plate.normal, PELVIS_TRUTH.sacrum.superiorEndplate.normal)).toBeLessThanOrEqual(10);
+    expect(Math.hypot(plate.normal.x, plate.normal.y, plate.normal.z)).toBeCloseTo(1, 9);
+    expect(plate.normal.z).toBeGreaterThan(0);
+  });
+
+  it('finds the S1 superior articular process tips within 3 mm, on or within 1.5 mm of sacrum bone', () => {
+    for (const side of ['left', 'right'] as const) {
+      const tip = landmarks.sacrum!.superiorArticularProcessTip[side];
+      expect(dist(tip, PELVIS_TRUTH.sacrum.superiorArticularProcessTip[side]), side).toBeLessThanOrEqual(3);
+      let nearest = Infinity;
+      for (let v = 0; v < pelvis.labels.length; v++) {
+        if (pelvis.levels![v] !== LEVEL_IDS.sacrum || !isBone(pelvis.labels[v])) continue;
+        const q = {
+          x: pelvis.origin.x + (v % pelvis.size.x),
+          y: pelvis.origin.y + (Math.floor(v / pelvis.size.x) % pelvis.size.y),
+          z: pelvis.origin.z + Math.floor(v / (pelvis.size.x * pelvis.size.y)),
+        };
+        nearest = Math.min(nearest, dist(tip, q));
+      }
+      expect(nearest, side).toBeLessThanOrEqual(1.5);
+    }
+  });
+
+  it('finds the iliac crest points within 3 mm of the highest hip-bone points, left with the larger x', () => {
+    for (const side of ['left', 'right'] as const) {
+      expect(dist(landmarks.iliacCrest![side], PELVIS_TRUTH.iliacCrest[side]), side).toBeLessThanOrEqual(3);
+    }
+    expect(landmarks.iliacCrest!.left.x).toBeGreaterThan(landmarks.iliacCrest!.right.x);
+    expect(notes).toEqual([]);
+  });
+
+  it('gives the phantom (no sacrum, no hip bones) neither a sacrum nor an iliacCrest field', () => {
+    const result = computeRegionLandmarks(phantom);
+    expect('sacrum' in result.landmarks).toBe(false);
+    expect('iliacCrest' in result.landmarks).toBe(false);
+    expect(result.notes).toEqual([]);
+    expect('sacrum' in computeLandmarks(phantom)).toBe(false);
+  });
+
+  it('leaves the iliac crests out, and says so, when a hip bone touches the top edge of the volume', () => {
+    const cut = computeRegionLandmarks(createPelvisFixture({ topZ: 18 }));
+    expect('iliacCrest' in cut.landmarks).toBe(false);
+    expect(cut.notes.join('\n')).toMatch(/left hip bone reaches the top edge.*cut off/);
+    expect(cut.landmarks.sacrum).toBeDefined();
   });
 });
