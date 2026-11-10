@@ -3,7 +3,7 @@
 // Works on volumes in the standard layout (i → left, j → back, k → head).
 // The numbers live in tools/anatomy/soft-tissue-params.json (draft, for the owner to review).
 import { readFileSync } from 'node:fs';
-import { isBone, TISSUE } from '../../src/core/labels';
+import { isBone, LEVEL_CODES, LEVEL_IDS, TISSUE } from '../../src/core/labels';
 import type { Landmarks, Vec3, Volume } from '../../src/core/types';
 
 export interface SoftTissueParams {
@@ -13,6 +13,7 @@ export interface SoftTissueParams {
   ligamentumFlavum: { thicknessMm: number };
   thecalSac: { radiusMm: number; minCanalAreaMm2: number };
   nerveRoot: { radiusMm: number; lengthBeyondForamenMm: number; downwardAngleDeg: number };
+  jointSpace: { maxWidthMm: number };
 }
 
 const PARAMS_URL = new URL('./soft-tissue-params.json', import.meta.url);
@@ -29,6 +30,7 @@ export function loadSoftTissueParams(): SoftTissueParams {
   positive(p.thecalSac?.radiusMm, 'thecalSac.radiusMm');
   positive(p.thecalSac?.minCanalAreaMm2, 'thecalSac.minCanalAreaMm2');
   positive(p.nerveRoot?.radiusMm, 'nerveRoot.radiusMm');
+  positive(p.jointSpace?.maxWidthMm, 'jointSpace.maxWidthMm');
   positive(p.nerveRoot?.lengthBeyondForamenMm, 'nerveRoot.lengthBeyondForamenMm');
   if (typeof p.nerveRoot?.downwardAngleDeg !== 'number' || Math.abs(p.nerveRoot.downwardAngleDeg) >= 90) {
     throw new Error('soft-tissue-params.json: nerveRoot.downwardAngleDeg must be a number between -90 and 90');
@@ -47,13 +49,15 @@ const SAC: ReadonlySet<number> = new Set([TISSUE.thecalSac, TISSUE.spinalCord]);
  * Runs every modelling step and returns a copy of the volume with new labels
  * (the intensity array is the same values, untouched). Steps, in order:
  * thecal sac (only if the volume has none), canal (epidural space +
- * ligamentum flavum), nerve roots (needs the landmarks' foramen centres).
+ * ligamentum flavum), nerve roots (needs the landmarks' foramen centres),
+ * joint spaces (facet and SI; needs the level volume).
  */
 export function modelSoftTissue<T extends ModelInput>(vol: T, landmarks?: Landmarks, params: SoftTissueParams = loadSoftTissueParams()): T {
   const labels = vol.labels.slice();
   modelThecalSac(vol, labels, params);
   modelCanal(vol, labels, params);
   if (landmarks) modelNerveRoots(vol, labels, landmarks, params);
+  modelJointSpaces(vol, labels, params);
   return { ...vol, labels };
 }
 
@@ -372,4 +376,117 @@ export function paintTube(
           if (distToSegment(voxelPosition(vol, i, j, k), a, b) <= radius) labels[v] = label;
         }
   }
+}
+
+/** Labels a joint space may replace. */
+const JOINT_MAY_REPLACE: ReadonlySet<number> = new Set([TISSUE.air, TISSUE.skinFat, TISSUE.muscle, TISSUE.jointSpace]);
+
+/** The 13 directions that, with their opposites, reach all 26 neighbours. */
+const DIRECTIONS: readonly [number, number, number][] = (() => {
+  const out: [number, number, number][] = [];
+  for (let dk = -1; dk <= 1; dk++)
+    for (let dj = -1; dj <= 1; dj++)
+      for (let di = -1; di <= 1; di++) {
+        const first = dk !== 0 ? dk : dj !== 0 ? dj : di;
+        if (first > 0) out.push([di, dj, dk]);
+      }
+  return out;
+})();
+
+type JointKind = 'facet' | 'si';
+
+/** Which joint two bone level ids make, if any. */
+function jointKind(a: number, b: number): JointKind | undefined {
+  if (a === 0 || b === 0 || a === b) return undefined;
+  const sacrum = LEVEL_IDS.sacrum;
+  const ilium = LEVEL_IDS.ilium;
+  if ((a === sacrum && b === ilium) || (a === ilium && b === sacrum)) return 'si';
+  if (a === ilium || b === ilium) return undefined;
+  // Neighbouring vertebral levels (L5 and sacrum included): ids follow LEVEL_CODES order.
+  return Math.abs(a - b) === 1 && Math.max(a, b) <= LEVEL_CODES.indexOf('sacrum') + 1 ? 'facet' : undefined;
+}
+
+/**
+ * Joint spaces: from every bone voxel, walk each of the 13 directions through
+ * non-bone voxels; if bone of a level that forms a joint with it is reached
+ * within jointSpace.maxWidthMm, the voxels walked over become joint space
+ * (only voxels of generic tissue; a walk through anything else is skipped).
+ * Facet joints count only behind the front edge of the canal (j greater than
+ * the canal's front in that slice), so disc spaces never count; with no canal
+ * in the volume there are no facet joints.
+ */
+export function modelJointSpaces(vol: ModelInput, labels: Uint8Array, params: SoftTissueParams): void {
+  const levels = vol.levels;
+  if (!levels) return;
+  const { x: nx, y: ny, z: nz } = vol.size;
+  const canalFront = canalFrontBySlice(vol, labels);
+  const sp = [vol.spacing.x, vol.spacing.y, vol.spacing.z];
+  const between: number[] = [];
+  const mark = new Uint8Array(labels.length);
+  for (let v = 0; v < labels.length; v++) {
+    if (!isBone(labels[v]) || levels[v] === 0) continue;
+    const i0 = v % nx;
+    const j0 = Math.floor(v / nx) % ny;
+    const k0 = Math.floor(v / (nx * ny));
+    for (const [di, dj, dk] of DIRECTIONS) {
+      const step = Math.hypot(di * sp[0], dj * sp[1], dk * sp[2]);
+      const maxSteps = Math.floor(params.jointSpace.maxWidthMm / step + 1e-9);
+      between.length = 0;
+      let i = i0;
+      let j = j0;
+      let k = k0;
+      for (let n = 1; n <= maxSteps + 1; n++) {
+        i += di;
+        j += dj;
+        k += dk;
+        if (i < 0 || j < 0 || k < 0 || i >= nx || j >= ny || k >= nz) break;
+        const w = i + nx * (j + ny * k);
+        if (isBone(labels[w])) {
+          if (between.length === 0) break; // touching bone, no gap
+          const kind = jointKind(levels[v], levels[w]);
+          if (!kind) break;
+          if (kind === 'facet' && !between.every((u) => behindCanalFront(u, nx, ny, canalFront))) break;
+          for (const u of between) mark[u] = 1;
+          break;
+        }
+        if (!JOINT_MAY_REPLACE.has(labels[w]) || n > maxSteps) break;
+        between.push(w);
+      }
+    }
+  }
+  for (let v = 0; v < labels.length; v++) if (mark[v]) labels[v] = TISSUE.jointSpace;
+}
+
+function behindCanalFront(v: number, nx: number, ny: number, front: Int32Array | null): boolean {
+  if (!front) return false;
+  const j = Math.floor(v / nx) % ny;
+  const k = Math.floor(v / (nx * ny));
+  return j > front[k];
+}
+
+/** Per slice: the smallest j of canal voxels (sac, cord, epidural), filled from the nearest slice that has one. */
+function canalFrontBySlice(vol: ModelInput, labels: Uint8Array): Int32Array | null {
+  const { x: nx, y: ny, z: nz } = vol.size;
+  const front = new Int32Array(nz).fill(-1);
+  for (let k = 0; k < nz; k++) {
+    outer: for (let j = 0; j < ny; j++) {
+      const row = nx * (j + ny * k);
+      for (let i = 0; i < nx; i++) {
+        const l = labels[row + i];
+        if (l === TISSUE.thecalSac || l === TISSUE.spinalCord || l === TISSUE.epiduralSpace) {
+          front[k] = j;
+          break outer;
+        }
+      }
+    }
+  }
+  const known = [...front.keys()].filter((k) => front[k] >= 0);
+  if (known.length === 0) return null;
+  for (let k = 0; k < nz; k++) {
+    if (front[k] >= 0) continue;
+    let best = known[0];
+    for (const c of known) if (Math.abs(c - k) < Math.abs(best - k)) best = c;
+    front[k] = front[best];
+  }
+  return front;
 }

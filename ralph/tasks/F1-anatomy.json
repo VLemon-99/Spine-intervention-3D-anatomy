@@ -429,9 +429,9 @@
       "dependsOn": [
         "F1-S13"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. softTissue.ts: modelJointSpaces(vol, labels, params) (last step so far; needs vol.levels). From every bone voxel, walk 13 directions (axes + diagonals) through air/skin-fat/muscle/joint voxels; reaching bone of a joint-forming level (neighbouring vertebral levels incl. L5-sacrum = facet; sacrum-ilium = SI) within jointSpace.maxWidthMm (4) marks the walked voxels. Facet voxels must be behind the canal front of their slice (sac/cord/epidural min j, filled from the nearest slice); no canal = no facets. On the pelvis fixture diagonal gaps add SI joint voxels up to 2 mm past the ideal gap box at its corners."
     },
     {
       "id": "F1-S16",

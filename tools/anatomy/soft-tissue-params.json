@@ -20,5 +20,9 @@
     "lengthBeyondForamenMm": 15,
     "downwardAngleDeg": 30,
     "note": "At every foramen centre in the landmarks, on each side: a tube of this radius from the nearest thecal-sac voxel through the foramen centre, then on outward (away from the midline) and downward at this angle below horizontal for this length. Never replaces bone."
+  },
+  "jointSpace": {
+    "maxWidthMm": 4,
+    "note": "Joint space = non-bone voxels in a straight gap at most this wide between two different bones: a vertebral level and the level directly below it (facet joints, only behind the front of the canal so disc spaces are not counted), or sacrum and ilium (SI joints). Gaps are measured along the volume axes and their diagonals."
   }
 }

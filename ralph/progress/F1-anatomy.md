@@ -123,3 +123,9 @@
 - Files touched: tools/anatomy/softTissue.ts, tools/anatomy/soft-tissue-params.json, tests/anatomy/softTissueNerves.test.ts (new), task file, this log.
 - Test result: verify 6/6 passed; first `npm run check` failed lint on an unused `_f` in the new test — rewrote that line; then green (201 unit tests, 46 screen tests passed).
 - Next round should know: paintTube(vol, labels, [points], radius, label, mayReplace) is ready for the arteries (F1-S16). sacVoxels scans the whole volume once per call; fine for now.
+
+## Round — 2026-11-10 14:05 — F1-S15 — done
+- What I did: facet and SI joint spaces (gap walks from bone surfaces along 13 directions, canal-front rule for facets), param maxWidthMm 4; 5 unit tests on the stripped phantom and pelvis fixture.
+- Files touched: tools/anatomy/softTissue.ts, tools/anatomy/soft-tissue-params.json, tests/anatomy/softTissueJoints.test.ts (new), task file, this log.
+- Test result: verify 5/5 passed (first run: my new pelvis test's SI box was too tight at the gap's corners, where diagonal gaps are real; widened that test's box by 2 mm at the edges — test written this round); `npm run check` green (206 unit tests, 46 screen tests passed).
+- Next round should know: step order now sac → canal → nerve roots (if landmarks) → joints. Joint spaces replace only air/skin-fat/muscle, so roots and arteries painted earlier stay. F1-S16 adds arteries; put that step before joints or make sure it never overwrites nerve root.
