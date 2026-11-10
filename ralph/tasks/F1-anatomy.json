@@ -165,9 +165,9 @@
       "dependsOn": [
         "F1-S5"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. tools/anatomy/regions.ts: REGIONS (name, title, levels, includesIlium), CROP_MARGIN_MM = 10, SI_JOINT_DISTANCE_MM = 30 (box-shaped, per axis), cropToRegion(vol, region, {marginMm?, siJointDistanceMm?}) -> cropped {size, spacing, origin, intensity, labels, levels, box, missingLevels}. Lumbosacral keeps ilium within 30 mm of the sacrum and all ilium from the sacrum bottom upward (crests). Back reach = furthest-back non-air voxel in the box columns + margin. For the owner (F1.7): on a real supine CT the scanner table may count as non-air and stretch the crop backwards; check when converting real data."
     },
     {
       "id": "F1-S7",

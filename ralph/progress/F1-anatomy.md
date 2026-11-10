@@ -53,3 +53,9 @@
 - Files touched: tools/anatomy/labels.ts, tests/anatomy/labels.test.ts, task file, this log.
 - Test result: verify 18/18 passed; `npm run check` green (134 unit tests, 46 screen tests passed).
 - Next round should know: full label pipeline is labelsFromMasks → refineLabelsByHu → levelsFromMasks(refinedLabels, masks, map). All three work on the masks' own voxel order, so reorder (applyLayoutPlan) either the masks first or the three outputs afterwards — the same plan for all.
+
+## Round — 2026-11-10 13:22 — F1-S6 — done
+- What I did: region table and cropToRegion (region bone bbox, lumbosacral ilium near the sacrum + hip bones up to the crests, mm margin clamped to edges, stretched back to the skin, origin moved); 8 unit tests.
+- Files touched: tools/anatomy/regions.ts, tests/anatomy/regions.test.ts, task file, this log.
+- Test result: verify 8/8 passed (first run had a fixture too short to show the lower hip bone being cut; fixed the fixture, not the code); `npm run check` green (142 unit tests, 46 screen tests passed).
+- Next round should know: cropToRegion expects the standard layout and Uint8 intensity/labels/levels (so crop after HU→8-bit and after reordering). Margin in voxels = ceil(marginMm / spacing) per axis. Possible real-data snag: the CT couch behind a supine patient counts as non-air for the back-skin reach.
