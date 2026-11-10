@@ -9,7 +9,8 @@
 // Along each ray the absorption is added up from the intensity values
 // (absorption per mm = intensity / 255 × ABSORPTION_PER_MM), and the pixel's
 // brightness is e^(−total absorption): bone dark, soft tissue grey, air light.
-// Noise, collimation, magnification, flips and the CPU reference come in F2.
+// The numbers shared with the CPU reference (drrCpu.ts) live in pipeline.ts.
+// Noise, collimation, magnification and flips come in later F2 stories.
 //
 // Assumes the volume's orientation is the identity (voxel i, j, k axes along
 // patient x, y, z), which holds for the phantom; general orientations are F2.
@@ -29,15 +30,9 @@ import {
 } from 'three';
 import { IMAGE_SIZE_PX, createProjection } from '../core/geometry';
 import type { CArmPose, Vec3, Volume } from '../core/types';
+import { ABSORPTION_PER_MM, MARCH_STEP_MM, MAX_MARCH_STEPS } from './pipeline';
 
-/** Ray-marching step along each ray, mm (half a phantom voxel). */
-export const MARCH_STEP_MM = 0.5;
-/**
- * Absorption per mm of a voxel with full intensity (255). Chosen so that about
- * 8 cm of soft tissue lets roughly half the X-rays through and bone shows
- * clearly darker. A display setting, not a physical constant; F2 may tune it.
- */
-export const ABSORPTION_PER_MM = 0.025;
+export { ABSORPTION_PER_MM, MARCH_STEP_MM };
 
 const vertexShader = /* glsl */ `
   void main() {
@@ -89,7 +84,7 @@ const fragmentShader = /* glsl */ `
     // X-ray absorption law: add up absorption along the ray, then
     // brightness = e^(-total absorption). More absorption = darker.
     float total = 0.0;
-    for (int i = 0; i < 4096; i++) {
+    for (int i = 0; i < ${MAX_MARCH_STEPS}; i++) {
       float t = tNear + (float(i) + 0.5) * uStep;
       if (t > tFar) break;
       vec3 uvw = (uSource + dir * t - uBoxMin) / (uBoxMax - uBoxMin);

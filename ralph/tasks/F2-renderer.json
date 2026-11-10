@@ -26,9 +26,9 @@
       "zone": "render",
       "priority": 1,
       "dependsOn": [],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. transmissionAt(volume, projection, pixel, options) is the one-pixel function; DrrCpuOptions is still empty."
     },
     {
       "id": "F2-S2",
