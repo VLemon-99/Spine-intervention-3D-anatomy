@@ -269,9 +269,9 @@
         "F2-S10",
         "F2-S8"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. The sliders sit in a fold-out group opened with a Collimation button (test id collimation-toggle, closed at first), two by two, each with its readout above it."
     },
     {
       "id": "F2-S12",

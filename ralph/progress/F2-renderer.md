@@ -28,6 +28,8 @@
 - Invert after collimation: inverted covered pixels are 1 − NO_SIGNAL = white, still perfectly uniform.
 - GPU collimation: the shutter widths are worked out in TypeScript (percent / 100 × 512, the same sum as `isCollimated`) and sent as pixels in `uShutterPx`; the shader tests whole pixel numbers and returns `uNoSignal` early, before any marching. Later steps of taking the image (noise) must stay AFTER that early return so covered pixels get none.
 - ESLint (`no-useless-assignment`) rejects `let { a, b } = …` when one of them is re-assigned but not read again; use two separately named results instead.
+- Controls column: fixed 140 px wide, 4 px gaps. Rows so far: Invert, the magnification row, the Collimation button, and (when open) the 2×2 slider group (about 120 px high). On the tablet about 325 px of height is available: with the group open about 264 px is used, so ONE more 44 px row fits while it is open. F2-S16's three buttons should share one row (three 44 px buttons, like the magnification row) rather than take three rows.
+- Sliders: Playwright's `click`/`tap` with `{ position }` on an `<input type="range">` moves it in both set-ups (`pressTrack` in `collimationSliders.spec.ts`). Screen tests of the sliders must first open the group with `press(page, 'collimation-toggle')`.
 
 ## Rounds
 <!--
@@ -97,3 +99,9 @@
 - Files touched: `src/render/drrGpu.ts`, `src/render/fluoroCanvas.ts`, `tests/e2e/render/collimation.spec.ts` (new), this log, the task file.
 - Test result: verify command passed (10 new screen tests; all 78 render screen tests). First `npm run check` failed on one lint error in the new test file (an unused re-assignment); fixed, then it passed: lint + types clean, 127 unit tests, 102 screen tests passed and 6 skipped (one-set-up-only tests).
 - Next round should know: no sliders yet (F2-S11). `coveredAndOpen(canvas)` in `collimation.spec.ts` shows how to check that covered pixels have one single value.
+
+## Round — 2026-11-10 13:37 — F2-S11 — done
+- What I did: Added the four collimation sliders (`collimation-left/right/top/bottom`, 0–50, step 1) with % readouts (`collimation-…-readout`) in a fold-out group opened by a new Collimation button (`collimation-toggle`, `aria-expanded`). Moving a slider sets that shutter (shown from the next image); sliders and readouts follow the settings when they change elsewhere.
+- Files touched: `src/render/controls.ts`, `tests/e2e/render/collimationSliders.spec.ts` (new), this log, the task file.
+- Test result: verify command passed (12 screen tests). `npm run check` passed: lint + types clean, 127 unit tests, 114 screen tests passed and 6 skipped (one-set-up-only tests).
+- Next round should know: the group is closed after page load. Each slider's `<input>` box is 67×44 px on the tablet.
