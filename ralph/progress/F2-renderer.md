@@ -167,3 +167,9 @@
 - Files touched: `src/render/formatPose.ts` (new), `src/render/poseReadout.ts` (new), `src/render/index.ts`, `tests/render/formatPose.test.ts` (new), `tests/e2e/render/poseText.spec.ts` (new), this log, the task file.
 - Test result: verify command passed (7 unit tests, 10 screen tests). `npm run check` passed: lint + types clean, 166 unit tests, 160 screen tests passed and 6 skipped (one-set-up-only tests).
 - Next round should know: every story that can be done without the owner is now done. The three left are F2-S13 (blocked — see its notes), and F2-S21 and F2-S20, which are `todo` but depend on F2-S13.
+
+## Round — 2026-11-10 17:29 — no story eligible — F2-S21 and F2-S20 blocked, loop finished
+- What I did: No `todo` story had all its dependencies done: F2-S21 and F2-S20 both wait for F2-S13, which is blocked on the owner's decision. Since they need that same decision before they can start, I marked both `blocked` with notes saying so. Ran the final full check and the production build, pushed, and opened the pull request.
+- Files touched: this log, the task file.
+- Test result: final `npm run check` passed: lint + types clean, 166 unit tests, 160 screen tests passed and 6 skipped (one-set-up-only tests). `npm run build` passed.
+- Next round should know: 18 stories done (F2-S1…S12, S14…S19), 3 blocked (F2-S13, S21, S20). To continue: the owner answers F2-S13's question (may the default-noise line in `tests/render/settings.test.ts` change?), then sets F2-S13, F2-S21 and F2-S20 back to `todo`. Open points recorded for the owner along the way: Invert turns the collimated area white (F2-S9 note); the noise and contrast numbers are drafts (F2-S12, F2-S17 notes); the 3% comparison is a loose check on the phantom (F2-S15 note).

@@ -485,9 +485,9 @@
       "dependsOn": [
         "F2-S13"
       ],
-      "status": "todo",
+      "status": "blocked",
       "attempts": 0,
-      "notes": "Unblocked at the 2026-11-10 story review: the shared contract now has store.lastImageKind (src/core/store.ts); takeShot already sets 'shot', and F3-S6 sets 'fluoro' for fluoro frames."
+      "notes": "BLOCKED 2026-11-10 — waits for F2-S13, which needs the owner's decision (see F2-S13's notes). This story adds more grain for fluoro frames on screen and cannot start before the grain itself (F2-S13) is in the on-screen image. Nothing else stands in its way. TO UNBLOCK: after F2-S13 is unblocked, set this story back to 'todo' as well. Earlier note: Unblocked at the 2026-11-10 story review: the shared contract now has store.lastImageKind (src/core/store.ts); takeShot already sets 'shot', and F3-S6 sets 'fluoro' for fluoro frames."
     },
     {
       "id": "F2-S20",
@@ -517,9 +517,9 @@
         "F2-S18",
         "F2-S21"
       ],
-      "status": "todo",
+      "status": "blocked",
       "attempts": 0,
-      "notes": ""
+      "notes": "BLOCKED 2026-11-10 — waits for F2-S13 and F2-S21 (see F2-S13's notes for the decision the owner needs to make). It is the final all-settings check and depends on both. TO UNBLOCK: after F2-S13 is unblocked, set this story back to 'todo' as well."
     }
   ]
 }
