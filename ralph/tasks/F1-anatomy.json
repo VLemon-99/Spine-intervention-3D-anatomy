@@ -25,9 +25,9 @@
       "zone": "anatomy",
       "priority": 1,
       "dependsOn": [],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. tools/anatomy/nifti.ts exports readNifti(path) and parseNifti(bytes, name). Data comes back as Float32Array in file order (i fastest); affine is 4x4 rows in NIfTI RAS+ (sform > qform > spacing-only), affineSource says which. Fixture helper: tests/anatomy/niftiFixture.ts (makeNifti / writeNifti)."
     },
     {
       "id": "F1-S2",
