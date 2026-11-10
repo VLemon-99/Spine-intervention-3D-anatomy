@@ -79,3 +79,9 @@
 - Files touched: tools/anatomy/convertCore.ts (new), tools/anatomy/convert.ts, tests/anatomy/convert.test.ts, task file, this log.
 - Test result: verify 9/9 passed (convert-cli.test.ts untouched and passing); first `npm run check` failed lint (preserve-caught-error) — fixed; then green (165 unit tests, 46 screen tests passed).
 - Next round should know: ConvertReport.source carries sourceDataset/licence/attribution for the manifest (F1-S18). F1-S18 should add the modeller and landmarks between labels and writing, inside convertFolder.
+
+## Round — 2026-11-10 13:34 — F1-S10 — done
+- What I did: body centre + superior/inferior endplates (plane fit on body columns) per typical level; 6 unit tests (phantom L4/L5 vs createPhantomLandmarks, bone+level at centres, a tilted endplate, empty/skip cases).
+- Files touched: tools/anatomy/landmarks.ts, tests/anatomy/landmarks.test.ts, task file, this log.
+- Test result: verify 6/6 passed; `npm run check` green (171 unit tests, 46 screen tests passed).
+- Next round should know: landmarks.ts works on any {size, spacing, origin, labels, levels} in the standard layout (e.g. createPhantom()). Reuse boneVoxelsByLevel / bodyVoxels / centreInside for pedicles and articular processes. Endplate centre = mean of top (or bottom) voxel centres, i.e. on the outer voxel centres, as in the phantom's truth.

@@ -264,9 +264,9 @@
       "dependsOn": [
         "F1-S5"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. tools/anatomy/landmarks.ts: TYPICAL_LEVELS (C3…L5), boneVoxelsByLevel, bodyVoxels (level bone with y in front of the canal = thecalSac/spinalCord voxels in the level's slices; without canal, the front 40% of the bone depth), centreInside (mean, snapped to the nearest body voxel if outside), findBodyLandmarks(vol) -> [{level, bodyCentre, superiorEndplate, inferiorEndplate}] head to foot. Endplates: least-squares plane through the top/bottom voxel of each body column at least 75% as tall as the tallest. For owner review on real data: if the real spinal_cord mask stops above the lumbar levels, the 40%-front fallback is used there."
     },
     {
       "id": "F1-S11",
