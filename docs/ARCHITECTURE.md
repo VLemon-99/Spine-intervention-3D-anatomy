@@ -8,7 +8,7 @@ A static website: TypeScript, built with Vite. It runs entirely in the browser, 
 ## Components
 | Component | What it does | Where it lives |
 |---|---|---|
-| Core (shared contracts) | Shared types (`Volume`, `Landmarks`, `Mode`, `CArmPose`, `NeedleState`, `TissueEvent`, `AttemptRecord`), tissue label list, C-arm projection geometry, central state store (pose, shot count, fluoro time, last image pose, mode, volume, landmarks, needle state, contrast volume) + event bus (`exposure`, `caseStart`, `tissueEvent`), seeded random numbers, synthetic phantom (with landmarks), `window.__sim` test hook | `src/core/` |
+| Core (shared contracts) | Shared types (`Volume`, `Landmarks`, `Mode`, `CArmPose`, `NeedleState`, `TissueEvent`, `AttemptRecord`), tissue label list, C-arm projection geometry, central state store (pose, shot count, fluoro time, last image pose and kind, mode, volume, landmarks, needle state, contrast volume, list of regions on offer) + event bus (`exposure`, `caseStart`, `tissueEvent`, `regionRequest`), shared list of keyboard shortcuts for the help overlay, seeded random numbers, synthetic phantom (with landmarks), `window.__sim` test hook | `src/core/` |
 | App shell | Disclaimer, home screen, modes (Practice / Exam / Quiz / Free play), layout, history (browser storage), About page, WebGL2 check. `main.ts` mounts every zone's panel | `src/app/` |
 | Anatomy | Converter script (NIfTI → web format), soft-tissue modeller, region loader, landmarks | `tools/anatomy/`, `src/anatomy/`, `public/data/` |
 | Renderer | GPU DRR shader, CPU reference DRR, display (invert, noise, collimation, magnification, flip), needle and contrast in the image, fluoro panel | `src/render/` |
@@ -21,7 +21,7 @@ A static website: TypeScript, built with Vite. It runs entirely in the browser, 
 | Quiz | Question bank, quiz screen, quiz scoring | `src/quiz/` |
 
 ## How data flows
-1. **Load:** the app shell asks the anatomy loader for a region. It reads `public/data/manifest.json` and the region files and puts a `Volume` (+ landmarks) in the store. Tests use the synthetic phantom from `src/core/phantom.ts` instead.
+1. **Load:** the anatomy zone reads `public/data/manifest.json` and puts the list of regions in the store. When the region picker (C-arm zone) emits `regionRequest`, the anatomy loader reads the region files and puts a `Volume` (+ landmarks) in the store. Tests use the synthetic phantom from `src/core/phantom.ts` instead.
 2. **Position:** C-arm controls update the `CArmPose` in the store. `src/core/geometry.ts` turns the pose into a source point, a detector plane and project/unproject functions.
 3. **Expose:** a shot (or each continuous-fluoro frame) emits an `exposure` event. The renderer draws a DRR from the volume + pose + needle curve + contrast volume, and keeps it on screen (last image hold). Counters update.
 4. **Needle:** needle controls send hand actions (angle, advance, rotate bevel) to the needle model. It computes the new shaft curve using tissue labels from the volume, and stores the `NeedleState`.
@@ -46,6 +46,11 @@ The 3D view only reads the store; it never changes it.
 - **Shared instances:** `src/core/store.ts` exports the app's one `store` and `bus`; unit tests make their own with `createStore()` / `createEventBus()`.
 - **Disclaimer flag:** while the disclaimer is shown, `<html>` has `data-disclaimer="shown"` and the rest of the page is inert. Zones with page-wide shortcuts read the attribute instead of importing from `src/app/`.
 - **Landmark levels:** a foramen is listed under the level above it (the L4–L5 foramen belongs to L4, whose nerve root exits there). This is how events name a nerve root's level.
+- **Zones talk only through `src/core/`:** a zone never imports from another zone's folder (only `src/app/main.ts` imports every zone's `mount`). What one zone needs from another goes through the store, the event bus or another shared file in `src/core/`.
+- **Regions:** the anatomy zone fills `store.regions` (`{ name, title }`); the region picker emits `regionRequest` (a region name) and the anatomy zone loads it. Loading does not take an image.
+- **Image kind:** the C-arm zone sets `store.lastImageKind` (`'shot'` or `'fluoro'`) together with `lastImagePose`, before emitting `exposure`. The renderer uses more grain for fluoro frames.
+- **Shortcut help:** each zone registers its keys as a group in `src/core/shortcuts.ts`; the help overlay (C-arm zone) lists every group.
+- **Sacrum and iliac crests:** they are not per-level landmark entries; a region's `Landmarks` has optional `sacrum` and `iliacCrest` fields. The L5–S1 foramen is listed under L5.
 - **Unit tests run without a browser page** (Vitest `node` environment, no jsdom/happy-dom). Logic that needs a unit test lives in plain functions; screens are checked by screen tests.
 
 ## Work zones (for parallel loops)
@@ -81,6 +86,7 @@ A zone may define its own internal types freely. `src/core/` holds only what cro
 - Wave 3: F9 (needs F2, F6).
 - Wave 4: F10 (needs F1, F3, F5, F6, F9).
 - F4 → F5 and F2 → F7 share a zone, so they always run one after the other.
+- F1 and F3 meet at the region picker. Each side is built and tested against the shared contract on its own, so they still run in parallel; one end-to-end test (F1-S27) is added after both are merged.
 
 ## External services
 - None at runtime.

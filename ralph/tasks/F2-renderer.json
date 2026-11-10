@@ -62,7 +62,7 @@
     {
       "id": "F2-S3",
       "title": "Check the GPU image against the CPU reference at three poses",
-      "description": "Add the screen test for F2.2. For three poses — the default pose; oblique +30° with tilt +15°; and oblique −45°, tilt −20°, table left/right +10 mm, head/foot −15 mm, height +20 mm — set the pose (setPose from tests/fixtures/simPage.ts is allowed until F3's controls are merged), set noiseLevel to 0 with setRenderSettings, take an image and read ALL 512×512 canvas pixels (add readWholeCanvas(page) to tests/e2e/render/renderPage.ts). In the test process, compute renderDrrCpu on createPhantom() at the same pose and compare value × 255 with the canvas grey values. If the two do not match, fix the GPU shader or the CPU reference (same sampling, same constants from pipeline.ts) until they do — never by loosening a test.",
+      "description": "Add the screen test for F2.2. For three poses — the default pose; oblique +30° with tilt +15°; and oblique −45°, tilt −20°, table left/right +10 mm, head/foot −15 mm, height +20 mm — set the pose (setPose from tests/fixtures/simPage.ts; render tests may keep using it for exact poses even after F3's controls exist — see CLAUDE.md), set noiseLevel to 0 with setRenderSettings, take an image and read ALL 512×512 canvas pixels (add readWholeCanvas(page) to tests/e2e/render/renderPage.ts). In the test process, compute renderDrrCpu on createPhantom() at the same pose and compare value × 255 with the canvas grey values. If the two do not match, fix the GPU shader or the CPU reference (same sampling, same constants from pipeline.ts) until they do — never by loosening a test.",
       "specRefs": [
         "F2.2"
       ],
@@ -109,7 +109,7 @@
     {
       "id": "F2-S5",
       "title": "Add the Invert toggle button to the fluoro panel",
-      "description": "Add an 'Invert' button (test id invert-toggle, aria-pressed showing its state) to the fluoro panel. A click (desktop) or tap (tablet) flips settings.invert; the button also follows the setting when it is changed elsewhere. Layout: the fluoro panel is one quarter of the screen (F0 layout), so put controls beside or under the canvas and keep them compact; make every button or slider handle at least 44×44 px (F12.3 will check this later); F12 owns the final layout. Use <button> elements with aria-pressed for on/off controls, not checkboxes (the spacebar is the Shot shortcut).",
+      "description": "Add an 'Invert' button (test id invert-toggle, aria-pressed showing its state) to the fluoro panel. A click (desktop) or tap (tablet) flips settings.invert; the button also follows the setting when it is changed elsewhere. Layout: the fluoro panel is one quarter of the screen (F0 layout), so put controls beside or under the canvas and keep them compact; every button and every slider's touch area (the box of its <input> element) is at least 44 px wide and 44 px tall, and this zone's own screen tests check it (F12 cannot fix another zone's panel); F12 owns the final layout. Use <button> elements with aria-pressed for on/off controls, not checkboxes (the spacebar is the Shot shortcut).",
       "specRefs": [
         "F2.3"
       ],
@@ -179,7 +179,7 @@
     {
       "id": "F2-S8",
       "title": "Add the magnification buttons (1×, 1.5×, 2×) to the fluoro panel",
-      "description": "Add three buttons labelled 1×, 1.5× and 2× (test ids magnification-1x, magnification-1.5x, magnification-2x) to the fluoro panel; the one in use has aria-pressed 'true'. Pressing one sets settings.magnification (it takes effect on the next image). Layout: the fluoro panel is one quarter of the screen (F0 layout), so put controls beside or under the canvas and keep them compact; make every button or slider handle at least 44×44 px (F12.3 will check this later); F12 owns the final layout. Use <button> elements with aria-pressed for on/off controls, not checkboxes (the spacebar is the Shot shortcut).",
+      "description": "Add three buttons labelled 1×, 1.5× and 2× (test ids magnification-1x, magnification-1.5x, magnification-2x) to the fluoro panel; the one in use has aria-pressed 'true'. Pressing one sets settings.magnification (it takes effect on the next image). Layout: the fluoro panel is one quarter of the screen (F0 layout), so put controls beside or under the canvas and keep them compact; every button and every slider's touch area (the box of its <input> element) is at least 44 px wide and 44 px tall, and this zone's own screen tests check it (F12 cannot fix another zone's panel); F12 owns the final layout. Use <button> elements with aria-pressed for on/off controls, not checkboxes (the spacebar is the Shot shortcut).",
       "specRefs": [
         "F2.4"
       ],
@@ -252,14 +252,15 @@
     {
       "id": "F2-S11",
       "title": "Add the four collimation sliders to the fluoro panel",
-      "description": "Add four sliders (<input type=\"range\">, 0–50, step 1; test ids collimation-left, collimation-right, collimation-top, collimation-bottom) with a number readout in % each (test ids collimation-left-readout …). Moving a slider sets that shutter in the settings (it takes effect on the next image); the sliders follow the settings when they change elsewhere. They may sit in a small fold-out group if space is short. Layout: the fluoro panel is one quarter of the screen (F0 layout), so put controls beside or under the canvas and keep them compact; make every button or slider handle at least 44×44 px (F12.3 will check this later); F12 owns the final layout. Use <button> elements with aria-pressed for on/off controls, not checkboxes (the spacebar is the Shot shortcut).",
+      "description": "Add four sliders (<input type=\"range\">, 0–50, step 1; test ids collimation-left, collimation-right, collimation-top, collimation-bottom) with a number readout in % each (test ids collimation-left-readout …). Moving a slider sets that shutter in the settings (it takes effect on the next image); the sliders follow the settings when they change elsewhere. They may sit in a small fold-out group if space is short. Layout: the fluoro panel is one quarter of the screen (F0 layout), so put controls beside or under the canvas and keep them compact; every button and every slider's touch area (the box of its <input> element) is at least 44 px wide and 44 px tall, and this zone's own screen tests check it (F12 cannot fix another zone's panel); F12 owns the final layout. Use <button> elements with aria-pressed for on/off controls, not checkboxes (the spacebar is the Shot shortcut).",
       "specRefs": [
         "F2.5"
       ],
       "acceptance": [
         "Screen test (both set-ups; click on the slider track on desktop, tap on it on tablet): the slider's value changes, its readout shows the same number with a % sign, and window.__sim.render().settings.collimation has the same number for that shutter — checked for all four sliders",
         "Screen test (both set-ups): after setting the left slider and taking an image, the covered pixel columns on the canvas have one single grey value",
-        "Screen test (both set-ups): the sliders (once the group is open, if there is one) and the canvas are visible without scrolling the page"
+        "Screen test (both set-ups): the sliders (once the group is open, if there is one) and the canvas are visible without scrolling the page",
+        "Screen test (both set-ups): each of the four sliders' touch area (the box of its <input> element) is at least 44 px wide and 44 px tall"
       ],
       "verify": "npx playwright test tests/e2e/render/collimationSliders.spec.ts",
       "zone": "render",
@@ -275,7 +276,7 @@
     {
       "id": "F2-S12",
       "title": "Add seeded X-ray grain (noise) to the CPU reference, with default levels for shots and fluoro",
-      "description": "Create src/render/noise.ts and add options.noise { seed, level } to renderDrrCpu as step 3 of the order of steps documented at the top of src/render/pipeline.ts: a zero-mean random amount, the same every time for the same seed and pixel, scaled by the level (0 = none, 1 = maximum) and added to the value, which is then kept within 0…1. Collimated pixels get no noise. Put two default levels in pipeline.ts, DEFAULT_NOISE_LEVEL = { shot, fluoro } with fluoro higher than shot and shot above 0, and export defaultNoiseLevel(kind: 'shot' | 'fluoro'). The exact numbers are a look-and-feel choice the owner may tune later; keep the shot level small (the F0 screen tests compare bone and air by 50 grey levels and must keep passing). The CPU and GPU grain patterns do not have to be identical to each other.",
+      "description": "Create src/render/noise.ts and add options.noise { seed, level } to renderDrrCpu as step 3 of the order of steps documented at the top of src/render/pipeline.ts: a zero-mean random amount, the same every time for the same seed and pixel, scaled by the level (0 = none, 1 = maximum) and added to the value, which is then kept within 0…1. Collimated pixels get no noise. Put two default levels in pipeline.ts, DEFAULT_NOISE_LEVEL = { shot, fluoro } with fluoro higher than shot and shot above 0, and export defaultNoiseLevel(kind: 'shot' | 'fluoro'). The exact numbers are a look-and-feel choice the owner may tune later; keep the shot level small (the F0 screen tests compare bone and air by 50 grey levels and must keep passing). The CPU grain takes its random numbers from src/core/random.ts (read-only); the GPU grain (next story) is a seeded formula inside the shader. The CPU and GPU grain patterns do not have to be identical to each other.",
       "specRefs": [
         "F2.6"
       ],
@@ -299,7 +300,7 @@
     {
       "id": "F2-S13",
       "title": "Add the seeded grain to the GPU image",
-      "description": "Add the grain to the GPU step that takes the image: level = settings.noiseLevel, seed = the image's noise seed (the image counter from F2-S2), so every new image has fresh grain but a reloaded page repeats the same sequence. Change the default settings.noiseLevel from 0 to defaultNoiseLevel('shot'). The grain is part of the held image: re-displaying it (Invert) must not change the grain. Using the higher fluoro level for continuous-fluoro frames is a separate, blocked story (F2-S21).",
+      "description": "Add the grain to the GPU step that takes the image: level = settings.noiseLevel, seed = the image's noise seed (the image counter from F2-S2), so every new image has fresh grain but a reloaded page repeats the same sequence. Change the default settings.noiseLevel from 0 to defaultNoiseLevel('shot'). The grain is part of the held image: re-displaying it (Invert) must not change the grain. Using the higher fluoro level for continuous-fluoro frames is a separate story (F2-S21).",
       "specRefs": [
         "F2.6"
       ],
@@ -371,7 +372,7 @@
     {
       "id": "F2-S16",
       "title": "Add the flip and rotate buttons to the fluoro panel",
-      "description": "Add three buttons to the fluoro panel: 'Flip ↔' (test id flip-horizontal, aria-pressed), 'Flip ↕' (test id flip-vertical, aria-pressed) and 'Rotate' (test id rotate-button; each press adds 90° clockwise and wraps from 270° back to 0°; it shows the current angle). They change the settings and the picture changes immediately. Layout: the fluoro panel is one quarter of the screen (F0 layout), so put controls beside or under the canvas and keep them compact; make every button or slider handle at least 44×44 px (F12.3 will check this later); F12 owns the final layout. Use <button> elements with aria-pressed for on/off controls, not checkboxes (the spacebar is the Shot shortcut).",
+      "description": "Add three buttons to the fluoro panel: 'Flip ↔' (test id flip-horizontal, aria-pressed), 'Flip ↕' (test id flip-vertical, aria-pressed) and 'Rotate' (test id rotate-button; each press adds 90° clockwise and wraps from 270° back to 0°; it shows the current angle). They change the settings and the picture changes immediately. Layout: the fluoro panel is one quarter of the screen (F0 layout), so put controls beside or under the canvas and keep them compact; every button and every slider's touch area (the box of its <input> element) is at least 44 px wide and 44 px tall, and this zone's own screen tests check it (F12 cannot fix another zone's panel); F12 owns the final layout. Use <button> elements with aria-pressed for on/off controls, not checkboxes (the spacebar is the Shot shortcut).",
       "specRefs": [
         "F2.7"
       ],
@@ -444,7 +445,7 @@
     {
       "id": "F2-S19",
       "title": "Show the image's pose as text on the fluoro image",
-      "description": "Add a text label lying over the top-left of the fluoro image (a normal page element above the canvas, test id pose-readout; it is not flipped or rotated with the picture). It shows the pose the image ON SCREEN was taken with (the store's lastImagePose; owner decision 2026-11-10), so it changes only when a new image is taken, and it is empty before the first image. Put the wording in a plain function formatPose(pose): 'OBL R 25°' for positive oblique, 'OBL L 25°' for negative, 'AP' for 0; then ' · ', then 'CRAN 10°' for positive tilt, 'CAUD 10°' for negative, 'TILT 0°' for 0. Angles are rounded to whole degrees. (The wording for 0° is a planning choice the owner may change.) The label must not block taps on the image (pointer-events: none), because F5 will use taps on the image later.",
+      "description": "Add a text label lying over the top-left of the fluoro image (a normal page element above the canvas, test id pose-readout; it is not flipped or rotated with the picture). It shows the pose the image ON SCREEN was taken with (the store's lastImagePose; owner decision 2026-11-10), so it changes only when a new image is taken, and it is empty before the first image. Put the wording in a plain function formatPose(pose): 'OBL R 25°' for positive oblique, 'OBL L 25°' for negative, 'AP' for 0; then ' · ', then 'CRAN 10°' for positive tilt, 'CAUD 10°' for negative, 'TILT 0°' for 0. Angles are rounded to whole degrees. Only the two angles are shown, not the table position (owner decision 2026-11-10). (The wording for 0° is a planning choice the owner may change.) The label must not block taps on the image (pointer-events: none), because F5 will use taps on the image later.",
       "specRefs": [
         "F2.9"
       ],
@@ -452,7 +453,8 @@
         "Unit test: formatPose gives 'OBL R 25° · CRAN 10°' for oblique +25, tilt +10; 'OBL L 30° · CAUD 15°' for −30, −15; 'AP · TILT 0°' for 0, 0; and rounds 24.6 to 25",
         "Screen test (both set-ups): the label is empty before the first image; after an image at the default pose it reads 'AP · TILT 0°'",
         "Screen test (both set-ups): after setting oblique +25, tilt +10 the label is unchanged until an image is taken, then reads 'OBL R 25° · CRAN 10°'",
-        "Screen test (both set-ups): the label lies inside the canvas's on-screen rectangle, and the canvas's drawing size is 512×512"
+        "Screen test (both set-ups): the label lies inside the canvas's on-screen rectangle, and the canvas's drawing size is 512×512",
+        "Screen test (both set-ups): the label does not block the image: document.elementFromPoint at the label's centre returns the canvas, not the label"
       ],
       "verify": "npx vitest run tests/render/formatPose.test.ts && npx playwright test tests/e2e/render/poseText.spec.ts",
       "zone": "render",
@@ -463,6 +465,29 @@
       "status": "todo",
       "attempts": 0,
       "notes": ""
+    },
+    {
+      "id": "F2-S21",
+      "title": "Use the higher noise level for continuous-fluoro frames on screen",
+      "description": "Use the shared contract added on 2026-11-10 (src/core/, read-only here): store.lastImageKind is 'shot' or 'fluoro' and is set by the C-arm zone together with lastImagePose, before it emits 'exposure'. When the image being taken is a fluoro frame, take it with more grain: the level used = settings.noiseLevel × (defaultNoiseLevel('fluoro') ÷ defaultNoiseLevel('shot')), kept within 0…1; a single shot (or a kind of null) uses settings.noiseLevel as before. Put that rule in a plain function for the unit test. window.__sim.render().lastImage also reports { kind, noiseLevel } (the level actually used). F3's continuous fluoro may not be merged yet, so the tests make a fluoro frame themselves: add a helper to tests/e2e/render/renderPage.ts that sets lastImagePose and lastImageKind 'fluoro' in the store and emits 'exposure' through the dev server's store module. No edits in src/core/ or src/carm/.",
+      "specRefs": [
+        "F2.6"
+      ],
+      "acceptance": [
+        "Unit test: the level for a 'shot' equals the setting; for 'fluoro' it is higher by the ratio of the two defaults and never above 1; at setting 0 both are 0",
+        "Screen test (both set-ups): a single shot (spacebar or Shot button) reports kind 'shot' and noiseLevel equal to settings.noiseLevel in window.__sim.render().lastImage; a fluoro frame reports kind 'fluoro' and a higher noiseLevel",
+        "Screen test (both set-ups): in the soft-tissue area used in F2-S13, the standard deviation of the canvas values is higher for a fluoro frame than for a single shot at the same pose and setting",
+        "All earlier render tests still pass"
+      ],
+      "verify": "npx vitest run tests/render/noiseLevel.test.ts && npx playwright test tests/e2e/render/fluoroNoise.spec.ts && npx playwright test tests/e2e/render",
+      "zone": "render",
+      "priority": 20,
+      "dependsOn": [
+        "F2-S13"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": "Unblocked at the 2026-11-10 story review: the shared contract now has store.lastImageKind (src/core/store.ts); takeShot already sets 'shot', and F3-S6 sets 'fluoro' for fluoro frames."
     },
     {
       "id": "F2-S20",
@@ -483,37 +508,18 @@
       ],
       "verify": "npx playwright test tests/e2e/render/combined.spec.ts && npm run check && npm run build",
       "zone": "render",
-      "priority": 20,
+      "priority": 21,
       "dependsOn": [
         "F2-S7",
         "F2-S10",
         "F2-S13",
         "F2-S15",
-        "F2-S18"
+        "F2-S18",
+        "F2-S21"
       ],
       "status": "todo",
       "attempts": 0,
       "notes": ""
-    },
-    {
-      "id": "F2-S21",
-      "title": "Use the higher noise level for continuous-fluoro frames on screen",
-      "description": "When an image is a continuous-fluoro frame, take it with defaultNoiseLevel('fluoro') instead of the shot level. BLOCKED AT PLANNING: the renderer cannot tell a fluoro frame from a single shot. The 'exposure' event carries no information and the store has no field for it; adding one is a change to src/core/ (a shared file), and F3 (which produces fluoro frames) must fill it in.",
-      "specRefs": [
-        "F2.6"
-      ],
-      "acceptance": [
-        "Screen test (both set-ups): an image taken as a continuous-fluoro frame reports the fluoro noise level in window.__sim.render().lastImage, and a single shot reports the shot level"
-      ],
-      "verify": "npx playwright test tests/e2e/render/fluoroNoise.spec.ts",
-      "zone": "render",
-      "priority": 21,
-      "dependsOn": [
-        "F2-S13"
-      ],
-      "status": "blocked",
-      "attempts": 0,
-      "notes": "Blocked at planning (2026-11-10), not by a failed attempt. Needs the owner's OK for a small shared-contract change, done in an interactive session: for example a store field lastImageKind: 'shot' | 'fluoro' | null in src/core/store.ts, set by the carm zone when it takes an image. It also needs F3's continuous fluoro to be merged. After both, set this story to 'todo'. F2.6 itself only asks for the unit test, which F2-S12 provides."
     }
   ]
 }

@@ -72,7 +72,7 @@ If my request conflicts with these documents, point it out and ask before procee
 - Never start `npm run dev` yourself in a loop round; Playwright's `webServer` starts the dev server.
 - After `page.goto('/')`, get past the disclaimer with `acceptDisclaimer(page)` from `tests/fixtures/acceptDisclaimer.ts` (clicks on desktop, taps on tablet).
 - `window.__sim` is installed asynchronously. Read it through `getSimState(page)` from `tests/fixtures/simPage.ts`, which waits for it; take an image with `takeImage(page)` (spacebar on desktop, tap on Shot on tablet).
-- `setPose(page, …)` in `tests/fixtures/simPage.ts` sets the C-arm pose directly through the store. It is a stop-gap until F3's real controls exist; once they do, new screen tests move the C-arm through the controls.
+- `setPose(page, …)` in `tests/fixtures/simPage.ts` sets the C-arm pose directly through the store. Once F3's real controls exist, new screen tests that are about using the app move the C-arm through the controls. Tests that need an exact pose to compare pixels (the render zone's image tests) may keep using `setPose`.
 - A test for one set-up only: `test.skip(({ hasTouch }) => hasTouch, 'desktop set-up only')` (or `!hasTouch` for tablet) inside a `describe`. Every behaviour still needs a test in both set-ups.
 - To see browser console errors (e.g. shader compile logs), use a throwaway spec with `page.on('console', …)` and delete it afterwards.
 

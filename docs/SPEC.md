@@ -66,7 +66,7 @@ Acceptance criteria:
   - every foramen has nerve-root voxels on both sides;
   - the midline back-to-front order from F0.4 holds;
   - joint-space voxels lie between two different bones.
-- [ ] F1.5 The converter writes `public/data/manifest.json` listing each region (`cervical` C1–T1, `thoracic` T1–L1, `lumbosacral` L1–sacrum including both SI joints) with its files, voxel spacing, source dataset name, licence and attribution text. It also writes a landmarks file per region with, for each vertebral level: the body centre, pedicle centres, the superior and inferior endplates' centres and tilt directions, the superior articular process tips, and the foramen centres. A unit test validates the manifest and landmark files against their schema, and checks each region's files total 25 MB or less.
+- [ ] F1.5 The converter writes `public/data/manifest.json` listing each region (`cervical` C1–T1, `thoracic` T1–L1, `lumbosacral` L1–sacrum including both SI joints) with its files, voxel spacing, source dataset name, licence and attribution text. It also writes a landmarks file per region with, for each vertebral level: the body centre, pedicle centres, the superior and inferior endplates' centres and tilt directions, the superior articular process tips, and the foramen centres (the L5–S1 foramen is listed under L5). Where the region contains them it also holds the sacrum's landmarks (S1 superior endplate centre and tilt direction, S1 superior articular process tips) and the highest point of each iliac crest. C1 and C2 have no entry for now (see Open questions). A unit test validates the manifest and landmark files against their schema, and checks each region's files total 25 MB or less.
 - [ ] F1.6 `loadRegion(name)` loads a region in the browser and returns a volume matching the shared `Volume` type. Screen test: choosing a region from the region picker renders it, and `window.__sim` reports the loaded region name and its size.
 - [ ] F1.7 (needs real data, done with the owner) The three real regions are converted and committed. Tests: the manifest lists all three, every file exists, and at every landmark "body centre" the label is bone and the level matches the landmark's level.
 
@@ -85,7 +85,7 @@ Acceptance criteria:
 - [ ] F2.6 Noise: X-ray grain with a seed and a level. Same seed = identical image. On a uniform region, pixel spread (standard deviation) rises as the noise level rises. Continuous-fluoro frames use a higher default noise level than single shots (unit test).
 - [ ] F2.7 Image orientation: flip left-right, flip up-down and rotate in 90° steps. A unit test checks a known pixel ends up where expected for each option.
 - [ ] F2.8 The renderer accepts an optional **extra absorption volume** on the same grid (used later for contrast) and adds it to the absorption along each ray. Unit test: a synthetic extra volume darkens exactly the pixels whose rays cross it.
-- [ ] F2.9 The image is 512×512 pixels by default, and the fluoro panel shows the current pose as text on the image (e.g. "OBL R 25° · CRAN 10°").
+- [ ] F2.9 The image is 512×512 pixels by default, and the fluoro panel shows the pose of the image on screen as text on the image: the two angles only, not the table position (e.g. "OBL R 25° · CRAN 10°").
 
 ### F3 — C-arm, table and exposure (zone: carm)
 The controls a learner uses to position the C-arm and take images, with radiation counting.
@@ -236,7 +236,7 @@ Acceptance criteria:
 - [ ] F12.3 Layout (screen test):
   - at 1280×800 and 1024×768 landscape, all four panels are visible without scrolling the page;
   - at 768×1024 portrait, panels stack with the fluoro panel first;
-  - in the tablet set-up every button, slider handle and toggle is at least 44×44 px.
+  - in the tablet set-up every button and toggle is at least 44×44 px, and every slider's touch area (the box of the slider control) is at least 44 px wide and 44 px tall. (A browser test cannot measure the handle of a standard slider, so the touch area is checked instead. Each zone's own screen tests check its own panel.)
 - [ ] F12.4 History lists finished attempts newest first and survives a reload. **Clear history** asks for confirmation. If browser storage is unavailable, the app still works and shows "History can't be saved in this browser" (screen test, with storage blocked).
 - [ ] F12.5 If the browser has no WebGL2, the app shows "This browser can't run the simulator (WebGL2 needed)" instead of a blank screen (screen test, with WebGL2 stubbed out).
 
@@ -268,4 +268,5 @@ Loops must not build these.
 - **App name:** "Spine Fluoro Trainer" is a working title. Rename any time.
 - **Which CT scan(s):** before F1.7 I'll shortlist candidate scans from the TotalSegmentator dataset (CC BY 4.0), with VerSe as a fallback, and the owner picks. (Answered: the regions may come from different anonymous people.)
 - **Owner review sessions** are needed for: needle tuning (`src/needle/params.json`), tissue resistances, procedure rule files, quiz explanations, and the modelled soft-tissue shapes.
+- **Landmarks for C1 and C2:** they have no normal vertebral body, so F1 leaves them out. Decide before the quiz (F11) needs them. The sacral hiatus and SI-joint landmarks are still to be added for the caudal and SI-joint procedures (F10).
 - **Real-tablet performance:** to be checked by the owner on an actual iPad once F2 and F3 are merged.
