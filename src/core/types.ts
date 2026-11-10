@@ -72,10 +72,38 @@ export interface LevelLandmarks {
   foramenCentre?: Partial<Sided<Vec3>>;
 }
 
+/**
+ * Landmarks of the sacrum (owner decision 2026-11-10). The sacrum has no
+ * normal vertebra shape, so it is not a LevelLandmarks entry. These are the
+ * points the L5–S1 level needs; the sacral hiatus and SI-joint points come
+ * with the caudal and SI-joint procedures (F10).
+ */
+export interface SacrumLandmarks {
+  /** Top surface of S1 (the floor of the L5–S1 disc); normal points up, away from the sacrum. */
+  superiorEndplate: Endplate;
+  /** Tips of S1's superior articular processes (they meet L5 at the L5–S1 facet joints). */
+  superiorArticularProcessTip: Sided<Vec3>;
+}
+
 /** Landmarks of a whole region, one entry per vertebral level. */
 export interface Landmarks {
   region: string;
   levels: LevelLandmarks[];
+  /** Present when the region contains the sacrum. */
+  sacrum?: SacrumLandmarks;
+  /** Highest point of each iliac crest; present when the region contains the hip bones. */
+  iliacCrest?: Sided<Vec3>;
+}
+
+/** How the image on screen was taken: a single shot or a continuous-fluoro frame (F2.6). */
+export type ImageKind = 'shot' | 'fluoro';
+
+/** One anatomy region on offer in the region picker (F1.6, F3.7). */
+export interface RegionEntry {
+  /** Region name as in the manifest, e.g. 'lumbosacral' (or 'phantom'). */
+  name: string;
+  /** Text shown to the learner, e.g. 'Lumbosacral'. */
+  title: string;
 }
 
 /** App mode (F6.1, F8.5, F10.4, F12.2). */
