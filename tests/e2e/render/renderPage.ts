@@ -88,3 +88,22 @@ export async function expectOnScreen(page: Page, locator: Locator): Promise<{ wi
   expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
   return { width: box.width, height: box.height };
 }
+
+/** 3% of the grey range (0–255): the most the canvas may differ from the CPU reference on average (F2.2). */
+export const MAX_MEAN_DIFFERENCE = 0.03 * 255;
+
+/**
+ * Mean absolute difference, in grey levels, between the canvas and a CPU
+ * reference image (values 0…1 are compared as value × 255).
+ */
+export function meanDifference(canvas: { data: Uint8Array }, reference: { data: Float32Array }): number {
+  expect(canvas.data.length).toBe(reference.data.length);
+  let sum = 0;
+  for (let i = 0; i < canvas.data.length; i++) sum += Math.abs(canvas.data[i]! - reference.data[i]! * 255);
+  return sum / canvas.data.length;
+}
+
+/** True if two canvas readings are identical pixel for pixel. */
+export function samePixels(a: { data: Uint8Array }, b: { data: Uint8Array }): boolean {
+  return Buffer.from(a.data).equals(Buffer.from(b.data));
+}

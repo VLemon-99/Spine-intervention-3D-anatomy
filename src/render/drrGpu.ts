@@ -38,7 +38,7 @@ import {
 } from 'three';
 import { IMAGE_SIZE_PX, createProjection } from '../core/geometry';
 import type { CArmPose, Vec3, Volume } from '../core/types';
-import { ABSORPTION_PER_MM, MARCH_STEP_MM, MAX_MARCH_STEPS } from './pipeline';
+import { ABSORPTION_PER_MM, MARCH_STEP_MM, MAX_MARCH_STEPS, type Magnification } from './pipeline';
 
 export { ABSORPTION_PER_MM, MARCH_STEP_MM };
 
@@ -60,6 +60,7 @@ const fragmentShader = /* glsl */ `
   uniform vec3 uUp;
   uniform float uPixelSize;
   uniform float uImageSize;
+  uniform float uMagnification;
   uniform vec3 uBoxMin;
   uniform vec3 uBoxMax;
   uniform float uStep;
@@ -72,6 +73,9 @@ const fragmentShader = /* glsl */ `
     float px = gl_FragCoord.x;
     float py = uImageSize - gl_FragCoord.y;
     float half_ = uImageSize * 0.5;
+    // Step 1, magnification: the pixel looks at centre + (p - centre) / m.
+    px = half_ + (px - half_) / uMagnification;
+    py = half_ + (py - half_) / uMagnification;
     vec3 onDetector = uDetectorCentre
       + uRight * (px - half_) * uPixelSize
       + uUp * (half_ - py) * uPixelSize;
@@ -122,6 +126,11 @@ const displayFragmentShader = /* glsl */ `
 
 const toVector3 = (v: Vec3): Vector3 => new Vector3(v.x, v.y, v.z);
 
+/** The settings that belong to taking the image. */
+export interface TakeOptions {
+  magnification: Magnification;
+}
+
 /** The display settings the display step uses. */
 export interface DisplayOptions {
   invert: boolean;
@@ -129,7 +138,7 @@ export interface DisplayOptions {
 
 export interface DrrGpu {
   /** Take the image of `volume` at `pose` into the held (off-screen) image. Does not touch the canvas. */
-  take(volume: Volume, pose: CArmPose): void;
+  take(volume: Volume, pose: CArmPose, options: TakeOptions): void;
   /** Draw the held image into the renderer's canvas. Cheap; needs no new exposure. */
   display(options: DisplayOptions): void;
 }
@@ -147,6 +156,7 @@ export function createDrrGpu(renderer: WebGLRenderer): DrrGpu {
       uUp: { value: new Vector3() },
       uPixelSize: { value: 1 },
       uImageSize: { value: IMAGE_SIZE_PX },
+      uMagnification: { value: 1 },
       uBoxMin: { value: new Vector3() },
       uBoxMax: { value: new Vector3() },
       uStep: { value: MARCH_STEP_MM },
@@ -194,7 +204,7 @@ export function createDrrGpu(renderer: WebGLRenderer): DrrGpu {
   };
 
   return {
-    take(volume, pose) {
+    take(volume, pose, options) {
       const projection = createProjection(pose);
       const { origin, spacing, size } = volume;
       const u = material.uniforms;
@@ -205,6 +215,7 @@ export function createDrrGpu(renderer: WebGLRenderer): DrrGpu {
       u.uUp!.value = toVector3(projection.detectorUp);
       u.uPixelSize!.value = projection.pixelSizeMm;
       u.uImageSize!.value = projection.width;
+      u.uMagnification!.value = options.magnification;
       // The box spans from the outer face of the first voxel to that of the last.
       u.uBoxMin!.value = new Vector3(origin.x - spacing.x / 2, origin.y - spacing.y / 2, origin.z - spacing.z / 2);
       u.uBoxMax!.value = new Vector3(

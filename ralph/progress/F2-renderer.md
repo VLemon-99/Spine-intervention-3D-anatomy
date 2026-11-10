@@ -21,6 +21,8 @@
 - To look at the layout, a throwaway spec with `page.screenshot(...)` into the scratchpad works (delete the spec afterwards); never start the dev server by hand.
 - Magnification: `detectorPosition(pixel, m)` in `pipeline.ts` is step 1. A patient point appears at image pixel `centre + (project(point) − centre) × m`. `bodyWidth(pose, m)` in `tests/render/magnification.test.ts` measures the upper vertebra body's dark band along its row with 512 single rays (fast) — the same idea works on a canvas row for the GPU stories.
 - Pose (0°, 0°): the source is under the table, so a NEGATIVE `tableHeight` moves the anatomy closer to the source (larger picture).
+- Settings for TAKING the image reach the shader through `drr.take(volume, pose, options)` (`TakeOptions` in `drrGpu.ts`); `fluoroCanvas.ts` passes values from `lastImage.settings` (the copy made at the exposure), never from the live settings. Add collimation, noise and contrast the same way.
+- Comparison helpers in `tests/e2e/render/renderPage.ts`: `meanDifference(canvas, reference)`, `MAX_MEAN_DIFFERENCE`, `samePixels(a, b)`. In a match test also check that the reference with the setting differs from the plain reference by more than the limit, so a GPU that ignores the setting cannot pass.
 
 ## Rounds
 <!--
@@ -66,3 +68,9 @@
 - Files touched: `src/render/pipeline.ts`, `src/render/drrCpu.ts`, `src/render/settings.ts`, `tests/render/magnification.test.ts` (new), this log, the task file.
 - Test result: verify command passed (6 unit tests). `npm run check` passed: lint + types clean, 119 unit tests, 78 screen tests passed and 6 skipped (one-set-up-only tests).
 - Next round should know: the GPU image does not use magnification yet (F2-S7): add a uniform and apply the same formula to the pixel position before building the ray, in the shader that TAKES the image.
+
+## Round — 2026-11-10 13:21 — F2-S7 — done
+- What I did: The shader that takes the image now applies magnification (uniform `uMagnification`, same formula as the CPU reference) and `fluoroCanvas.ts` passes the magnification remembered for that exposure. Changing the setting leaves the held image alone; it shows on the next image.
+- Files touched: `src/render/drrGpu.ts`, `src/render/fluoroCanvas.ts`, `tests/e2e/render/magnification.spec.ts` (new), `tests/e2e/render/renderPage.ts` (comparison helpers), this log, the task file.
+- Test result: verify command passed (6 new screen tests; all 60 render screen tests). `npm run check` passed: lint + types clean, 119 unit tests, 84 screen tests passed and 6 skipped (one-set-up-only tests).
+- Next round should know: no magnification buttons yet (F2-S8) — they go into the controls column from F2-S5.
