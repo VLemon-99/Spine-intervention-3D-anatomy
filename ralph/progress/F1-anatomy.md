@@ -104,3 +104,9 @@
 - Files touched: tools/anatomy/landmarks.ts, tests/anatomy/landmarks.test.ts, task file, this log.
 - Test result: verify 19/19 passed; `npm run check` green (184 unit tests, 46 screen tests passed).
 - Next round should know: the converter (F1-S18) should call computeRegionLandmarks and print its notes in the report. On real data the S1 endplate is tilted ~40°; the plane fit handles tilt but only the owner can judge the result.
+
+## Round — 2026-11-10 13:52 — F1-S13 — done
+- What I did: soft-tissue modeller with the canal step (epidural space + ligamentum flavum), its params file, stripped-phantom helper and shared midline check; 6 unit tests.
+- Files touched: tools/anatomy/softTissue.ts, tools/anatomy/soft-tissue-params.json, tests/anatomy/softTissueCanal.test.ts, tests/anatomy/strippedPhantom.ts, tests/anatomy/softTissueChecks.ts (all new), task file, this log.
+- Test result: verify 6/6 passed; `npm run check` green (190 unit tests, 46 screen tests passed).
+- Next round should know: createStrippedPhantom({ removeSac: true }) also turns sac and cord into muscle (for F1-S26). expectMidlineOrder(vol) and labelAt(vol, p) are in tests/anatomy/softTissueChecks.ts. modelSoftTissue already takes landmarks (unused so far) for the nerve roots and arteries. The canal step only runs in slices that contain sac/cord voxels, so F1-S26 must add the sac before it.

@@ -358,9 +358,9 @@
       "dependsOn": [
         "F1-S12"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. tools/anatomy/soft-tissue-params.json (draft, reviewedByOwner false: canal.maxAreaMm2 1500, ligamentumFlavum.thicknessMm 4). tools/anatomy/softTissue.ts: loadSoftTissueParams(), modelSoftTissue(vol, landmarks?, params?) -> copy with new labels (steps so far: canal), modelCanal(vol, labels, params). Canal per slice = 4-connected non-bone region grown from thecal sac/cord; open (edge or too big) slices use the nearest closed slice outline (union if equally near); ligamentum flavum only in open slices between two closed ones, behind the outline, stopping at bone. Only air/skinFat/muscle (and earlier epidural/LF) are overwritten."
     },
     {
       "id": "F1-S26",

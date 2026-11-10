@@ -1,0 +1,13 @@
+{
+  "status": "draft",
+  "reviewedByOwner": false,
+  "note": "Draft numbers that shape the modelled soft tissue (CT segmentations do not contain these structures). Approximations for the owner to review on real anatomy; only the owner sets reviewedByOwner to true.",
+  "canal": {
+    "maxAreaMm2": 1500,
+    "note": "In each axial slice the bony canal is the non-bone area around the thecal sac enclosed by bone. If that area is larger than maxAreaMm2 or reaches the slice edge, the ring is open (between two vertebrae) and the outline of the nearest closed slice is carried across."
+  },
+  "ligamentumFlavum": {
+    "thicknessMm": 4,
+    "note": "Layer added behind the canal outline where there is no bone behind it (the gap between two laminae)."
+  }
+}
