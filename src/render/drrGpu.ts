@@ -9,6 +9,12 @@
 // Along each ray the absorption is added up from the intensity values
 // (absorption per mm = intensity / 255 × ABSORPTION_PER_MM), and the pixel's
 // brightness is e^(−total absorption): bone dark, soft tissue grey, air light.
+// The image is drawn in two steps, following the ORDER OF STEPS at the top of
+// pipeline.ts: take() renders the X-ray image into an off-screen image that is
+// kept (the held image); display() draws the held image to the canvas, with
+// the display settings (invert). display() can run again at any time without
+// a new exposure.
+//
 // The numbers shared with the CPU reference (drrCpu.ts) live in pipeline.ts.
 // Noise, collimation, magnification and flips come in later F2 stories.
 //
@@ -19,6 +25,7 @@ import {
   GLSL3,
   Mesh,
   NearestFilter,
+  NoColorSpace,
   OrthographicCamera,
   PlaneGeometry,
   RedFormat,
@@ -26,6 +33,7 @@ import {
   ShaderMaterial,
   UnsignedByteType,
   Vector3,
+  WebGLRenderTarget,
   type WebGLRenderer,
 } from 'three';
 import { IMAGE_SIZE_PX, createProjection } from '../core/geometry';
@@ -95,11 +103,35 @@ const fragmentShader = /* glsl */ `
   }
 `;
 
+/** Display step: draws the held image to the canvas, pixel for pixel. */
+const displayFragmentShader = /* glsl */ `
+  precision highp float;
+
+  uniform sampler2D uHeld;
+  uniform bool uInvert;
+
+  layout(location = 0) out highp vec4 outColor;
+
+  void main() {
+    float value = texelFetch(uHeld, ivec2(gl_FragCoord.xy), 0).r;
+    // Step 5, invert: value -> 1 - value.
+    if (uInvert) value = 1.0 - value;
+    outColor = vec4(vec3(value), 1.0);
+  }
+`;
+
 const toVector3 = (v: Vec3): Vector3 => new Vector3(v.x, v.y, v.z);
 
+/** The display settings the display step uses. */
+export interface DisplayOptions {
+  invert: boolean;
+}
+
 export interface DrrGpu {
-  /** Draw the image of `volume` at `pose` into the renderer's canvas. */
-  render(volume: Volume, pose: CArmPose): void;
+  /** Take the image of `volume` at `pose` into the held (off-screen) image. Does not touch the canvas. */
+  take(volume: Volume, pose: CArmPose): void;
+  /** Draw the held image into the renderer's canvas. Cheap; needs no new exposure. */
+  display(options: DisplayOptions): void;
 }
 
 export function createDrrGpu(renderer: WebGLRenderer): DrrGpu {
@@ -125,6 +157,24 @@ export function createDrrGpu(renderer: WebGLRenderer): DrrGpu {
   });
   const scene = new Scene();
   scene.add(new Mesh(new PlaneGeometry(2, 2), material));
+
+  // The held image: 8 bits per channel, read back pixel for pixel.
+  const held = new WebGLRenderTarget(IMAGE_SIZE_PX, IMAGE_SIZE_PX, {
+    minFilter: NearestFilter,
+    magFilter: NearestFilter,
+    depthBuffer: false,
+    colorSpace: NoColorSpace,
+  });
+  const displayMaterial = new ShaderMaterial({
+    glslVersion: GLSL3,
+    vertexShader,
+    fragmentShader: displayFragmentShader,
+    uniforms: { uHeld: { value: held.texture }, uInvert: { value: false } },
+    depthTest: false,
+    depthWrite: false,
+  });
+  const displayScene = new Scene();
+  displayScene.add(new Mesh(new PlaneGeometry(2, 2), displayMaterial));
   const camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
   let uploaded: { volume: Volume; texture: Data3DTexture } | null = null;
@@ -144,7 +194,7 @@ export function createDrrGpu(renderer: WebGLRenderer): DrrGpu {
   };
 
   return {
-    render(volume, pose) {
+    take(volume, pose) {
       const projection = createProjection(pose);
       const { origin, spacing, size } = volume;
       const u = material.uniforms;
@@ -162,7 +212,14 @@ export function createDrrGpu(renderer: WebGLRenderer): DrrGpu {
         origin.y + (size.y - 0.5) * spacing.y,
         origin.z + (size.z - 0.5) * spacing.z,
       );
+      renderer.setRenderTarget(held);
       renderer.render(scene, camera);
+      renderer.setRenderTarget(null);
+    },
+    display(options) {
+      displayMaterial.uniforms.uInvert!.value = options.invert;
+      renderer.setRenderTarget(null);
+      renderer.render(displayScene, camera);
     },
   };
 }

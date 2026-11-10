@@ -154,3 +154,33 @@ describe('volume layout', () => {
     expect(() => transmissionAt(slabVolume(20), createProjection(AP_POSE), IMAGE_CENTRE)).not.toThrow();
   });
 });
+
+describe('invert (display step 5)', () => {
+  it('with options.invert every value equals 1 − the value without it', () => {
+    const phantom = createPhantom();
+    const pose = initialState().pose;
+    const plain = renderDrrCpu(phantom, pose);
+    const inverted = renderDrrCpu(phantom, pose, { invert: true });
+    expect(inverted.data.length).toBe(plain.data.length);
+    let worst = 0;
+    for (let i = 0; i < plain.data.length; i++) {
+      worst = Math.max(worst, Math.abs(inverted.data[i]! - (1 - plain.data[i]!)));
+    }
+    expect(worst).toBeLessThan(1e-6);
+    // Air becomes black and the image is not flat.
+    expect(inverted.data[0]).toBe(0);
+    expect(inverted.data.some((v) => v > 0.5)).toBe(true);
+  });
+
+  it('invert: false gives the same image as no option', () => {
+    const phantom = createPhantom();
+    const pose = initialState().pose;
+    expect(renderDrrCpu(phantom, pose, { invert: false }).data).toEqual(renderDrrCpu(phantom, pose).data);
+  });
+
+  it('transmissionAt inverts a single pixel the same way', () => {
+    const projection = createProjection(AP_POSE);
+    const plain = transmissionAt(slabVolume(20), projection, IMAGE_CENTRE);
+    expect(transmissionAt(slabVolume(20), projection, IMAGE_CENTRE, { invert: true })).toBeCloseTo(1 - plain, 12);
+  });
+});

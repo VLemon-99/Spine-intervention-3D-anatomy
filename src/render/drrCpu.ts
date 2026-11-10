@@ -3,7 +3,8 @@
 // A slow but simple version of the GPU image (drrGpu.ts), in plain TypeScript
 // with no browser code, so unit tests can check the maths and screen tests can
 // compare the GPU image with it. It follows the ORDER OF STEPS at the top of
-// pipeline.ts; so far only step 2 (absorption) without the extra volume.
+// pipeline.ts; so far step 2 (absorption, without the extra volume) and step 5
+// (invert).
 //
 // Sampling is the same as in the GPU shader: the ray is clipped to the
 // volume's box, samples are taken at entry + (i + 0.5) × step, and each sample
@@ -13,8 +14,10 @@ import type { CArmPose, Vec3, Volume } from '../core/types';
 import { ABSORPTION_PER_MM, MARCH_STEP_MM, MAX_MARCH_STEPS } from './pipeline';
 
 /** Options of the CPU reference. Later F2 stories add to this. */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface DrrCpuOptions {}
+export interface DrrCpuOptions {
+  /** Display step 5: value → 1 − value (more absorption = lighter). */
+  invert?: boolean;
+}
 
 export interface DrrImage {
   width: number;
@@ -83,10 +86,14 @@ function march(volume: Volume, projection: Projection, pixel: Pixel): number {
   return Math.exp(-total);
 }
 
+/** The display steps that change a pixel's value (step 5, invert). */
+const display = (value: number, options: DrrCpuOptions): number => (options.invert ? 1 - value : value);
+
 /**
  * Fraction of the X-rays (0…1) that gets through the volume along the ray of
  * one image pixel position (e.g. { x: 255.5, y: 255.5 } for the centre of
- * pixel (255, 255)). For checking single rays quickly.
+ * pixel (255, 255)), shown inverted if options.invert is set. For checking
+ * single rays quickly.
  */
 export function transmissionAt(
   volume: Volume,
@@ -94,14 +101,12 @@ export function transmissionAt(
   pixel: Pixel,
   options: DrrCpuOptions = {},
 ): number {
-  void options; // no options yet; later F2 stories use them
   assertStandardLayout(volume);
-  return march(volume, projection, pixel);
+  return display(march(volume, projection, pixel), options);
 }
 
 /** The whole 512×512 reference image of `volume` at `pose`. */
 export function renderDrrCpu(volume: Volume, pose: CArmPose, options: DrrCpuOptions = {}): DrrImage {
-  void options; // no options yet; later F2 stories use them
   assertStandardLayout(volume);
   const projection = createProjection(pose);
   const width = IMAGE_SIZE_PX;
@@ -109,7 +114,7 @@ export function renderDrrCpu(volume: Volume, pose: CArmPose, options: DrrCpuOpti
   const data = new Float32Array(width * height);
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
-      data[x + width * y] = march(volume, projection, { x: x + 0.5, y: y + 0.5 });
+      data[x + width * y] = display(march(volume, projection, { x: x + 0.5, y: y + 0.5 }), options);
     }
   }
   return { width, height, data };

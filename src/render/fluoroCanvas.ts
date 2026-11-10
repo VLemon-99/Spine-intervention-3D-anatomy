@@ -10,7 +10,12 @@
 // For each exposure it remembers how the image was taken (pose, a copy of the
 // render settings, and the noise seed = an image counter: 1 for the first
 // image after page load, then 2, 3 …). Screen tests read this through the
-// 'render' debug getter. The settings have no effect on the image yet.
+// 'render' debug getter.
+//
+// The image is drawn in two steps (see drrGpu.ts): each exposure takes the
+// X-ray image into a held off-screen image and then displays it. When a
+// display setting (invert) changes, only the display step runs again — the
+// held image is re-shown at once, with no new exposure.
 import { Color, WebGLRenderer } from 'three';
 import { IMAGE_SIZE_PX } from '../core/geometry';
 import { registerDebugGetter } from '../core/debugRegistry';
@@ -79,14 +84,27 @@ export function createFluoroCanvas(
     renderer.clear();
   };
 
+  /** True while the canvas shows a held X-ray image (not the blank or no-volume fill). */
+  let holding = false;
+  const display = (): void => {
+    drr.display({ invert: settings.get().invert });
+  };
+
   fill(BLANK);
   bus.on('exposure', () => {
     const { volume } = store.get();
     if (volume && lastImage) {
-      drr.render(volume, lastImage.pose);
+      drr.take(volume, lastImage.pose);
+      holding = true;
+      display();
     } else {
+      holding = false;
       fill(NO_VOLUME);
     }
+  });
+  // Display settings apply straight away, to the held image.
+  settings.subscribe(() => {
+    if (holding) display();
   });
   return canvas;
 }

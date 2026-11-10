@@ -102,9 +102,9 @@
       "dependsOn": [
         "F2-S3"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. The held image has 8 bits per channel (no extra WebGL feature needed). When an image is taken with no volume loaded, the plain no-volume fill is shown and is not inverted."
     },
     {
       "id": "F2-S5",
