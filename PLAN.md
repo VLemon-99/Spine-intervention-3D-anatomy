@@ -8,7 +8,7 @@
 |---|---|---|---|---|---|---|
 | F0 — Walking skeleton | `ralph/tasks/F0-skeleton.json` | all (sets up shared files) | — | merged | `claude/sharp-wozniak-jbi9yp` | Merged 2026-11-10 ([PR #4](https://github.com/VLemon-99/Spine-intervention-3D-anatomy/pull/4)). 15/15 stories done, plus a disclaimer keyboard fix from review |
 | F1 — Anatomy data | `ralph/tasks/F1-anatomy.json` | anatomy | F0 | planned | `ralph/F1-anatomy` | 27 stories; 25 for the loop. Blocked by design: S27 (end-to-end picker test, needs F3 merged — no decision needed) and S22 (F1.7, real CT — interactive session with the owner) |
-| F2 — Fluoro renderer | `ralph/tasks/F2-renderer.json` | render | F0 | planned | `ralph/F2-renderer` | 21 stories, all for the loop |
+| F2 — Fluoro renderer | `ralph/tasks/F2-renderer.json` | render | F0 | in review | `claude/ralph-f2-renderer-fa4hl7` | 21/21 stories done 2026-11-10; waiting for review of [PR #8](https://github.com/VLemon-99/Spine-intervention-3D-anatomy/pull/8) |
 | F3 — C-arm, table & exposure | `ralph/tasks/F3-carm.json` | carm | F0 | planned | `ralph/F3-carm` | 11 stories, all for the loop. F3.3 is already covered by F0's tests |
 | F4 — Needle mechanics | `ralph/tasks/F4-needle-mechanics.json` | needle | F0 | not planned | `ralph/F4-needle-mechanics` | Tuning needs owner review |
 | F5 — Needle handling controls | `ralph/tasks/F5-needle-controls.json` | needle | F3, F4 | not planned | `ralph/F5-needle-controls` | |
@@ -42,6 +42,11 @@
   - **Lumbosacral file size:** the region is now cut wide enough to include both iliac crests. If it does not fit in 25 MB at 1 mm (found out in F1.7), the choice is a coarser voxel size or cutting the crests off.
   - **Dataset contents:** the TotalSegmentator mask names in `tools/anatomy/label-map.json` are a draft to check against the real download (F1.7). Its "spinal cord" mask is treated as thecal sac; discs have no mask as far as I know, so they would be labelled as generic soft tissue unless you want modelled discs (not in the spec). VerSe (the fallback dataset) uses a different file layout the converter stories do not cover.
   - **Noise levels, contrast darkness and all soft-tissue shape numbers** are drafts for you to tune.
+- **Review and merge F2:** [PR #8](https://github.com/VLemon-99/Spine-intervention-3D-anatomy/pull/8). Points to look at while reviewing:
+  - With Invert on, the collimated (covered) area is white, not black, because Invert comes after collimation in the order of steps. Say if it should stay black.
+  - Draft numbers in `src/render/pipeline.ts`: noise levels (shot 0.04, fluoro 0.1), grain strength (0.25) and contrast darkness (0.3 per mm).
+  - The fluoro panel's controls column is nearly full on the tablet when the collimation sliders are folded out (F12 owns the final layout).
+  - The spec's "within 3% of the grey range" comparison is a loose check on the phantom (most of the picture is air); the tests add stricter checks.
 - Spec wording to update if you agree (not changed yet): SPEC F2 does not say the magnification, collimation and flip/rotate controls sit in the fluoro panel, or that Invert/flip/rotate act immediately (both are recorded in `docs/DECISIONS.md`).
 - Not yet approved (proposed by the F0 loop, see the story notes in `ralph/tasks/F0-skeleton.json`): extra dev packages `@types/node`, `@eslint/js` and `tsx`, TypeScript 6 instead of 7; the contrast volume stored at 8-bit precision (may need revisiting in F9); level names in shared data as text ('L4'); and the rest of the `src/core/types.ts` field choices (F0-S4 notes). Approve or change them in an interactive session — `src/core/` changes are shared-file changes.
 - Optional: `npm audit` reports 10 moderate warnings, all inside the lint tool (ESLint / typescript-eslint, via minimatch); nothing reaches the app. Fix by updating those packages in an interactive session with the full test suite. Never use `npm audit fix --force` (it downgrades ESLint and breaks the version pins).

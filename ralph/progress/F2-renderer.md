@@ -188,3 +188,9 @@
 - Files touched: `src/render/pipeline.ts`, `src/render/fluoroCanvas.ts`, `tests/render/noiseLevel.test.ts` (new), `tests/e2e/render/fluoroNoise.spec.ts` (new), `tests/e2e/render/renderPage.ts`, this log, the task file.
 - Test result: verify command passed (6 unit tests, 6 new screen tests, all render screen tests). `npm run check` passed: lint + types clean, 172 unit tests, 182 screen tests passed and 6 skipped (one-set-up-only tests).
 - Next round should know: only F2-S20 (the all-settings check) is left.
+
+## Round — 2026-11-10 22:00 — F2-S20 — done (interactive session)
+- What I did: Added `tests/e2e/render/combined.spec.ts`: oblique +30°, tilt +15°, magnification 1.5, collimation { left 10, right 5, top 15, bottom 20 }, a contrast blob, invert, flip left-right and rotation 90° with noise 0, compared with `renderDrrCpu` given the same options. The two renderers already applied the steps in the same order, so no renderer code changed. The test also checks, on the pixels each mistake would change, that the canvas is at least four times closer to the right picture than to one with any single step left out or with flip and rotation swapped.
+- Files touched: `tests/e2e/render/combined.spec.ts` (new), this log, the task file, `PLAN.md` (roadmap status; interactive session).
+- Test result: verify command passed: the combined test (4 screen tests), `npm run check` (lint + types clean, 172 unit tests, 186 screen tests passed and 6 skipped — the one-set-up-only tests) and `npm run build`.
+- Next round should know: all 21 F2 stories are done. Open points for the owner are listed in PLAN.md → "Waiting on me" and in the pull request.

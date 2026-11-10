@@ -517,9 +517,9 @@
         "F2-S18",
         "F2-S21"
       ],
-      "status": "blocked",
+      "status": "done",
       "attempts": 0,
-      "notes": "BLOCKED 2026-11-10 — waits for F2-S13 and F2-S21 (see F2-S13's notes for the decision the owner needs to make). It is the final all-settings check and depends on both. TO UNBLOCK: after F2-S13 is unblocked, set this story back to 'todo' as well."
+      "notes": "Done 2026-11-10 (interactive session, after F2-S13 and F2-S21). Measured mean difference with everything on: about 0.11 grey levels (limit 7.65). The test also checks that leaving out any one step, or swapping flip and rotation, would be noticed."
     }
   ]
 }
