@@ -135,3 +135,9 @@
 - Files touched: tools/anatomy/softTissue.ts, tools/anatomy/soft-tissue-params.json, tests/anatomy/softTissueArteries.test.ts (new), task file, this log.
 - Test result: verify 5/5 passed; `npm run check` green (211 unit tests, 46 screen tests passed).
 - Next round should know: the modeller is complete: modelSoftTissue(vol, landmarks) = sac → canal → nerve roots → arteries → joints. Landmarks must be computed BEFORE modelling (they use bone + sac only), so F1-S18's order is: labels/levels → crop → resample → landmarks → modeller → write.
+
+## Round — 2026-11-10 14:15 — F1-S17 — done
+- What I did: shared manifest + landmarks-file formats with hand-written validators and the 25 MB size check; committed an empty public/data/manifest.json; 10 unit tests. (The worker restarted mid-round; I re-ran the full check before committing.)
+- Files touched: src/anatomy/manifestFormat.ts, public/data/manifest.json, tests/anatomy/manifestFormat.test.ts (all new), task file, this log.
+- Test result: verify 10/10 passed; `npm run check` green (221 unit tests, 46 screen tests passed).
+- Next round should know: 25 MB is taken as 25 000 000 bytes. Endplate normals must have length 1 (±0.001). Each manifest region has a `title`; F1-S18 can take it from REGIONS[region].title in tools/anatomy/regions.ts. Landmarks-file `region` may be any valid region name (so 'phantom' passes).

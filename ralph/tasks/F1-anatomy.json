@@ -479,9 +479,9 @@
         "F1-S8",
         "F1-S23"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. src/anatomy/manifestFormat.ts: REGION_NAMES, MAX_REGION_BYTES = 25 000 000, Manifest {formatVersion 1, regions[{name, title, levels, files{header,intensity,labels,levels,landmarks}, size, spacing, sourceDataset, licence, attribution}]}, LandmarksFile = Landmarks + reviewedByOwner, validateManifest / validateLandmarksFile (string[]), parseManifest / parseLandmarksFile (throw), isSafeFileName, landmarksFileName, checkRegionSize(bytes[], limit?). public/data/manifest.json committed with no regions. Added a \"title\" per region (not named in the spec list) because store.regions needs {name, title} for the picker (F1-S21) - owner may want to confirm."
     },
     {
       "id": "F1-S18",
