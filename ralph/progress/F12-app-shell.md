@@ -38,3 +38,9 @@
 - Files touched: none kept (src/app/index.ts, tests/fixtures/acceptDisclaimer.ts, tests/e2e/app/home.spec.ts restored/removed). Only this log and the task file changed.
 - Test result: branch is back at the F12-S2 state (full check passed there: 186 unit, 198 screen).
 - Next round should know: the owner must decide (see F12-S3 notes). Design that worked: in src/app/index.ts, a home screen and a 'sim-screen' (flex column 100vh: top bar + the existing grid with flex:1, min-height:0); `#app [hidden] { display:none !important }` because .app-layout's display:grid overrides the hidden attribute; buttons with class app-button min 44×44. Fixture: after the disclaimer, if home-screen is visible, press home-freeplay. Stories that depend on F12-S3 (S4, S5, S7, S8, S9, S10, S11) cannot start until it is unblocked; F12-S6 is still eligible.
+
+## Round — 2026-11-11 07:35 — F12-S6 — done
+- What I did: Added the history store: records kept as a JSON array (in the order added) under spineFluoroTrainer.history.v1; list() sorts newest first by date, then last-added first. Everything read back is checked with toAttemptRecord (known fields only, score 0–100, valid date and mode, quiz records without procedure fields); a broken value gives []. add() refuses invalid records ('invalid') and never throws.
+- Files touched: src/app/history.ts (new), tests/app/history.test.ts (new).
+- Test result: verify passed (10 unit). npm run check: lint + types OK, 196 unit passed, 198 screen passed (6 skipped).
+- Next round should know: F12-S3 is still blocked (owner decision on rememberDisclaimer.spec.ts), so every remaining todo story (S4, S5, S7–S11) waits on it. No story is eligible until the owner answers.

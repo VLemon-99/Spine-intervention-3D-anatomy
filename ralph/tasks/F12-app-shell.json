@@ -144,9 +144,9 @@
       "dependsOn": [
         "F12-S1"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-11. src/app/history.ts: createHistory(storage) with add/list/clear/available, toAttemptRecord(value) validator (returns a clean copy or null; F12-S11 can reuse it), module-level `history` on appStorage, key spineFluoroTrainer.history.v1."
     },
     {
       "id": "F12-S7",
