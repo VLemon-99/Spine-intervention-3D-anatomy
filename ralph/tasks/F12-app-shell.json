@@ -70,9 +70,9 @@
       "dependsOn": [
         "F12-S1"
       ],
-      "status": "todo",
-      "attempts": 0,
-      "notes": ""
+      "status": "blocked",
+      "attempts": 1,
+      "notes": "Blocked 2026-11-11 — needs an owner decision about an existing test. The home screen + Free play + Home button worked (new home.spec.ts: 10/10 passed; every other existing screen test passed through the updated acceptDisclaimer). But 3 runs of tests/e2e/app/rememberDisclaimer.spec.ts (written in F12-S1, before the home screen existed) now fail, because they press 'I understand' directly and then expect the simulator screen: (1) 'after accepting and reloading…' (both set-ups) checks fluoro-panel is visible right after the reload — now the home screen is shown; (2) 'with local storage blocked…' (tablet) taps Shot right after accepting — the Shot button is on the hidden simulator screen. (Desktop passed only because the spacebar still takes a shot while the home screen is shown — the later data-screen shared change.) Test rules forbid changing an existing test to make it pass. Owner to decide: may F12-S3 update rememberDisclaimer.spec.ts so that, in those two tests, it chooses Free play (home-freeplay) before checking the panels / taking the Shot (or checks home-screen instead of fluoro-panel after the reload)? The disclaimer checks themselves stay as they are. If yes, set this story back to 'todo'."
     },
     {
       "id": "F12-S4",
