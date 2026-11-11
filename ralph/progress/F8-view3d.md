@@ -36,3 +36,9 @@
 - Files touched: ralph/tasks/F8-view3d.json, ralph/progress/F8-view3d.md
 - Test result: baseline unchanged from F8-S2 (npm run check passed: 182 unit, 198 screen passed, 6 skipped); no code changes this round.
 - Next round should know: F8-S4 and F8-S7 depend only on F8-S2 and are eligible. F8-S5, F8-S6 and F8-S9 wait on F8-S3. Plan for F8-S3 once unblocked: src/view3d/carmModel.ts carmModel(pose) → { source, detectorCentre, detectorCorners } from createProjection (corners = centre ± 150·detectorRight ± 150·detectorUp); 'detector' mesh with its four corners as world-space vertices, 'source' sphere at mesh.position, 'beam' LineSegments source→corners; triangleCount must handle indexed geometry (sphere) and lines.
+
+## Round — 2026-11-11 07:25 — F8-S4 — done
+- What I did: Added the 'needle' scene object (a line along NeedleState.shaft, hub to tip, drawn over the bone), hidden when the store has no needle, rebuilt when store.needle changes. Extended window.__sim.view3d() with needle: { hub, tip } | null from the line's geometry; objects now lists bone and needle (lines report 0 triangles).
+- Files touched: src/view3d/index.ts, src/view3d/scene.ts, tests/e2e/view3d/needle.spec.ts, tests/e2e/view3d/view3dPage.ts, ralph/tasks/F8-view3d.json, ralph/progress/F8-view3d.md
+- Test result: verify passed (4/4); all view3d screen tests 16/16; npm run check passed (182 unit, 202 screen passed, 6 skipped).
+- Next round should know: F8-S3 is still blocked (owner decision). Next eligible: F8-S7 (layers). In the getter, objects are listed as [view.bone, view.needle] — add new objects there; triangles counts only Mesh objects.

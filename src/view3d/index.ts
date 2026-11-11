@@ -7,10 +7,10 @@
 // (when something changed), not in a constant loop. The WebGL renderer is
 // made the first time the view is turned on.
 
-import { WebGLRenderer } from 'three';
+import { Mesh, WebGLRenderer } from 'three';
 import { registerDebugGetter } from '../core/debugRegistry';
 import { store } from '../core/store';
-import type { Volume } from '../core/types';
+import type { NeedleState, Vec3, Volume } from '../core/types';
 import { createView3dScene, triangleCount } from './scene';
 
 // Every button is at least 44×44 px (F12 owns the final layout).
@@ -99,6 +99,14 @@ export function mount(element: HTMLElement): void {
     requestDraw();
   };
 
+  let builtNeedle: NeedleState | null | undefined;
+  const syncNeedle = (needle: NeedleState | null): void => {
+    if (needle === builtNeedle) return;
+    builtNeedle = needle;
+    view.setNeedle(needle);
+    requestDraw();
+  };
+
   const setShown = (on: boolean): void => {
     shown = on;
     toggle.setAttribute('aria-pressed', String(on));
@@ -115,24 +123,33 @@ export function mount(element: HTMLElement): void {
 
   setShown(false);
   syncVolume(store.get().volume);
-  store.subscribe((state) => syncVolume(state.volume));
+  syncNeedle(store.get().needle);
+  store.subscribe((state) => {
+    syncVolume(state.volume);
+    syncNeedle(state.needle);
+  });
   toggle.addEventListener('click', () => setShown(!shown));
 
   registerDebugGetter('view3d', () => {
     const { position } = view.camera;
     const target = view.target;
+    // Hub and tip straight from the needle line's own geometry.
+    const line = view.needle.geometry.getAttribute('position');
+    const vertex = (i: number): Vec3 => ({ x: line.getX(i), y: line.getY(i), z: line.getZ(i) });
+    const needle = view.needle.visible && line.count >= 2 ? { hub: vertex(0), tip: vertex(line.count - 1) } : null;
     return {
       shown,
       toggleEnabled: !toggle.disabled,
-      objects: [view.bone].map((object) => ({
+      objects: [view.bone, view.needle].map((object) => ({
         name: object.name,
         visible: object.visible,
-        triangles: triangleCount(object.geometry),
+        triangles: object instanceof Mesh ? triangleCount(object.geometry) : 0,
       })),
       camera: {
         position: { x: position.x, y: position.y, z: position.z },
         target: { x: target.x, y: target.y, z: target.z },
       },
+      needle,
     };
   });
 }

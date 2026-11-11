@@ -96,9 +96,9 @@
       "dependsOn": [
         "F8-S2"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "'needle' is a Three.js Line through every shaft point (world coordinates), drawn on top of the bone (depthTest off). Hidden when store.needle is null. view3d().needle reads hub/tip from the line's own position attribute. Test helpers testNeedle/putNeedle in tests/e2e/view3d/view3dPage.ts."
     },
     {
       "id": "F8-S5",

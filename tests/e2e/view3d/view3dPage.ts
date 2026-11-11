@@ -1,6 +1,6 @@
 // Screen-test helpers of the view3d zone (not a spec file).
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import type { Vec3 } from '../../../src/core/types';
+import type { NeedleState, Vec3 } from '../../../src/core/types';
 
 /** What window.__sim.view3d() returns. */
 export interface View3dInfo {
@@ -8,6 +8,8 @@ export interface View3dInfo {
   toggleEnabled: boolean;
   objects: { name: string; visible: boolean; triangles: number }[];
   camera: { position: Vec3; target: Vec3 };
+  /** Hub and tip of the needle object in the scene, or null when no needle is shown. */
+  needle: { hub: Vec3; tip: Vec3 } | null;
 }
 
 type View3dHook = { __sim: { view3d(): View3dInfo } };
@@ -109,4 +111,30 @@ export async function putTestVolume(page: Page, n: number, boneVoxels: [number, 
     },
     { n, boneVoxels },
   );
+}
+
+/** A hand-made needle for tests: hub at the first shaft point, tip at the last. */
+export function testNeedle(shaft: Vec3[]): NeedleState {
+  return {
+    needleId: 'test-needle',
+    preBend: 0,
+    entryPoint: { ...shaft[0]! },
+    hubAngles: { pitch: 0, yaw: 0 },
+    bevelAngle: 0,
+    insertedDepth: 0,
+    shaft: shaft.map((p) => ({ ...p })),
+    tip: { ...shaft[shaft.length - 1]! },
+  };
+}
+
+/**
+ * Put a needle (or null for none) in the store through the app's own store
+ * module as served by the dev server (the same trick as setPose). Test-only.
+ */
+export async function putNeedle(page: Page, needle: NeedleState | null): Promise<void> {
+  await page.evaluate(async (n) => {
+    const storeModule = '/src/core/store.ts';
+    const { store } = (await import(/* @vite-ignore */ storeModule)) as typeof import('../../../src/core/store');
+    store.set({ needle: n });
+  }, needle);
 }

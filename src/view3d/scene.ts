@@ -7,6 +7,8 @@ import {
   BufferGeometry,
   Color,
   DirectionalLight,
+  Line,
+  LineBasicMaterial,
   Mesh,
   MeshLambertMaterial,
   PerspectiveCamera,
@@ -14,7 +16,7 @@ import {
   Vector3,
 } from 'three';
 import { TISSUE } from '../core/labels';
-import type { Volume } from '../core/types';
+import type { NeedleState, Volume } from '../core/types';
 import { buildSurface } from './surface';
 
 /** Background colour of the 3D canvas. */
@@ -34,6 +36,10 @@ export interface View3dScene {
   target: Vector3;
   /** The bone surface mesh (named 'bone'). */
   bone: Mesh<BufferGeometry, MeshLambertMaterial>;
+  /** The needle shaft, hub to tip, as a line (named 'needle'); hidden when there is no needle. */
+  needle: Line<BufferGeometry, LineBasicMaterial>;
+  /** Rebuild the needle line from the needle state (null hides it). */
+  setNeedle(needle: NeedleState | null): void;
   /** Rebuild the anatomy objects for a volume (or empty them for null) and reset the camera to show it. */
   setVolume(volume: Volume | null): void;
   /** Set the camera's aspect ratio (width / height). */
@@ -74,6 +80,14 @@ export function createView3dScene(): View3dScene {
   bone.name = 'bone';
   scene.add(bone);
 
+  const needle = new Line(new BufferGeometry(), new LineBasicMaterial({ color: 0x7fd8ff }));
+  needle.name = 'needle';
+  needle.visible = false;
+  // Draw the needle over the bone, so it is never lost inside it.
+  needle.material.depthTest = false;
+  needle.renderOrder = 1;
+  scene.add(needle);
+
   const fitCamera = (volume: Volume | null): void => {
     let radius = 100;
     target.set(0, 0, 0);
@@ -102,11 +116,24 @@ export function createView3dScene(): View3dScene {
     camera,
     target,
     bone,
+    needle,
     setVolume(volume) {
       const old = bone.geometry;
       bone.geometry = meshGeometry(volume, BONE_LABELS);
       old.dispose();
       fitCamera(volume);
+    },
+    setNeedle(state) {
+      const old = needle.geometry;
+      const geometry = new BufferGeometry();
+      const points = state?.shaft ?? [];
+      const positions = new Float32Array(points.length * 3);
+      points.forEach((p, i) => positions.set([p.x, p.y, p.z], i * 3));
+      geometry.setAttribute('position', new BufferAttribute(positions, 3));
+      geometry.computeBoundingSphere();
+      needle.geometry = geometry;
+      old.dispose();
+      needle.visible = points.length >= 2;
     },
     setAspect(aspect) {
       camera.aspect = aspect;
