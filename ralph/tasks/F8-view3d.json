@@ -56,7 +56,7 @@
     {
       "id": "F8-S3",
       "title": "Show the C-arm source, detector and beam outline, following the current pose",
-      "description": "Add src/view3d/carmModel.ts with a plain function that, for a pose, returns the X-ray source point, the detector centre and the detector's four corners (DETECTOR_SIZE_MM square, along the projection's detectorRight and detectorUp) from createProjection in src/core/geometry.ts (read-only). In the scene add objects named 'source' (a small sphere), 'detector' (a flat square) and 'beam' (lines from the source to the four detector corners). They follow the live C-arm pose in the store (owner decision 2026-11-11: the 3D view shows where the C-arm is now, not where the last image was taken). Extend window.__sim.view3d() with carm: { source, detectorCentre, detectorCorners }, read from the scene objects themselves. The start camera now shows the whole C-arm from source to detector. Tests set poses with setPose from tests/fixtures/simPage.ts and compute the expected points in the test process with createProjection. No edits in src/core/ or src/app/.",
+      "description": "Add src/view3d/carmModel.ts with a plain function that, for a pose, returns the X-ray source point, the detector centre and the detector's four corners (DETECTOR_SIZE_MM square, along the projection's detectorRight and detectorUp) from createProjection in src/core/geometry.ts (read-only). In the scene add objects named 'source' (a small sphere), 'detector' (a flat square) and 'beam' (lines from the source to the four detector corners). They follow the live C-arm pose in the store (owner decision 2026-11-11: the 3D view shows where the C-arm is now, not where the last image was taken). Extend window.__sim.view3d() with carm: { source, detectorCentre, detectorCorners }, read from the scene objects themselves. The start camera now shows the whole C-arm from source to detector. Tests set poses with setPose from tests/fixtures/simPage.ts and compute the expected points in the test process with createProjection. No edits in src/core/ or src/app/. Owner decision 2026-11-11 (unblocks this story): in tests/e2e/view3d/toggle.spec.ts › 'the start camera looks at the middle of the volume', replace the upper bound `expect(distance).toBeLessThan(50)` with `expect(distance).toBeGreaterThan(650)` (far enough to see the whole C-arm), in the same commit as the camera change; keep the target check and everything else in that test unchanged. This is the only existing test this story may change.",
       "specRefs": [
         "F8.1",
         "F8.2"
@@ -64,7 +64,8 @@
       "acceptance": [
         "Unit test: for three poses (including a table offset) the function's source and detector centre equal createProjection's, and the corners are 150 mm from the detector centre along its right and up directions",
         "Screen test (both set-ups): with the 3D view on, the objects list contains visible 'source', 'detector' and 'beam' objects",
-        "Screen test (both set-ups): after each of three setPose calls (one with oblique and tilt, one with table offsets, one lateral), the reported source, detector centre and corners are within 0.5 mm of createProjection(pose) (F8.2)"
+        "Screen test (both set-ups): after each of three setPose calls (one with oblique and tilt, one with table offsets, one lateral), the reported source, detector centre and corners are within 0.5 mm of createProjection(pose) (F8.2)",
+        "The F8-S2 start-camera test is changed exactly as the owner decided (distance > 650 mm instead of < 50 mm) and passes in both set-ups"
       ],
       "verify": "npx vitest run tests/view3d/carmModel.test.ts && npx playwright test tests/e2e/view3d/carm.spec.ts",
       "zone": "view3d",
@@ -72,9 +73,9 @@
       "dependsOn": [
         "F8-S2"
       ],
-      "status": "blocked",
+      "status": "todo",
       "attempts": 0,
-      "notes": "Blocked before any code (no attempt used). Conflict with an existing test: F8-S3 says 'the start camera now shows the whole C-arm from source to detector' (source is 650 mm from the isocentre), but tests/e2e/view3d/toggle.spec.ts › 'the start camera looks at the middle of the volume' (added in F8-S2, beyond F8-S2's acceptance criteria) requires the start camera to be less than 50 mm from the target for a 5 mm test volume. Loops may not change an existing test. Owner decision needed: allow changing that test's upper bound (e.g. 'far enough to see the whole C-arm: distance > 650 mm', keeping the target check), or drop the 'whole C-arm' camera requirement from F8-S3. Then set this story back to todo."
+      "notes": "Was blocked (no attempt used): its camera requirement conflicted with the F8-S2 start-camera test. Owner decided 2026-11-11 to change that test's upper bound to > 650 mm as part of this story (see description). Plan: src/view3d/carmModel.ts carmModel(pose) → { source, detectorCentre, detectorCorners } from createProjection (corners = centre ± 150·detectorRight ± 150·detectorUp); 'detector' mesh with its four corners as world-space vertices, 'source' sphere at mesh.position, 'beam' LineSegments source→corners; the getter's triangles already counts only Mesh objects — make triangleCount handle indexed geometry (sphere)."
     },
     {
       "id": "F8-S4",
