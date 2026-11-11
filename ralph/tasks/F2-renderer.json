@@ -26,9 +26,9 @@
       "zone": "render",
       "priority": 1,
       "dependsOn": [],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. transmissionAt(volume, projection, pixel, options) is the one-pixel function; DrrCpuOptions is still empty."
     },
     {
       "id": "F2-S2",
@@ -55,9 +55,9 @@
       "dependsOn": [
         "F2-S1"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. The validating function is applySettingsPatch; the shared store instance is renderSettings."
     },
     {
       "id": "F2-S3",
@@ -78,9 +78,9 @@
         "F2-S1",
         "F2-S2"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. Measured mean difference about 0.05 grey levels (worst single pixel under 2) at all three poses, in both set-ups; no renderer change was needed."
     },
     {
       "id": "F2-S4",
@@ -102,9 +102,9 @@
       "dependsOn": [
         "F2-S3"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. The held image has 8 bits per channel (no extra WebGL feature needed). When an image is taken with no volume loaded, the plain no-volume fill is shown and is not inverted."
     },
     {
       "id": "F2-S5",
@@ -124,9 +124,9 @@
       "dependsOn": [
         "F2-S4"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. The controls sit in a narrow column to the right of the picture (container test id fluoro-controls)."
     },
     {
       "id": "F2-S6",
@@ -147,9 +147,9 @@
       "dependsOn": [
         "F2-S1"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. The formula lives in detectorPosition(pixel, m) in pipeline.ts; the list of allowed magnifications (MAGNIFICATIONS) moved there too and settings.ts re-exports it."
     },
     {
       "id": "F2-S7",
@@ -172,9 +172,9 @@
         "F2-S6",
         "F2-S4"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10."
     },
     {
       "id": "F2-S8",
@@ -195,9 +195,9 @@
         "F2-S7",
         "F2-S5"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. The three buttons sit in one row (each 44×44 px minimum) under the Invert button."
     },
     {
       "id": "F2-S9",
@@ -219,9 +219,9 @@
       "dependsOn": [
         "F2-S6"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. NO_SIGNAL is 0 (black). Following the order of steps, Invert (step 5) comes after collimation (step 4), so with Invert on the covered area is uniformly white (1 − NO_SIGNAL); say so if the owner would rather keep it black."
     },
     {
       "id": "F2-S10",
@@ -245,9 +245,9 @@
         "F2-S9",
         "F2-S7"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. With Invert on the covered area is uniformly white (Invert comes after collimation in the order of steps) — see the F2-S9 note."
     },
     {
       "id": "F2-S11",
@@ -269,9 +269,9 @@
         "F2-S10",
         "F2-S8"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. The sliders sit in a fold-out group opened with a Collimation button (test id collimation-toggle, closed at first), two by two, each with its readout above it."
     },
     {
       "id": "F2-S12",
@@ -293,9 +293,9 @@
       "dependsOn": [
         "F2-S9"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. Draft numbers the owner may tune (pipeline.ts): DEFAULT_NOISE_LEVEL shot 0.04, fluoro 0.1; NOISE_AMPLITUDE 0.25 (at level 1 a pixel changes by at most ±25% of full brightness). The grain is evenly spread and does not depend on the pixel brightness."
     },
     {
       "id": "F2-S13",
@@ -320,9 +320,9 @@
         "F2-S12",
         "F2-S10"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10 (interactive session). The owner approved changing the default-noise line in tests/render/settings.test.ts from 0 to defaultNoiseLevel('shot'); that was the only edit to an existing test. The shader takes its grain from the same seeded number sequence as the CPU reference, so the two grain patterns match (not required, but it lets a test compare them)."
     },
     {
       "id": "F2-S14",
@@ -343,9 +343,9 @@
       "dependsOn": [
         "F2-S4"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. The mapping is orientPixel (and its opposite, unorientPixel) in src/render/orientation.ts."
     },
     {
       "id": "F2-S15",
@@ -365,9 +365,9 @@
       "dependsOn": [
         "F2-S14"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. Note for review: on the phantom the '3% of the grey range' limit is loose for orientation (a picture shown with no flip or rotation at all is only about 7.5 grey levels off on average, because most of the picture is air), so the test also demands the canvas be at least four times closer than that; the exact pixel-by-pixel mapping tests are the strict check."
     },
     {
       "id": "F2-S16",
@@ -389,9 +389,9 @@
         "F2-S15",
         "F2-S11"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. Rotate sits beside Invert (first row); Flip ↔ and Flip ↕ share a row under the magnification buttons."
     },
     {
       "id": "F2-S17",
@@ -412,9 +412,9 @@
       "dependsOn": [
         "F2-S1"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. Draft number the owner or F9 may tune: EXTRA_ABSORPTION_PER_MM = 0.3 (3 mm of full-strength contrast lets about 40% of the X-rays through)."
     },
     {
       "id": "F2-S18",
@@ -438,9 +438,9 @@
         "F2-S17",
         "F2-S4"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. A contrast array whose length does not fit the loaded volume is ignored on screen (drawn as no contrast); the CPU reference rejects it with an error."
     },
     {
       "id": "F2-S19",
@@ -462,9 +462,9 @@
       "dependsOn": [
         "F2-S2"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10. An angle that rounds to 0 reads as 0 (e.g. 0.4° gives AP). The label is white text on a see-through dark strip so it can be read over both light and dark parts of the picture."
     },
     {
       "id": "F2-S21",
@@ -485,9 +485,9 @@
       "dependsOn": [
         "F2-S13"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": "Unblocked at the 2026-11-10 story review: the shared contract now has store.lastImageKind (src/core/store.ts); takeShot already sets 'shot', and F3-S6 sets 'fluoro' for fluoro frames."
+      "notes": "Done 2026-11-10 (interactive session, after F2-S13 was unblocked). The rule is noiseLevelFor(kind, setting) in src/render/pipeline.ts."
     },
     {
       "id": "F2-S20",
@@ -517,9 +517,9 @@
         "F2-S18",
         "F2-S21"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-10 (interactive session, after F2-S13 and F2-S21). Measured mean difference with everything on: about 0.11 grey levels (limit 7.65). The test also checks that leaving out any one step, or swapping flip and rotation, would be noticed."
     }
   ]
 }
