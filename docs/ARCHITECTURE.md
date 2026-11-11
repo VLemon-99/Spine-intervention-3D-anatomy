@@ -8,7 +8,7 @@ A static website: TypeScript, built with Vite. It runs entirely in the browser, 
 ## Components
 | Component | What it does | Where it lives |
 |---|---|---|
-| Core (shared contracts) | Shared types (`Volume`, `Landmarks`, `Mode`, `CArmPose`, `NeedleState`, `TissueEvent`, `AttemptRecord`), tissue label list, C-arm projection geometry, central state store (pose, shot count, fluoro time, last image pose and kind, mode, volume, landmarks, needle state, contrast volume, list of regions on offer) + event bus (`exposure`, `caseStart`, `tissueEvent`, `regionRequest`), shared list of keyboard shortcuts for the help overlay, seeded random numbers, synthetic phantom (with landmarks), `window.__sim` test hook | `src/core/` |
+| Core (shared contracts) | Shared types (`Volume`, `Landmarks`, `Mode`, `CArmPose`, `NeedleState`, `TissueEvent`, `AttemptRecord`), tissue label list, C-arm projection geometry, central state store (pose, shot count, fluoro time, last image pose and kind, mode, volume, landmarks, needle state, contrast volume, list of regions on offer, list of procedures on offer) + event bus (`exposure`, `caseStart`, `tissueEvent`, `regionRequest`, `procedureRequest`, `attemptFinished`), shared list of keyboard shortcuts for the help overlay, seeded random numbers, synthetic phantom (with landmarks), `window.__sim` test hook | `src/core/` |
 | App shell | Disclaimer, home screen, modes (Practice / Exam / Quiz / Free play), layout, history (browser storage), About page, WebGL2 check. `main.ts` mounts every zone's panel | `src/app/` |
 | Anatomy | Converter script (NIfTI → web format), soft-tissue modeller, region loader, landmarks | `tools/anatomy/`, `src/anatomy/`, `public/data/` |
 | Renderer | GPU DRR shader, CPU reference DRR, display (invert, noise, collimation, magnification, flip), needle and contrast in the image, fluoro panel | `src/render/` |
@@ -27,7 +27,7 @@ A static website: TypeScript, built with Vite. It runs entirely in the browser, 
 4. **Needle:** needle controls send hand actions (angle, advance, rotate bevel) to the needle model. It computes the new shaft curve using tissue labels from the volume, and stores the `NeedleState`.
 5. **Feel & events:** the sim reads the tissue at the tip after each needle step and emits `TissueEvent`s (loss of resistance, bone contact, dural puncture, nerve contact, intravascular…).
 6. **Contrast:** an injection makes the contrast module add to a contrast volume according to the compartment at the tip. The renderer adds it on the next image.
-7. **Score:** the procedures module watches exposures, needle state and events. On **Finish** it scores the attempt and hands an `AttemptRecord` to the app shell, which saves it in the browser.
+7. **Score:** the procedures module watches exposures, needle state and events. On **Finish** it scores the attempt and emits `attemptFinished` with an `AttemptRecord`; the app shell saves it in the browser. A finished quiz session does the same.
 
 The 3D view only reads the store; it never changes it.
 
@@ -44,6 +44,8 @@ The 3D view only reads the store; it never changes it.
 - **Table offsets:** `tableLeftRight` along x (+ = toward the patient's left), `tableHeadFoot` along z (+ = toward the head), `tableHeight` along y (+ = up, toward the back). They move the patient relative to the isocentre.
 - **Volume layout:** voxel (i, j, k) is stored at index `i + size.x * (j + size.y * k)`; `origin` is the patient position of the centre of voxel (0, 0, 0); `orientation` gives the patient direction of the i, j and k axes. Level names in landmarks and events are text (`'L4'`); numeric level ids exist only in the level volume (`LEVEL_IDS` in `src/core/labels.ts`).
 - **Shared instances:** `src/core/store.ts` exports the app's one `store` and `bus`; unit tests make their own with `createStore()` / `createEventBus()`.
+- **Procedures:** the procedures zone fills `store.procedures` (`{ id, title }`); the app's procedure picker emits `procedureRequest` (a procedure id) and the procedures zone starts the case. Finished procedures and quiz sessions emit `attemptFinished`; the app shell saves the record.
+- **Screen flag:** the app sets `data-screen` on `<html>` to the screen on show (`home`, `sim`, `procedures`, `quiz`, `about`, `history`). Zones with page-wide shortcuts may read it, like the disclaimer flag.
 - **Disclaimer flag:** while the disclaimer is shown, `<html>` has `data-disclaimer="shown"` and the rest of the page is inert. Zones with page-wide shortcuts read the attribute instead of importing from `src/app/`.
 - **Landmark levels:** a foramen is listed under the level above it (the L4–L5 foramen belongs to L4, whose nerve root exits there). This is how events name a nerve root's level.
 - **Zones talk only through `src/core/`:** a zone never imports from another zone's folder (only `src/app/main.ts` imports every zone's `mount`). What one zone needs from another goes through the store, the event bus or another shared file in `src/core/`.

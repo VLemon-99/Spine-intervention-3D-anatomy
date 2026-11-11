@@ -1,0 +1,273 @@
+{
+  "feature": "F12",
+  "name": "App shell",
+  "branch": "ralph/F12-app-shell",
+  "zone": "app",
+  "dependsOnFeatures": [
+    "F0"
+  ],
+  "stories": [
+    {
+      "id": "F12-S1",
+      "title": "Remember that the disclaimer was accepted, so it is not shown again on reload",
+      "description": "Add src/app/storage.ts: a small safe wrapper around the browser's local storage (read, write, remove) that never throws — when storage is blocked or full it reports 'unavailable' instead (the history story F12-S6 uses it too). Keys carry the app name and a version, e.g. 'spineFluoroTrainer.disclaimerAccepted.v1'. When the learner accepts the disclaimer, save that; on the next load, skip the disclaimer if it was saved. If storage is unavailable, show the disclaimer on every load and keep working. Shared-file change, explicitly allowed for this story (owner decision 2026-11-11): two existing F2 screen tests reload the page and then call acceptDisclaimer() again, so change tests/fixtures/acceptDisclaimer.ts so that it accepts the disclaimer only when it is shown (it is decided while the page loads; check for the accept button) and otherwise returns straight away. Its name and how it is called stay the same; no test file changes. Unit tests use a fake storage object passed in (no browser page). Only the app zone edits src/app/main.ts.",
+      "specRefs": [
+        "F12.1"
+      ],
+      "acceptance": [
+        "Unit test: the storage wrapper reads back what it wrote; with a storage object whose every call throws, reads give nothing, writes report 'unavailable', and nothing throws",
+        "Screen test (both set-ups): after accepting the disclaimer and reloading the page, the disclaimer is not shown and <html> has no data-disclaimer attribute",
+        "Screen test (both set-ups): in a fresh browser context (nothing saved) the disclaimer is shown",
+        "Screen test (both set-ups): with local storage blocked (an init script makes window.localStorage throw), the disclaimer is shown after accepting and reloading, and the app still works after accepting (a Shot is counted)",
+        "The existing screen tests still pass unchanged, including tests/e2e/render/invert.spec.ts and tests/e2e/render/noise.spec.ts, which reload the page"
+      ],
+      "verify": "npx vitest run tests/app/storage.test.ts && npx playwright test tests/e2e/app/rememberDisclaimer.spec.ts tests/e2e/app tests/e2e/render/invert.spec.ts tests/e2e/render/noise.spec.ts",
+      "zone": "app",
+      "priority": 1,
+      "dependsOn": [],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F12-S2",
+      "title": "Show a clear message instead of a blank screen when the browser has no WebGL2",
+      "description": "In src/app/main.ts, before mounting any zone, check that the browser can create a WebGL2 context (a plain check function in src/app/, given the canvas factory, so it can be unit-tested). If it cannot, show only the message \"This browser can't run the simulator (WebGL2 needed)\" (test id webgl2-missing) in a readable card, and mount nothing else (owner decision 2026-11-11: no disclaimer either, as there is nothing to use). The screen test stubs WebGL2 out with an init script that makes HTMLCanvasElement.prototype.getContext return null for 'webgl2'. Only the app zone edits src/app/main.ts.",
+      "specRefs": [
+        "F12.5"
+      ],
+      "acceptance": [
+        "Unit test: the check function returns false when the factory's getContext('webgl2') returns null or throws, and true when it returns an object",
+        "Screen test (both set-ups): with WebGL2 stubbed out, the page shows the exact message \"This browser can't run the simulator (WebGL2 needed)\" and none of the four main panels is visible",
+        "Screen test (both set-ups): with WebGL2 stubbed out, the page logs no uncaught errors (listen for 'pageerror')",
+        "Screen test (both set-ups): without the stub, the message is not shown"
+      ],
+      "verify": "npx vitest run tests/app/webgl2.test.ts && npx playwright test tests/e2e/app/webgl2.spec.ts",
+      "zone": "app",
+      "priority": 2,
+      "dependsOn": [],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F12-S3",
+      "title": "Add the home screen with Free play, and a Home button on the simulator screen",
+      "description": "After the disclaimer, the app shows a home screen (test id home-screen) instead of going straight to the four panels. It offers four choices (F12.2): Practice, Exam, Quiz and Free play (test ids home-practice, home-exam, home-quiz, home-freeplay), plus History and About (home-history, home-about; their screens come in later stories, so for now they may be disabled). This story makes Free play work: it sets the store's mode to 'freeplay' and shows the simulator screen (the existing four-panel layout). The simulator screen gets a slim top bar with a Home button (test id home-button) that goes back to the home screen; the four panels must still fit without scrolling. Every zone is still mounted once at start-up, as now (tests/e2e/app/panels.spec.ts checks it); the home screen only hides and shows the simulator screen. Owner decision 2026-11-11: the app sets data-screen on <html> ('home', 'sim', and later 'quiz', 'procedures', 'about', 'history') so zones with page-wide shortcuts can ignore keys off the simulator screen, the same way they read data-disclaimer; teaching other zones to read it is a later shared change. Shared-file change, explicitly allowed for this story (owner decision 2026-11-11): change tests/fixtures/acceptDisclaimer.ts so that, after the disclaimer, it also chooses Free play (click on desktop, tap on tablet) when the home screen is shown, so every existing screen test still lands on the four panels; its name and how it is called stay the same, and no test file changes. Layout: on the tablet every button is at least 44×44 px and this story's screen tests check the app's own buttons. Only the app zone edits src/app/main.ts.",
+      "specRefs": [
+        "F12.2"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups): after clicking or tapping 'I understand' (directly, not through the fixture), the home screen shows the four choices Practice, Exam, Quiz and Free play, plus History and About, and the four main panels are not visible",
+        "Screen test (both set-ups; click on desktop, tap on tablet): Free play shows the four main panels, sets the store's mode to 'freeplay' (read through the dev server's store module) and sets data-screen to 'sim'",
+        "Screen test (both set-ups): the Home button returns to the home screen (data-screen 'home') without changing the pose or the shot count",
+        "Screen test (both set-ups): the home screen's buttons and the Home button are at least 44×44 px",
+        "The existing screen tests still pass unchanged (they reach the four panels through the updated acceptDisclaimer)"
+      ],
+      "verify": "npx playwright test tests/e2e/app/home.spec.ts && npm run test:e2e",
+      "zone": "app",
+      "priority": 3,
+      "dependsOn": [
+        "F12-S1"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F12-S4",
+      "title": "Make Practice, Exam and Quiz set the mode and open their screens",
+      "description": "Practice and Exam set the store's mode to 'practice' / 'exam' and open the procedure picker screen (test id procedure-picker) with the heading 'Practice' or 'Exam'. The procedures themselves come with F10, and listing them is the next story but one (F12-S10), so for now the picker says 'No procedures available yet' (test id procedure-picker-empty). Quiz sets the mode to 'quiz' and shows the quiz screen (test id quiz-screen): change src/app/main.ts so the quiz zone mounts into the quiz screen instead of the hidden slot (it still mounts exactly once); what the quiz shows is F11. Each of these screens has the Home button (test id home-button) back to the home screen, and sets data-screen ('procedures' or 'quiz'). Owner decision 2026-11-11: the mode is set when the choice is made on the home screen. Only the app zone edits src/app/main.ts.",
+      "specRefs": [
+        "F12.2"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups; click on desktop, tap on tablet): Practice shows the picker headed 'Practice' with the empty-list text and sets the mode to 'practice'; Exam does the same with 'Exam' and 'exam'",
+        "Screen test (both set-ups): Quiz shows the quiz screen, contains the quiz zone's marker (zone-quiz), and sets the mode to 'quiz'",
+        "Screen test (both set-ups): from each of these screens the Home button returns to the home screen",
+        "Screen test (both set-ups): Free play after Exam sets the mode back to 'freeplay'",
+        "Screen test (both set-ups): every new button is at least 44×44 px",
+        "tests/e2e/app/panels.spec.ts still passes unchanged (every zone mounted exactly once)"
+      ],
+      "verify": "npx playwright test tests/e2e/app/modes.spec.ts tests/e2e/app/panels.spec.ts",
+      "zone": "app",
+      "priority": 4,
+      "dependsOn": [
+        "F12-S3"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F12-S5",
+      "title": "Add the About page with the disclaimer, the dataset credits and the app version",
+      "description": "Add the About screen (test id about-screen), opened from the home screen's About button and closed with the Home button. It always shows the full disclaimer text (reuse the same text as src/app/disclaimer.ts, so the two never differ), the app version (import version from package.json — JSON imports type-check here; no change to package.json), and the dataset credits from the manifest. The manifest is the anatomy zone's file: read data/manifest.json yourself with fetch (relative to import.meta.env.BASE_URL; never import from src/anatomy/) and show, for each region, its source dataset name, licence and attribution text — owner decision 2026-11-11: the field names are those F1 writes (regions[].sourceDataset, regions[].licence, regions[].attribution). Treat the file as untrusted: check each field is text and put it on the page as text, never as HTML. When the manifest is missing, invalid or lists no regions (today's phantom-only build), show 'Images are computed from a synthetic test phantom; no patient data is used.' (test id about-no-dataset). Tests serve a made-up manifest with Playwright's page.route (fake dataset names and attribution only; nothing is added to public/data/).",
+      "specRefs": [
+        "F12.1"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups): the About page shows the disclaimer text, including 'For training only' and 'not for clinical use'",
+        "Screen test (both set-ups): it shows the version from package.json",
+        "Screen test (both set-ups): with a served test manifest of two regions, it shows each region's dataset name, licence and attribution text",
+        "Screen test (both set-ups): a served manifest whose attribution contains HTML tags shows the tags as plain text and adds no elements",
+        "Screen test (both set-ups): with no manifest (404) or one listing no regions, it shows the phantom-only text",
+        "Screen test (both set-ups): its buttons are at least 44×44 px; the Home button returns to the home screen"
+      ],
+      "verify": "npx playwright test tests/e2e/app/about.spec.ts",
+      "zone": "app",
+      "priority": 5,
+      "dependsOn": [
+        "F12-S3"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": "The manifest field names must match what F1 writes (F1-S17/F1-S18). Check them when F1 is reviewed; if they differ, this story's reader needs a small fix."
+    },
+    {
+      "id": "F12-S6",
+      "title": "Add the history store: save attempt records in the browser, newest first",
+      "description": "Create src/app/history.ts with plain functions on top of the storage wrapper from F12-S1 (storage passed in, so unit tests need no browser page): add(record), list() newest first (by the record's date, then by order added), clear(), and available() (false when storage is blocked). Records are the shared AttemptRecord type (src/core/types.ts, read-only), kept under a versioned key such as 'spineFluoroTrainer.history.v1'. Whatever is read back from storage is untrusted: entries that are not valid attempt records are dropped, and a broken stored value gives an empty list instead of an error. Export a module-level history object for the app (as src/core/store.ts does for the store) so the history screen and the screen tests use the same instance. Plain TypeScript, no browser code in the logic.",
+      "specRefs": [
+        "F12.4"
+      ],
+      "acceptance": [
+        "Unit test: added records come back newest first, both procedure and quiz records",
+        "Unit test: records survive a new history object made on the same storage (as after a reload)",
+        "Unit test: clear() empties the list",
+        "Unit test: a stored value that is not JSON, or that holds invalid entries, gives a list without them and no error",
+        "Unit test: with a storage that throws, available() is false, add() does not throw, and list() is empty"
+      ],
+      "verify": "npx vitest run tests/app/history.test.ts",
+      "zone": "app",
+      "priority": 6,
+      "dependsOn": [
+        "F12-S1"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F12-S7",
+      "title": "Add the History screen with Clear history and the storage-unavailable message",
+      "description": "Add the History screen (test id history-screen), opened from the home screen's History button, with the Home button back. It lists the finished attempts newest first (test id history-entry for each): date, mode, procedure (or 'Quiz'), total score, an 'Unsafe' mark when flagged, and shots and fluoro time when present; an empty history says so. 'Clear history' (test id history-clear) asks for confirmation in an in-page dialog (test ids history-clear-confirm and history-clear-cancel; not window.confirm, so it works the same with touch) and clears only after confirming. If browser storage is unavailable, the screen shows \"History can't be saved in this browser\" (test id history-unavailable) and the app keeps working. Procedures (F10) and the quiz (F11) do not exist yet, and saving the records they hand over is F12-S11, so tests add records through the dev server's src/app/history.ts module (the same trick as setPose), with made-up records only.",
+      "specRefs": [
+        "F12.4"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups): three records added by the test are listed newest first, showing their scores and an 'Unsafe' mark on the flagged one",
+        "Screen test (both set-ups): after reloading the page, the same records are still listed",
+        "Screen test (both set-ups; click on desktop, tap on tablet): Clear history shows the confirmation; Cancel keeps the records; Confirm removes them, and they stay gone after a reload",
+        "Screen test (both set-ups): with local storage blocked (init script), the screen shows \"History can't be saved in this browser\", and Free play and a Shot still work",
+        "Screen test (both set-ups): every button on the screen and in the dialog is at least 44×44 px"
+      ],
+      "verify": "npx playwright test tests/e2e/app/history.spec.ts",
+      "zone": "app",
+      "priority": 7,
+      "dependsOn": [
+        "F12-S6",
+        "F12-S3"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F12-S8",
+      "title": "Lay out the simulator screen for landscape and stack the panels in portrait",
+      "description": "Make the simulator screen's layout meet F12.3: at 1280×800 and 1024×768 landscape (the two set-ups' own sizes) all four panels, with the top bar, are visible without scrolling the page; at 768×1024 portrait (the test sets this viewport, in both set-ups) the panels stack in one column with the fluoro panel first, then C-arm, needle and 3D view, and the page may scroll. Use CSS only (e.g. a media query on orientation or width); keep the fluoro image readable in portrait (its panel roughly as tall as it is wide). Other zones' panel contents are theirs; this story changes only the app zone's layout. Planning note: the PLAN says to re-check the layout once all panels exist (after F5–F10).",
+      "specRefs": [
+        "F12.3"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups, at the set-up's own landscape size): the four panels are fully inside the viewport and the page cannot scroll (scroll width and height equal the viewport's)",
+        "Screen test (both set-ups, viewport 768×1024): the four panels have the same left edge, do not overlap, and their tops are in the order fluoro, C-arm, needle, 3D view",
+        "Screen test (both set-ups, viewport 768×1024): the fluoro panel is the first panel and starts within the top quarter of the page",
+        "The existing screen tests still pass unchanged"
+      ],
+      "verify": "npx playwright test tests/e2e/app/layout.spec.ts && npm run test:e2e",
+      "zone": "app",
+      "priority": 8,
+      "dependsOn": [
+        "F12-S3"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F12-S9",
+      "title": "Check every app-zone button and toggle is at least 44×44 px on the tablet",
+      "description": "Add one screen test that visits every app-zone screen in the tablet set-up — disclaimer, home, procedure picker, quiz screen, About, History with the clear dialog open, and the simulator screen's top bar — and checks that every visible button and toggle of the app zone (inside the app's own screens, not inside other zones' panels, which each zone checks itself) is at least 44×44 px. Fix any that are smaller. Run the whole check.",
+      "specRefs": [
+        "F12.3"
+      ],
+      "acceptance": [
+        "Screen test (tablet; the desktop run checks the same screens are reachable by click): every visible app-zone button and toggle on each screen is at least 44×44 px",
+        "npm run check passes"
+      ],
+      "verify": "npx playwright test tests/e2e/app/touchTargets.spec.ts && npm run check",
+      "zone": "app",
+      "priority": 9,
+      "dependsOn": [
+        "F12-S4",
+        "F12-S5",
+        "F12-S7",
+        "F12-S8"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F12-S10",
+      "title": "List the procedures on offer in the picker and ask for the one the learner picks",
+      "description": "Uses the shared contract added on 2026-11-11 (src/core/, read-only here): store.procedures — the procedures on offer as { id, title } entries (ProcedureEntry), filled by the procedures zone (F10) — and the bus event 'procedureRequest' carrying a procedure id. The picker lists store.procedures (and follows changes); picking one emits exactly one 'procedureRequest' with its id and shows the simulator screen in the mode chosen on the home screen; starting the case itself (briefing, caseStart) is the procedures zone's job (F10.2). Tests fill store.procedures and listen on the bus through the dev server's store module. No edits in src/procedures/.",
+      "specRefs": [
+        "F12.2",
+        "F10.2"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups): after the test puts two procedures in store.procedures, the Practice picker lists both titles and no empty-list text",
+        "Screen test (both set-ups; click on desktop, tap on tablet): picking one emits exactly one 'procedureRequest' with its id, shows the simulator screen, and the mode is still 'practice' (and 'exam' when started from Exam)",
+        "Screen test (both set-ups): each entry is at least 44 px tall"
+      ],
+      "verify": "npx playwright test tests/e2e/app/procedurePicker.spec.ts",
+      "zone": "app",
+      "priority": 10,
+      "dependsOn": [
+        "F12-S4"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": "Unblocked 2026-11-11: the shared contract now has store.procedures and the bus event 'procedureRequest' (src/core/store.ts)."
+    },
+    {
+      "id": "F12-S11",
+      "title": "Save the attempt records that procedures and the quiz hand over",
+      "description": "Uses the shared contract added on 2026-11-11 (src/core/, read-only here): the bus event 'attemptFinished' carrying an AttemptRecord, which the procedures zone (F10.5) and the quiz zone (F11.4) will emit when an attempt ends. The app zone listens for it and adds the record to the history (F12-S6); an invalid record is ignored. Tests emit the event through the dev server's store module with made-up records. This is the feature's last loop story: run the whole check.",
+      "specRefs": [
+        "F12.4",
+        "F10.5",
+        "F11.4"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups): after the test emits two 'attemptFinished' events, the History screen lists both, newest first, also after a reload",
+        "Screen test (both set-ups): an 'attemptFinished' event with an invalid record adds nothing and causes no page error",
+        "npm run check passes"
+      ],
+      "verify": "npx playwright test tests/e2e/app/historyFromBus.spec.ts && npm run check",
+      "zone": "app",
+      "priority": 11,
+      "dependsOn": [
+        "F12-S7",
+        "F12-S9",
+        "F12-S10"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": "Unblocked 2026-11-11: the shared contract now has the bus event 'attemptFinished' (src/core/store.ts)."
+    }
+  ]
+}
