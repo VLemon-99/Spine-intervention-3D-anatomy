@@ -25,9 +25,9 @@
       "zone": "needle",
       "priority": 1,
       "dependsOn": [],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. Catalogue ids: quincke-22g-89, quincke-22g-127, quincke-25g-89, quincke-25g-127, tuohy-20g-89, rf-curved-20g-100. data.ts exports catalogue, params, validateCatalogue, validateParams, needleSpec(id)."
     },
     {
       "id": "F4-S2",
