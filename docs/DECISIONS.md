@@ -2,6 +2,12 @@
 
 > One entry per meaningful choice, newest at the top. This stops future sessions and loop rounds from quietly undoing past decisions. Loop rounds don't edit this file — they record proposals in their progress log, and an interactive session adds them here after review.
 
+## 2026-11-11 — F12-S3 may update rememberDisclaimer.spec.ts
+- **Decision:** F12-S3 (home screen) may update `tests/e2e/app/rememberDisclaimer.spec.ts` so its tests choose Free play before checking the panels or taking a Shot (or check the home screen after the reload). Its disclaimer checks stay the same.
+- **Why:** That test was written in F12-S1, before the home screen existed, and assumed the panels come straight after the disclaimer. With the home screen (F12.2) they no longer do; the test's purpose (the disclaimer is remembered, and the app works with storage blocked) is unchanged.
+- **Alternatives considered:** Skipping the home screen when the disclaimer was remembered (goes against the home-screen decision above).
+- **Revisit if:** —
+
 ## 2026-11-11 — F4, F8 and F12 planning choices
 - **Decision (owner accepted every planning default):**
   - **Needle lever rule vs track memory:** the F4.2 lever rule (tip moves opposite the hub by inserted ÷ outside length) applies while the needle is 10 mm deep or less; deeper, track memory (F4.8) holds the inserted part in its track.
