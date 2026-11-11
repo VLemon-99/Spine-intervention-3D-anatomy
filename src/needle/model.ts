@@ -15,7 +15,9 @@
 // passed, from the entry point to the tip.
 
 import type { NeedleState, Vec3, Volume } from '../core/types';
+import { isBone } from '../core/labels';
 import { needleSpec, params } from './data';
+import { assertStandardLayout, labelAt } from './sample';
 
 export interface HubAngles {
   pitch: number;
@@ -53,6 +55,8 @@ export interface NeedleModel {
   readonly track: readonly Vec3[];
   /** Unit direction the tip moves in when advanced. */
   readonly tipDir: Vec3;
+  /** True while the tip rests against bone (set by advance, cleared by withdraw). */
+  readonly boneContact: boolean;
 }
 
 export interface AdvanceResult {
@@ -137,6 +141,7 @@ export function createNeedle(input: CreateNeedleInput): NeedleModel {
     depth: 0,
     track: [copy(input.entryPoint)],
     tipDir: insertionDir,
+    boneContact: false,
   };
 }
 
@@ -157,10 +162,12 @@ export function setHubAngles(model: NeedleModel, angles: HubAngles): NeedleModel
 /**
  * Advances the tip by `mm` along its direction of travel, in steps of
  * params.stepMm. The depth never exceeds the needle's length (the hub stops at
- * the skin, F4.9).
+ * the skin, F4.9). The tip never enters a bone voxel: when the next step would,
+ * the tip stays where it is and boneContact is reported (F4.7).
  */
 export function advance(model: NeedleModel, mm: number, volume: Volume): AdvanceResult {
-  void volume; // tissue is looked up from the volume by later stories (bone stop, drift)
+  assertStandardLayout(volume);
+  let boneContact = model.boneContact;
   let remaining = Math.max(0, finiteOr(mm, 0));
   let depth = model.depth;
   let tip = model.track[model.track.length - 1];
@@ -169,18 +176,25 @@ export function advance(model: NeedleModel, mm: number, volume: Volume): Advance
   while (remaining > EPS) {
     const step = Math.min(params.stepMm, remaining, model.lengthMm - depth);
     if (step <= EPS) break;
-    tip = add(tip, scale(tipDir, step));
+    const next = add(tip, scale(tipDir, step));
+    if (isBone(labelAt(volume, next))) {
+      boneContact = true;
+      break;
+    }
+    boneContact = false;
+    tip = next;
     track.push(tip);
     depth += step;
     remaining -= step;
   }
   if (model.lengthMm - depth <= EPS) depth = model.lengthMm;
-  return { state: { ...model, depth, track, tipDir }, boneContact: false };
+  return { state: { ...model, depth, track, tipDir, boneContact }, boneContact };
 }
 
 /** Pulls the tip back `mm` along its own track; the depth never goes below 0. */
 export function withdraw(model: NeedleModel, mm: number): NeedleModel {
   let remaining = Math.min(Math.max(0, finiteOr(mm, 0)), model.depth);
+  const boneContact = remaining > EPS ? false : model.boneContact;
   const depth = model.depth - remaining <= EPS ? 0 : model.depth - remaining;
   const track = model.track.slice();
   while (remaining > EPS && track.length > 1) {
@@ -200,7 +214,7 @@ export function withdraw(model: NeedleModel, mm: number): NeedleModel {
     track.length >= 2
       ? normalize(sub(track[track.length - 1], track[track.length - 2]))
       : hubDirection(model, model.hubAngles);
-  return { ...model, depth, track, tipDir };
+  return { ...model, depth, track, tipDir, boneContact };
 }
 
 /** The shared NeedleState (src/core/types.ts): a fresh copy, safe to hand out. */

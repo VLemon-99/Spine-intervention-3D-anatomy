@@ -5,6 +5,7 @@
 ## Lessons
 <!-- Reusable learnings for future rounds: gotchas, patterns, commands that work. After the feature is merged, an interactive session promotes the useful ones into CLAUDE.md. -->
 - JSON imports (`import x from './file.json'`) type-check without tsconfig changes (moduleResolution bundler). Validators take `unknown` and return the typed data; tests break a deep copy of the committed JSON to check each rejection.
+- To look at phantom voxels quickly: `npx tsx -e "import { createPhantom } from './src/core/phantom'; …"` (console.log in a Vitest test is not shown with the default reporter).
 - `npm run check` takes about 2.5 minutes; run it with a long timeout (e.g. 400000 ms).
 
 ## Rounds
@@ -27,3 +28,9 @@
 - Files touched: src/needle/model.ts, tests/needle/model.test.ts, tests/needle/volumes.ts, this log, the task file.
 - Test result: model.test.ts 8/8; npm run check passed (unit 196, screen 186 passed / 6 skipped).
 - Next round should know: withdraw() trims the track by arc length and resets tipDir to the last track segment's direction (or the hub direction at depth 0). The ESLint setup flags unused parameters, hence `void volume`; remove it once the volume is really used. bevelAngle starts at 0.
+
+## Round — 2026-11-11 06:59 — F4-S3 — done
+- What I did: added src/needle/sample.ts (labelAt: nearest voxel, outside grid = air, rejects non-identity orientation via assertStandardLayout). advance() now checks the label at the next step position before moving; bone stops the tip at the last position outside bone and sets boneContact (on the model and in the result). A withdrawal of more than 0 mm clears it; a successful step also clears it.
+- Files touched: src/needle/sample.ts, src/needle/model.ts, tests/needle/bone.test.ts, this log, the task file.
+- Test result: bone.test.ts 7/7, all needle tests 28/28; npm run check passed (unit 203, screen 186 passed / 6 skipped).
+- Next round should know: in the phantom the lamina's back surface (x 0, z 14) is the voxel boundary y = 24.5; skin starts at y = 42. The tip stops up to one step (0.25 mm) short of the surface because whole steps are used. advance() now calls assertStandardLayout on every call.

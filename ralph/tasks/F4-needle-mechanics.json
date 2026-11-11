@@ -75,9 +75,9 @@
       "dependsOn": [
         "F4-S2"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. sample.ts exports labelAt and assertStandardLayout. NeedleModel has a boneContact field (set by advance, cleared by any real withdrawal); advance() returns it too."
     },
     {
       "id": "F4-S4",
