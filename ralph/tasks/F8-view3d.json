@@ -32,7 +32,7 @@
     {
       "id": "F8-S2",
       "title": "Add the 3D view toggle and a Three.js scene showing the bone surface",
-      "description": "In the 3D view panel add a '3D view' toggle button (test id view3d-toggle, aria-pressed). Planning default (see notes): the view is off at start. When on, a Three.js WebGLRenderer canvas (test id view3d-canvas, preserveDrawingBuffer on so tests can read it) fills the panel below the toggle row and shows the bone surface (scene object named 'bone', built with buildSurface from the store's volume and the bone labels) with simple lighting; the start camera shows the whole volume. When off, the canvas is hidden and nothing is drawn. The scene is rebuilt when the store's volume changes. Draw on demand (when something changed), not in a constant loop. The 3D view only reads the store, never changes it. Register a read-only getter with registerDebugGetter('view3d', …) (src/core/debugRegistry.ts) so window.__sim.view3d() returns { shown, toggleEnabled, objects: [{ name, visible, triangles }], camera: { position, target } }; later stories add fields. Read every value from the Three.js objects themselves, not from the store, so the tests really check the scene. Layout: the 3D view panel is one quarter of the screen (F0 layout; about 500×370 px in the tablet set-up) and will also hold four layer toggles — keep the toggle row compact. Every button is at least 44×44 px and this zone's own screen tests check it (F12 owns the final layout). No edits in src/core/ or src/app/.",
+      "description": "In the 3D view panel add a '3D view' toggle button (test id view3d-toggle, aria-pressed). Owner decision 2026-11-11: the view is off at start. When on, a Three.js WebGLRenderer canvas (test id view3d-canvas, preserveDrawingBuffer on so tests can read it) fills the panel below the toggle row and shows the bone surface (scene object named 'bone', built with buildSurface from the store's volume and the bone labels) with simple lighting; the start camera shows the whole volume. When off, the canvas is hidden and nothing is drawn. The scene is rebuilt when the store's volume changes. Draw on demand (when something changed), not in a constant loop. The 3D view only reads the store, never changes it. Register a read-only getter with registerDebugGetter('view3d', …) (src/core/debugRegistry.ts) so window.__sim.view3d() returns { shown, toggleEnabled, objects: [{ name, visible, triangles }], camera: { position, target } }; later stories add fields. Read every value from the Three.js objects themselves, not from the store, so the tests really check the scene. Layout: the 3D view panel is one quarter of the screen (F0 layout; about 500×370 px in the tablet set-up) and will also hold four layer toggles — keep the toggle row compact. Every button is at least 44×44 px and this zone's own screen tests check it (F12 owns the final layout). No edits in src/core/ or src/app/.",
       "specRefs": [
         "F8.1"
       ],
@@ -51,12 +51,12 @@
       ],
       "status": "todo",
       "attempts": 0,
-      "notes": "Planning default to confirm with the owner: the 3D view is off when the app starts (it also saves graphics memory on tablets)."
+      "notes": ""
     },
     {
       "id": "F8-S3",
       "title": "Show the C-arm source, detector and beam outline, following the current pose",
-      "description": "Add src/view3d/carmModel.ts with a plain function that, for a pose, returns the X-ray source point, the detector centre and the detector's four corners (DETECTOR_SIZE_MM square, along the projection's detectorRight and detectorUp) from createProjection in src/core/geometry.ts (read-only). In the scene add objects named 'source' (a small sphere), 'detector' (a flat square) and 'beam' (lines from the source to the four detector corners). They follow the live C-arm pose in the store (planning choice: the 3D view shows where the C-arm is now, not where the last image was taken). Extend window.__sim.view3d() with carm: { source, detectorCentre, detectorCorners }, read from the scene objects themselves. The start camera now shows the whole C-arm from source to detector. Tests set poses with setPose from tests/fixtures/simPage.ts and compute the expected points in the test process with createProjection. No edits in src/core/ or src/app/.",
+      "description": "Add src/view3d/carmModel.ts with a plain function that, for a pose, returns the X-ray source point, the detector centre and the detector's four corners (DETECTOR_SIZE_MM square, along the projection's detectorRight and detectorUp) from createProjection in src/core/geometry.ts (read-only). In the scene add objects named 'source' (a small sphere), 'detector' (a flat square) and 'beam' (lines from the source to the four detector corners). They follow the live C-arm pose in the store (owner decision 2026-11-11: the 3D view shows where the C-arm is now, not where the last image was taken). Extend window.__sim.view3d() with carm: { source, detectorCentre, detectorCorners }, read from the scene objects themselves. The start camera now shows the whole C-arm from source to detector. Tests set poses with setPose from tests/fixtures/simPage.ts and compute the expected points in the test process with createProjection. No edits in src/core/ or src/app/.",
       "specRefs": [
         "F8.1",
         "F8.2"
@@ -150,7 +150,7 @@
     {
       "id": "F8-S7",
       "title": "Add surfaces for the four soft-tissue layers",
-      "description": "Create src/view3d/layers.ts with the layer list (planning default, see notes): 'nerves' (nerve root), 'vessels' (artery, vein), 'thecal' (thecal sac and spinal cord) and 'soft' (skin/fat, muscle, disc, ligamentum flavum, epidural space, joint space), using the label ids in src/core/labels.ts (read-only); bone (cortical and cancellous) stays the always-shown 'bone' object. Build one scene object per layer (named 'layer-nerves', 'layer-vessels', 'layer-thecal', 'layer-soft') with buildSurface, each with its own colour; the soft-tissue layer is see-through so the bone stays visible. Planning default for the start: nerves, vessels and thecal sac shown, soft tissue hidden. The objects are rebuilt with the bone when the volume changes. The on-screen toggles are the next story.",
+      "description": "Create src/view3d/layers.ts with the layer list (owner decision 2026-11-11): 'nerves' (nerve root), 'vessels' (artery, vein), 'thecal' (thecal sac and spinal cord) and 'soft' (skin/fat, muscle, disc, ligamentum flavum, epidural space, joint space), using the label ids in src/core/labels.ts (read-only); bone (cortical and cancellous) stays the always-shown 'bone' object. Build one scene object per layer (named 'layer-nerves', 'layer-vessels', 'layer-thecal', 'layer-soft') with buildSurface, each with its own colour; the soft-tissue layer is see-through so the bone stays visible. Owner decision for the start: nerves, vessels and thecal sac shown, soft tissue hidden. The objects are rebuilt with the bone when the volume changes. The on-screen toggles are the next story.",
       "specRefs": [
         "F8.4"
       ],
@@ -167,7 +167,7 @@
       ],
       "status": "todo",
       "attempts": 0,
-      "notes": "Planning defaults to confirm with the owner: which tissues count as 'soft tissue', and which layers are shown at start."
+      "notes": ""
     },
     {
       "id": "F8-S8",
@@ -194,7 +194,7 @@
     {
       "id": "F8-S9",
       "title": "Hide the 3D view and disable its toggle in Exam mode",
-      "description": "When the store's mode is 'exam', the 3D view is hidden (canvas and layer toggles hidden, nothing drawn, window.__sim.view3d().shown false) and the view3d-toggle is disabled, so clicks and taps do nothing (toggleEnabled false). When the mode changes away from 'exam' the toggle works again; planning choice: the view stays off until the learner turns it on. The home screen that sets the mode is F12, so tests set store.mode through the dev server's store module (the same trick as setPose). This is the feature's last loop story: run the whole check.",
+      "description": "When the store's mode is 'exam', the 3D view is hidden (canvas and layer toggles hidden, nothing drawn, window.__sim.view3d().shown false) and the view3d-toggle is disabled, so clicks and taps do nothing (toggleEnabled false). When the mode changes away from 'exam' the toggle works again; owner decision 2026-11-11: the view stays off until the learner turns it on. The home screen that sets the mode is F12, so tests set store.mode through the dev server's store module (the same trick as setPose). This is the feature's last loop story: run the whole check.",
       "specRefs": [
         "F8.5"
       ],

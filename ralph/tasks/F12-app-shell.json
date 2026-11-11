@@ -10,7 +10,7 @@
     {
       "id": "F12-S1",
       "title": "Remember that the disclaimer was accepted, so it is not shown again on reload",
-      "description": "Add src/app/storage.ts: a small safe wrapper around the browser's local storage (read, write, remove) that never throws — when storage is blocked or full it reports 'unavailable' instead (the history story F12-S6 uses it too). Keys carry the app name and a version, e.g. 'spineFluoroTrainer.disclaimerAccepted.v1'. When the learner accepts the disclaimer, save that; on the next load, skip the disclaimer if it was saved. If storage is unavailable, show the disclaimer on every load and keep working. Shared-file change, explicitly allowed for this story (planning default, see notes): two existing F2 screen tests reload the page and then call acceptDisclaimer() again, so change tests/fixtures/acceptDisclaimer.ts so that it accepts the disclaimer only when it is shown (it is decided while the page loads; check for the accept button) and otherwise returns straight away. Its name and how it is called stay the same; no test file changes. Unit tests use a fake storage object passed in (no browser page). Only the app zone edits src/app/main.ts.",
+      "description": "Add src/app/storage.ts: a small safe wrapper around the browser's local storage (read, write, remove) that never throws — when storage is blocked or full it reports 'unavailable' instead (the history story F12-S6 uses it too). Keys carry the app name and a version, e.g. 'spineFluoroTrainer.disclaimerAccepted.v1'. When the learner accepts the disclaimer, save that; on the next load, skip the disclaimer if it was saved. If storage is unavailable, show the disclaimer on every load and keep working. Shared-file change, explicitly allowed for this story (owner decision 2026-11-11): two existing F2 screen tests reload the page and then call acceptDisclaimer() again, so change tests/fixtures/acceptDisclaimer.ts so that it accepts the disclaimer only when it is shown (it is decided while the page loads; check for the accept button) and otherwise returns straight away. Its name and how it is called stay the same; no test file changes. Unit tests use a fake storage object passed in (no browser page). Only the app zone edits src/app/main.ts.",
       "specRefs": [
         "F12.1"
       ],
@@ -27,12 +27,12 @@
       "dependsOn": [],
       "status": "todo",
       "attempts": 0,
-      "notes": "Needs the owner's OK to change the shared helper tests/fixtures/acceptDisclaimer.ts (planning default: allowed)."
+      "notes": ""
     },
     {
       "id": "F12-S2",
       "title": "Show a clear message instead of a blank screen when the browser has no WebGL2",
-      "description": "In src/app/main.ts, before mounting any zone, check that the browser can create a WebGL2 context (a plain check function in src/app/, given the canvas factory, so it can be unit-tested). If it cannot, show only the message \"This browser can't run the simulator (WebGL2 needed)\" (test id webgl2-missing) in a readable card, and mount nothing else (planning default: no disclaimer either, as there is nothing to use). The screen test stubs WebGL2 out with an init script that makes HTMLCanvasElement.prototype.getContext return null for 'webgl2'. Only the app zone edits src/app/main.ts.",
+      "description": "In src/app/main.ts, before mounting any zone, check that the browser can create a WebGL2 context (a plain check function in src/app/, given the canvas factory, so it can be unit-tested). If it cannot, show only the message \"This browser can't run the simulator (WebGL2 needed)\" (test id webgl2-missing) in a readable card, and mount nothing else (owner decision 2026-11-11: no disclaimer either, as there is nothing to use). The screen test stubs WebGL2 out with an init script that makes HTMLCanvasElement.prototype.getContext return null for 'webgl2'. Only the app zone edits src/app/main.ts.",
       "specRefs": [
         "F12.5"
       ],
@@ -53,7 +53,7 @@
     {
       "id": "F12-S3",
       "title": "Add the home screen with Free play, and a Home button on the simulator screen",
-      "description": "After the disclaimer, the app shows a home screen (test id home-screen) instead of going straight to the four panels. It offers four choices (F12.2): Practice, Exam, Quiz and Free play (test ids home-practice, home-exam, home-quiz, home-freeplay), plus History and About (home-history, home-about; their screens come in later stories, so for now they may be disabled). This story makes Free play work: it sets the store's mode to 'freeplay' and shows the simulator screen (the existing four-panel layout). The simulator screen gets a slim top bar with a Home button (test id home-button) that goes back to the home screen; the four panels must still fit without scrolling. Every zone is still mounted once at start-up, as now (tests/e2e/app/panels.spec.ts checks it); the home screen only hides and shows the simulator screen. Planning default (see notes): the app sets data-screen on <html> ('home', 'sim', and later 'quiz', 'procedures', 'about', 'history') so zones with page-wide shortcuts can ignore keys off the simulator screen, the same way they read data-disclaimer; teaching other zones to read it is a later shared change. Shared-file change, explicitly allowed for this story (planning default, see notes): change tests/fixtures/acceptDisclaimer.ts so that, after the disclaimer, it also chooses Free play (click on desktop, tap on tablet) when the home screen is shown, so every existing screen test still lands on the four panels; its name and how it is called stay the same, and no test file changes. Layout: on the tablet every button is at least 44×44 px and this story's screen tests check the app's own buttons. Only the app zone edits src/app/main.ts.",
+      "description": "After the disclaimer, the app shows a home screen (test id home-screen) instead of going straight to the four panels. It offers four choices (F12.2): Practice, Exam, Quiz and Free play (test ids home-practice, home-exam, home-quiz, home-freeplay), plus History and About (home-history, home-about; their screens come in later stories, so for now they may be disabled). This story makes Free play work: it sets the store's mode to 'freeplay' and shows the simulator screen (the existing four-panel layout). The simulator screen gets a slim top bar with a Home button (test id home-button) that goes back to the home screen; the four panels must still fit without scrolling. Every zone is still mounted once at start-up, as now (tests/e2e/app/panels.spec.ts checks it); the home screen only hides and shows the simulator screen. Owner decision 2026-11-11: the app sets data-screen on <html> ('home', 'sim', and later 'quiz', 'procedures', 'about', 'history') so zones with page-wide shortcuts can ignore keys off the simulator screen, the same way they read data-disclaimer; teaching other zones to read it is a later shared change. Shared-file change, explicitly allowed for this story (owner decision 2026-11-11): change tests/fixtures/acceptDisclaimer.ts so that, after the disclaimer, it also chooses Free play (click on desktop, tap on tablet) when the home screen is shown, so every existing screen test still lands on the four panels; its name and how it is called stay the same, and no test file changes. Layout: on the tablet every button is at least 44×44 px and this story's screen tests check the app's own buttons. Only the app zone edits src/app/main.ts.",
       "specRefs": [
         "F12.2"
       ],
@@ -72,12 +72,12 @@
       ],
       "status": "todo",
       "attempts": 0,
-      "notes": "Needs the owner's OK on three planning defaults: the app opens on the home screen (not straight into Free play); the fixture acceptDisclaimer may also choose Free play; and the data-screen attribute on <html>."
+      "notes": ""
     },
     {
       "id": "F12-S4",
       "title": "Make Practice, Exam and Quiz set the mode and open their screens",
-      "description": "Practice and Exam set the store's mode to 'practice' / 'exam' and open the procedure picker screen (test id procedure-picker) with the heading 'Practice' or 'Exam'. The procedures themselves come with F10, and the shared contract for listing and starting them does not exist yet (F12-S10, blocked), so for now the picker says 'No procedures available yet' (test id procedure-picker-empty). Quiz sets the mode to 'quiz' and shows the quiz screen (test id quiz-screen): change src/app/main.ts so the quiz zone mounts into the quiz screen instead of the hidden slot (it still mounts exactly once); what the quiz shows is F11. Each of these screens has the Home button (test id home-button) back to the home screen, and sets data-screen ('procedures' or 'quiz'). Planning choice: the mode is set when the choice is made on the home screen. Only the app zone edits src/app/main.ts.",
+      "description": "Practice and Exam set the store's mode to 'practice' / 'exam' and open the procedure picker screen (test id procedure-picker) with the heading 'Practice' or 'Exam'. The procedures themselves come with F10, and listing them is the next story but one (F12-S10), so for now the picker says 'No procedures available yet' (test id procedure-picker-empty). Quiz sets the mode to 'quiz' and shows the quiz screen (test id quiz-screen): change src/app/main.ts so the quiz zone mounts into the quiz screen instead of the hidden slot (it still mounts exactly once); what the quiz shows is F11. Each of these screens has the Home button (test id home-button) back to the home screen, and sets data-screen ('procedures' or 'quiz'). Owner decision 2026-11-11: the mode is set when the choice is made on the home screen. Only the app zone edits src/app/main.ts.",
       "specRefs": [
         "F12.2"
       ],
@@ -102,7 +102,7 @@
     {
       "id": "F12-S5",
       "title": "Add the About page with the disclaimer, the dataset credits and the app version",
-      "description": "Add the About screen (test id about-screen), opened from the home screen's About button and closed with the Home button. It always shows the full disclaimer text (reuse the same text as src/app/disclaimer.ts, so the two never differ), the app version (import version from package.json — JSON imports type-check here; no change to package.json), and the dataset credits from the manifest. The manifest is the anatomy zone's file: read data/manifest.json yourself with fetch (relative to import.meta.env.BASE_URL; never import from src/anatomy/) and show, for each region, its source dataset name, licence and attribution text — planning default (see notes): the field names are those F1 writes (regions[].sourceDataset, regions[].licence, regions[].attribution). Treat the file as untrusted: check each field is text and put it on the page as text, never as HTML. When the manifest is missing, invalid or lists no regions (today's phantom-only build), show 'Images are computed from a synthetic test phantom; no patient data is used.' (test id about-no-dataset). Tests serve a made-up manifest with Playwright's page.route (fake dataset names and attribution only; nothing is added to public/data/).",
+      "description": "Add the About screen (test id about-screen), opened from the home screen's About button and closed with the Home button. It always shows the full disclaimer text (reuse the same text as src/app/disclaimer.ts, so the two never differ), the app version (import version from package.json — JSON imports type-check here; no change to package.json), and the dataset credits from the manifest. The manifest is the anatomy zone's file: read data/manifest.json yourself with fetch (relative to import.meta.env.BASE_URL; never import from src/anatomy/) and show, for each region, its source dataset name, licence and attribution text — owner decision 2026-11-11: the field names are those F1 writes (regions[].sourceDataset, regions[].licence, regions[].attribution). Treat the file as untrusted: check each field is text and put it on the page as text, never as HTML. When the manifest is missing, invalid or lists no regions (today's phantom-only build), show 'Images are computed from a synthetic test phantom; no patient data is used.' (test id about-no-dataset). Tests serve a made-up manifest with Playwright's page.route (fake dataset names and attribution only; nothing is added to public/data/).",
       "specRefs": [
         "F12.1"
       ],
@@ -151,7 +151,7 @@
     {
       "id": "F12-S7",
       "title": "Add the History screen with Clear history and the storage-unavailable message",
-      "description": "Add the History screen (test id history-screen), opened from the home screen's History button, with the Home button back. It lists the finished attempts newest first (test id history-entry for each): date, mode, procedure (or 'Quiz'), total score, an 'Unsafe' mark when flagged, and shots and fluoro time when present; an empty history says so. 'Clear history' (test id history-clear) asks for confirmation in an in-page dialog (test ids history-clear-confirm and history-clear-cancel; not window.confirm, so it works the same with touch) and clears only after confirming. If browser storage is unavailable, the screen shows \"History can't be saved in this browser\" (test id history-unavailable) and the app keeps working. Procedures (F10) and the quiz (F11) do not exist yet, and how they hand records over is still to be decided (F12-S11, blocked), so tests add records through the dev server's src/app/history.ts module (the same trick as setPose), with made-up records only.",
+      "description": "Add the History screen (test id history-screen), opened from the home screen's History button, with the Home button back. It lists the finished attempts newest first (test id history-entry for each): date, mode, procedure (or 'Quiz'), total score, an 'Unsafe' mark when flagged, and shots and fluoro time when present; an empty history says so. 'Clear history' (test id history-clear) asks for confirmation in an in-page dialog (test ids history-clear-confirm and history-clear-cancel; not window.confirm, so it works the same with touch) and clears only after confirming. If browser storage is unavailable, the screen shows \"History can't be saved in this browser\" (test id history-unavailable) and the app keeps working. Procedures (F10) and the quiz (F11) do not exist yet, and saving the records they hand over is F12-S11, so tests add records through the dev server's src/app/history.ts module (the same trick as setPose), with made-up records only.",
       "specRefs": [
         "F12.4"
       ],
@@ -199,7 +199,7 @@
     {
       "id": "F12-S9",
       "title": "Check every app-zone button and toggle is at least 44×44 px on the tablet",
-      "description": "Add one screen test that visits every app-zone screen in the tablet set-up — disclaimer, home, procedure picker, quiz screen, About, History with the clear dialog open, and the simulator screen's top bar — and checks that every visible button and toggle of the app zone (inside the app's own screens, not inside other zones' panels, which each zone checks itself) is at least 44×44 px. Fix any that are smaller. This is the feature's last loop story: run the whole check.",
+      "description": "Add one screen test that visits every app-zone screen in the tablet set-up — disclaimer, home, procedure picker, quiz screen, About, History with the clear dialog open, and the simulator screen's top bar — and checks that every visible button and toggle of the app zone (inside the app's own screens, not inside other zones' panels, which each zone checks itself) is at least 44×44 px. Fix any that are smaller. Run the whole check.",
       "specRefs": [
         "F12.3"
       ],
@@ -223,7 +223,7 @@
     {
       "id": "F12-S10",
       "title": "List the procedures on offer in the picker and ask for the one the learner picks",
-      "description": "Needs a shared-contract addition in src/core/ first (interactive session; proposed, not yet decided): store.procedures — the procedures on offer as { id, title } entries, filled by the procedures zone (F10) — and a bus event 'procedureRequest' carrying a procedure id. Then: the picker lists store.procedures (and follows changes); picking one emits exactly one 'procedureRequest' with its id and shows the simulator screen in the mode chosen on the home screen; starting the case itself (briefing, caseStart) is the procedures zone's job (F10.2). Tests fill store.procedures and listen on the bus through the dev server's store module. No edits in src/procedures/.",
+      "description": "Uses the shared contract added on 2026-11-11 (src/core/, read-only here): store.procedures — the procedures on offer as { id, title } entries (ProcedureEntry), filled by the procedures zone (F10) — and the bus event 'procedureRequest' carrying a procedure id. The picker lists store.procedures (and follows changes); picking one emits exactly one 'procedureRequest' with its id and shows the simulator screen in the mode chosen on the home screen; starting the case itself (briefing, caseStart) is the procedures zone's job (F10.2). Tests fill store.procedures and listen on the bus through the dev server's store module. No edits in src/procedures/.",
       "specRefs": [
         "F12.2",
         "F10.2"
@@ -239,14 +239,14 @@
       "dependsOn": [
         "F12-S4"
       ],
-      "status": "blocked",
+      "status": "todo",
       "attempts": 0,
-      "notes": "Blocked by design: needs the shared contract store.procedures + bus event 'procedureRequest' in src/core/ (interactive change with the owner). The loop skips it and says so in its pull request."
+      "notes": "Unblocked 2026-11-11: the shared contract now has store.procedures and the bus event 'procedureRequest' (src/core/store.ts)."
     },
     {
       "id": "F12-S11",
       "title": "Save the attempt records that procedures and the quiz hand over",
-      "description": "Needs a shared-contract addition in src/core/ first (interactive session; proposed, not yet decided): a bus event 'attemptFinished' carrying an AttemptRecord, which the procedures zone (F10.5) and the quiz zone (F11.4) emit when an attempt ends. Then the app zone listens for it and adds the record to the history (F12-S6); an invalid record is ignored. Tests emit the event through the dev server's store module with made-up records.",
+      "description": "Uses the shared contract added on 2026-11-11 (src/core/, read-only here): the bus event 'attemptFinished' carrying an AttemptRecord, which the procedures zone (F10.5) and the quiz zone (F11.4) will emit when an attempt ends. The app zone listens for it and adds the record to the history (F12-S6); an invalid record is ignored. Tests emit the event through the dev server's store module with made-up records. This is the feature's last loop story: run the whole check.",
       "specRefs": [
         "F12.4",
         "F10.5",
@@ -254,17 +254,20 @@
       ],
       "acceptance": [
         "Screen test (both set-ups): after the test emits two 'attemptFinished' events, the History screen lists both, newest first, also after a reload",
-        "Screen test (both set-ups): an 'attemptFinished' event with an invalid record adds nothing and causes no page error"
+        "Screen test (both set-ups): an 'attemptFinished' event with an invalid record adds nothing and causes no page error",
+        "npm run check passes"
       ],
-      "verify": "npx playwright test tests/e2e/app/historyFromBus.spec.ts",
+      "verify": "npx playwright test tests/e2e/app/historyFromBus.spec.ts && npm run check",
       "zone": "app",
       "priority": 11,
       "dependsOn": [
-        "F12-S7"
+        "F12-S7",
+        "F12-S9",
+        "F12-S10"
       ],
-      "status": "blocked",
+      "status": "todo",
       "attempts": 0,
-      "notes": "Blocked by design: needs the shared bus event 'attemptFinished' in src/core/ (interactive change with the owner). The loop skips it and says so in its pull request."
+      "notes": "Unblocked 2026-11-11: the shared contract now has the bus event 'attemptFinished' (src/core/store.ts)."
     }
   ]
 }

@@ -2,6 +2,22 @@
 
 > One entry per meaningful choice, newest at the top. This stops future sessions and loop rounds from quietly undoing past decisions. Loop rounds don't edit this file — they record proposals in their progress log, and an interactive session adds them here after review.
 
+## 2026-11-11 — F4, F8 and F12 planning choices
+- **Decision (owner accepted every planning default):**
+  - **Needle lever rule vs track memory:** the F4.2 lever rule (tip moves opposite the hub by inserted ÷ outside length) applies while the needle is 10 mm deep or less; deeper, track memory (F4.8) holds the inserted part in its track.
+  - **Needle clock face:** 12 o'clock = toward the patient's head (made perpendicular to the needle); for a needle going straight into the back, 3 o'clock is the patient's right. The hub notch marks the bevel opening; the tip drifts to the opposite side.
+  - **Pre-bend direction:** the bend points away from the hub notch (the side the bevel drift goes, so both add up). The curved RF cannula's curve is built in (from the catalogue).
+  - **3D view:** off when the app starts; nerve roots, vessels and thecal sac shown, soft tissue hidden. "Soft tissue" = skin/fat, muscle, disc, ligamentum flavum, epidural space, joint space; the thecal sac layer includes the spinal cord. The C-arm in the 3D view follows the live pose. After Exam mode the view stays off until turned on.
+  - **Home screen:** the app opens on the home screen after the disclaimer. History and About are reached from the home screen; the other screens have a Home button. The mode is set when a choice is made on the home screen.
+  - **Shared test helper:** F12 may change `tests/fixtures/acceptDisclaimer.ts` so it skips a disclaimer that is not shown (remembered) and then chooses Free play, so every existing screen test still lands on the four panels. Its name and use stay the same.
+  - **Screen flag:** the app sets `data-screen` on `<html>` (`home`, `sim`, `procedures`, `quiz`, `about`, `history`). Teaching page-wide shortcuts to ignore keys off the simulator screen is a later change in those zones.
+  - **Shared contract (`src/core/`) extended:** `store.procedures` (`{ id, title }`, filled by the procedures zone), bus event `procedureRequest` (a procedure id; the procedures zone starts the case), bus event `attemptFinished` (an `AttemptRecord`, emitted by procedures and quiz, saved by the app shell). F12-S10 and F12-S11 are unblocked.
+  - **About page:** the app reads the dataset credits from `data/manifest.json` itself (fields `sourceDataset`, `licence`, `attribution` per region, as F1 writes them). Without a real dataset it shows "Images are computed from a synthetic test phantom; no patient data is used."
+  - **No WebGL2:** only the message is shown, without the disclaimer.
+- **Why:** Asked during F4, F8 and F12 planning; the owner accepted the recommended options. The spec's F4.2 and F4.8 disagree for deep needles; the bend rule matches common practice; a closed 3D view saves tablet graphics memory; a home screen is what learners expect, and changing the shared helper keeps every existing screen test valid without touching a test file; the shared contract lets the app, procedures and quiz work without importing each other.
+- **Alternatives considered:** Lever rule at every depth; bend toward the notch; 3D view on at start; opening straight into Free play with a Home button (no helper change); keeping attempt hand-over undecided until F10.
+- **Revisit if:** The needle feels wrong to the owner at the 10 mm switch-over; learners want the 3D view open by default; F10 or F11 need more from the procedure contract (e.g. descriptions or regions in the picker).
+
 ## 2026-11-10 — F1–F3 story review: shared-contract additions and story fixes
 - **Decision:**
   - **Shared contract (`src/core/`) extended before the loops start:** `store.lastImageKind` (`'shot'` / `'fluoro'`), `store.regions` plus the bus event `regionRequest`, optional `Landmarks.sacrum` and `Landmarks.iliacCrest`, and a shared shortcut list (`src/core/shortcuts.ts`) that the help overlay shows.
