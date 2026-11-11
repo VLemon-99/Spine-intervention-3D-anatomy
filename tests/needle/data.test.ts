@@ -152,3 +152,14 @@ describe('drift tuning numbers (F4-S4, F4-S5)', () => {
     expect(() => validateParams(power)).toThrow(/driftStiffnessPower/);
   });
 });
+
+describe('pre-bend tuning number (F4-S7)', () => {
+  it('rejects a missing or negative bendDegPerMmPerDeg', () => {
+    const missing = goodParams();
+    delete missing.bendDegPerMmPerDeg;
+    expect(() => validateParams(missing)).toThrow(/bendDegPerMmPerDeg/);
+    const negative = goodParams();
+    negative.bendDegPerMmPerDeg = -0.1;
+    expect(() => validateParams(negative)).toThrow(/bendDegPerMmPerDeg/);
+  });
+});

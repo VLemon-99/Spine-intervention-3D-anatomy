@@ -16,7 +16,7 @@
 
 import type { NeedleState, Vec3, Volume } from '../core/types';
 import { TISSUE_LABELS, isBone } from '../core/labels';
-import { needleSpec, params, type TipType } from './data';
+import { needleSpec, params, type NeedleSpec, type TipType } from './data';
 import { assertStandardLayout, labelAt } from './sample';
 
 export interface HubAngles {
@@ -42,6 +42,7 @@ export interface NeedleModel {
   readonly tipType: TipType;
   /** Relative bending stiffness from the catalogue (a stiffer needle drifts less). */
   readonly stiffness: number;
+  /** Effective pre-bend in degrees (0–30, or the catalogue curve of a curved-tip needle). */
   readonly preBend: number;
   readonly entryPoint: Vec3;
   /** Unit insertion direction at creation. */
@@ -126,6 +127,19 @@ function finiteOr(value: unknown, fallback: number): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 }
 
+/** Largest pre-bend a learner can set, degrees (F4.6, F5.1). */
+export const MAX_PRE_BEND_DEG = 30;
+
+/**
+ * The bend the model uses: a curved-tip needle has its catalogue curve built in
+ * (the requested preBend is ignored); otherwise the requested preBend clamped to
+ * 0–30°, and a non-number counts as 0.
+ */
+export function effectiveBend(spec: NeedleSpec, preBend: unknown): number {
+  if (spec.tipType === 'curved' && spec.tipCurveDeg !== undefined) return spec.tipCurveDeg;
+  return Math.min(MAX_PRE_BEND_DEG, Math.max(0, finiteOr(preBend, 0)));
+}
+
 /** A new needle whose tip sits at the entry point (depth 0), pointing along `direction`. */
 export function createNeedle(input: CreateNeedleInput): NeedleModel {
   const spec = needleSpec(input.needleId);
@@ -136,7 +150,7 @@ export function createNeedle(input: CreateNeedleInput): NeedleModel {
     lengthMm: spec.lengthMm,
     tipType: spec.tipType,
     stiffness: spec.stiffness,
-    preBend: finiteOr(input.preBend, 0),
+    preBend: effectiveBend(spec, input.preBend),
     entryPoint: copy(input.entryPoint),
     insertionDir,
     up,
@@ -206,9 +220,12 @@ export function advance(model: NeedleModel, mm: number, volume: Volume): Advance
   let tip = model.track[model.track.length - 1];
   const track = model.track.slice();
   let tipDir = model.tipDir;
-  // Drift per mm in tissue of stiffness 1: by tip type, less for a stiffer needle (F4.4).
-  const driftPerMm =
-    (params.driftDegPerMm[model.tipType] * DEG) / Math.pow(model.stiffness, params.driftStiffnessPower);
+  // Turn per mm in tissue of stiffness 1, toward the side away from the notch:
+  // bevel drift by tip type, less for a stiffer needle (F4.3, F4.4), plus the
+  // pre-bent tip's curve, which bends the same way (owner decision 2026-11-11, F4.6).
+  const turnPerMm =
+    (params.driftDegPerMm[model.tipType] * DEG) / Math.pow(model.stiffness, params.driftStiffnessPower) +
+    params.bendDegPerMmPerDeg * model.preBend * DEG;
   while (remaining > EPS) {
     const step = Math.min(params.stepMm, remaining, model.lengthMm - depth);
     if (step <= EPS) break;
@@ -218,9 +235,9 @@ export function advance(model: NeedleModel, mm: number, volume: Volume): Advance
       break;
     }
     boneContact = false;
-    // Bevel drift: the direction of travel turns a little away from the bevel
-    // face, in proportion to the tissue's stiffness at the tip (air: none, F4.4).
-    const turn = driftPerMm * tissueStiffness(labelAt(volume, tip)) * step;
+    // The direction of travel turns a little away from the bevel face, in
+    // proportion to the tissue's stiffness at the tip (air: none, F4.4).
+    const turn = turnPerMm * tissueStiffness(labelAt(volume, tip)) * step;
     if (turn > 0) tipDir = normalize(add(tipDir, scale(driftDirection(model, tipDir), Math.tan(turn))));
     tip = next;
     track.push(tip);

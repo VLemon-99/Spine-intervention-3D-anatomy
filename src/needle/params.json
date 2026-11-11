@@ -8,6 +8,7 @@
     "curved": 0.08
   },
   "driftStiffnessPower": 0.5,
+  "bendDegPerMmPerDeg": 0.02,
   "tissueStiffness": {
     "air": 0,
     "skinFat": 0.4,

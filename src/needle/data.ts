@@ -43,6 +43,11 @@ export interface NeedleParams {
    * drift is divided by stiffness ^ driftStiffnessPower (positive number).
    */
   driftStiffnessPower: number;
+  /**
+   * Pre-bent tip: degrees per mm the direction of travel turns toward the bend,
+   * per degree of bend, in tissue of stiffness 1 (non-negative).
+   */
+  bendDegPerMmPerDeg: number;
 }
 
 const MAX_STEP_MM = 0.5;
@@ -136,6 +141,9 @@ export function validateParams(data: unknown): NeedleParams {
   }
   if (!isFiniteNumber(data.driftStiffnessPower) || data.driftStiffnessPower <= 0) {
     problems.push('driftStiffnessPower must be a positive number');
+  }
+  if (!isFiniteNumber(data.bendDegPerMmPerDeg) || data.bendDegPerMmPerDeg < 0) {
+    problems.push('bendDegPerMmPerDeg must be a number, 0 or more');
   }
   if (problems.length > 0) fail('params.json', problems);
   return data as unknown as NeedleParams;

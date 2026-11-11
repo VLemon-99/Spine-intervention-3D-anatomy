@@ -52,3 +52,9 @@
 - Files touched: tests/needle/spin.test.ts, this log, the task file.
 - Test result: spin.test.ts 3/3 (with drift.test.ts and driftOrder.test.ts 13/13); npm run check passed (unit 217, screen 186 passed / 6 skipped).
 - Next round should know: spin drift 0.219 mm vs no-spin 2.356 mm (both spin directions equal, by symmetry).
+
+## Round — 2026-11-11 07:17 — F4-S7 — done
+- What I did: added the pre-bent tip. effectiveBend(spec, preBend) clamps to 0–30 (non-number → 0) and returns the catalogue tipCurveDeg for curved-tip needles; the model stores the effective bend as preBend (so NeedleState.preBend reports it). Each step's turn toward the side away from the notch is now (bevel drift + bendDegPerMmPerDeg × bend) × tissue stiffness × step, so bend and drift add up and rotate together with the bevel; no bend in air. New params field bendDegPerMmPerDeg (0.02, draft, validated) plus a validator test.
+- Files touched: src/needle/model.ts, src/needle/data.ts, src/needle/params.json, tests/needle/preBend.test.ts, tests/needle/data.test.ts, this log, the task file.
+- Test result: preBend.test.ts 6/6, all needle tests 50/50; npm run check passed (unit 224, screen 186 passed / 6 skipped).
+- Next round should know: the bend is not reduced by needle stiffness (only bevel drift is). Offsets at 40 mm muscle, 22G Quincke: 0° 2.36, 15° 6.46, 30° 10.43 mm; RF cannula 4.83 mm. F4-S8's tests use preBend 0, but track memory must keep working with a bend.

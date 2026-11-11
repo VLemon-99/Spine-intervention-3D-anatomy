@@ -170,9 +170,9 @@
       "dependsOn": [
         "F4-S6"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. params.bendDegPerMmPerDeg 0.02 (draft). effectiveBend(spec, preBend) exported from model.ts. After 40 mm muscle, 22G Quincke tip offset: 0° 2.36 mm, 15° 6.46 mm, 30° 10.43 mm; curved RF cannula (15°) 4.83 mm."
     },
     {
       "id": "F4-S8",
