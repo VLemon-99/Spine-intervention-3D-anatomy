@@ -1,5 +1,5 @@
-// Training disclaimer (docs/SPEC.md F0.2). Shown on every page load for now;
-// remembering acceptance is F12.1. It covers the whole app until the learner
+// Training disclaimer (docs/SPEC.md F0.2). main.ts shows it until the learner
+// has accepted it once (remembered in the browser, F12.1). It covers the whole app until the learner
 // clicks or taps 'I understand'.
 //
 // Other zones can check whether it is still shown — e.g. so page-wide

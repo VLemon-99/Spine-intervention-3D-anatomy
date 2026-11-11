@@ -25,9 +25,9 @@
       "zone": "app",
       "priority": 1,
       "dependsOn": [],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-11. src/app/storage.ts (createSafeStorage, storageKey, appStorage); main.ts skips the disclaimer when spineFluoroTrainer.disclaimerAccepted.v1 is \"true\"; acceptDisclaimer fixture returns straight away when no accept button is shown."
     },
     {
       "id": "F12-S2",

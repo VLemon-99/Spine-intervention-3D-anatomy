@@ -2,7 +2,8 @@
 // 1. Builds the layout and mounts every zone (each builds its own panel).
 // 2. Puts the synthetic phantom and its landmarks in the store as the current
 //    volume (the anatomy loader replaces this in F1).
-// 3. Shows the training disclaimer over everything.
+// 3. Shows the training disclaimer over everything, unless the learner
+//    accepted it before (remembered in the browser's local storage, F12.1).
 // 4. In development and test runs only, installs the window.__sim test hook.
 import { mount as mountAnatomy } from '../anatomy/index';
 import { mount as mountCarm } from '../carm/index';
@@ -17,6 +18,9 @@ import { mount as mountSim } from '../sim/index';
 import { mount as mountView3d } from '../view3d/index';
 import { showDisclaimer } from './disclaimer';
 import { getLayout, mount as mountApp } from './index';
+import { appStorage, storageKey } from './storage';
+
+const DISCLAIMER_KEY = storageKey('disclaimerAccepted', 1);
 
 const root = document.getElementById('app');
 if (root) {
@@ -34,7 +38,13 @@ if (root) {
     }
   }
 
-  showDisclaimer(document.body);
+  // When storage is unavailable, read() gives nothing, so the disclaimer is
+  // shown on every load, and the failed write is simply ignored.
+  if (appStorage.read(DISCLAIMER_KEY) !== 'true') {
+    showDisclaimer(document.body, () => {
+      appStorage.write(DISCLAIMER_KEY, 'true');
+    });
+  }
 }
 
 // The bundler drops this branch (and testHook.ts) from the production build.
