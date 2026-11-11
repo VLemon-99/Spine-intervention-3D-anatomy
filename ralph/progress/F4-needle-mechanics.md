@@ -64,3 +64,9 @@
 - Files touched: src/needle/model.ts, src/needle/data.ts, src/needle/params.json, tests/needle/trackMemory.test.ts, tests/needle/data.test.ts, this log, the task file.
 - Test result: trackMemory.test.ts 6/6, all needle tests 55/55; npm run check passed (unit 231, screen 186 passed / 6 skipped).
 - Next round should know: at exactly 10 mm the needle still pivots (memory only for depth > 10). A withdrawal that ends at ≤ 10 mm also realigns when nothing was changed (no visible effect then, the track already starts along the hub direction).
+
+## Round — 2026-11-11 07:26 — F4-S9 — done
+- What I did: added tests/needle/determinism.test.ts: a fixed 14-step sequence on the phantom (25G Quincke, 10° pre-bend, slightly tilted direction; shallow and deep hub changes, bevel turns, advancing into the lamina, withdrawing, re-advancing) run twice, compared with toStrictEqual after every step, plus a scan of src/needle/ for Math.random. No model change was needed.
+- Files touched: tests/needle/determinism.test.ts, this log, the task file.
+- Test result: determinism.test.ts 2/2; npm run check passed (unit 233, screen 186 passed / 6 skipped). All nine F4 stories are done.
+- Next round should know: F4 is complete. Proposals for the owner (all drafts in params.json / catalogue.json): driftStiffnessPower 0.5 (thin needles drift ~1.9× a 22G), bendDegPerMmPerDeg 0.02, trackSteerFraction 0.05, drift per tip type quincke 0.17 / tuohy 0.05 / curved 0.08 °/mm, curved RF cannula 20G 100 mm with a 15° curve.

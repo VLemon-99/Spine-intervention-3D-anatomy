@@ -219,9 +219,9 @@
         "F4-S7",
         "F4-S8"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done without a model change: the model has no hidden state or randomness. Two runs of a 14-step sequence on the phantom are deeply equal (toStrictEqual)."
     }
   ]
 }
