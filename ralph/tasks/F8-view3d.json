@@ -49,9 +49,9 @@
       "dependsOn": [
         "F8-S1"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Scene in src/view3d/scene.ts (createView3dScene: scene, camera with up = +z, target Vector3, 'bone' mesh, setVolume, setAspect); panel, renderer, draw-on-demand and the view3d debug getter in src/view3d/index.ts. Renderer is created on first show. Screen-test helpers in tests/e2e/view3d/view3dPage.ts (getView3d, press, expectOnScreen, countNonBackgroundPixels, putTestVolume)."
     },
     {
       "id": "F8-S3",
