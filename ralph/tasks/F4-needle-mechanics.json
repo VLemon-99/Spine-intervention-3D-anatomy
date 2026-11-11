@@ -145,9 +145,9 @@
       "dependsOn": [
         "F4-S5"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done without a model change: with ±30° spin per 1 mm step the drift at 40 mm is 0.22 mm vs 2.36 mm without spin (about 9%)."
     },
     {
       "id": "F4-S7",

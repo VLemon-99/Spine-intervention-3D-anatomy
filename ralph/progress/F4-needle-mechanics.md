@@ -46,3 +46,9 @@
 - Files touched: src/needle/model.ts, src/needle/data.ts, src/needle/params.json, tests/needle/driftOrder.test.ts, tests/needle/data.test.ts, this log, the task file.
 - Test result: driftOrder.test.ts 3/3, drift.test.ts 7/7, all needle tests 39/39; npm run check passed (unit 214, screen 186 passed / 6 skipped).
 - Next round should know: drift after 40 mm muscle: 22G 2.36 mm, 25G 4.52 mm. Among muscle/skinFat/ligamentumFlavum the stiffest is ligamentumFlavum (1.8), softest skinFat (0.4).
+
+## Round — 2026-11-11 07:12 — F4-S6 — done
+- What I did: added tests/needle/spin.test.ts (22G Quincke, uniform muscle, 40 × 1 mm advances with the bevel rotated ±30° before each). The model already applies drift step by step in the current bevel direction, so no change to src/needle/ was needed.
+- Files touched: tests/needle/spin.test.ts, this log, the task file.
+- Test result: spin.test.ts 3/3 (with drift.test.ts and driftOrder.test.ts 13/13); npm run check passed (unit 217, screen 186 passed / 6 skipped).
+- Next round should know: spin drift 0.219 mm vs no-spin 2.356 mm (both spin directions equal, by symmetry).
