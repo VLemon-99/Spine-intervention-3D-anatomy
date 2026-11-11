@@ -15,8 +15,8 @@
 // passed, from the entry point to the tip.
 
 import type { NeedleState, Vec3, Volume } from '../core/types';
-import { isBone } from '../core/labels';
-import { needleSpec, params } from './data';
+import { TISSUE_LABELS, isBone } from '../core/labels';
+import { needleSpec, params, type TipType } from './data';
 import { assertStandardLayout, labelAt } from './sample';
 
 export interface HubAngles {
@@ -39,6 +39,7 @@ export interface CreateNeedleInput {
 export interface NeedleModel {
   readonly needleId: string;
   readonly lengthMm: number;
+  readonly tipType: TipType;
   readonly preBend: number;
   readonly entryPoint: Vec3;
   /** Unit insertion direction at creation. */
@@ -131,6 +132,7 @@ export function createNeedle(input: CreateNeedleInput): NeedleModel {
   return {
     needleId: spec.id,
     lengthMm: spec.lengthMm,
+    tipType: spec.tipType,
     preBend: finiteOr(input.preBend, 0),
     entryPoint: copy(input.entryPoint),
     insertionDir,
@@ -160,6 +162,34 @@ export function setHubAngles(model: NeedleModel, angles: HubAngles): NeedleModel
 }
 
 /**
+ * Turns the hub so the notch moves by `degrees` on the clock face (positive =
+ * clockwise, from 12 toward 3 o'clock). bevelAngle stays between 0 and 360.
+ */
+export function rotateBevel(model: NeedleModel, degrees: number): NeedleModel {
+  const turned = (((model.bevelAngle + finiteOr(degrees, 0)) % 360) + 360) % 360;
+  return { ...model, bevelAngle: turned >= 360 - 1e-12 ? 0 : turned };
+}
+
+/** Tissue stiffness (params) for a label id; unknown labels count as air. */
+function tissueStiffness(label: number): number {
+  const entry = TISSUE_LABELS.find((t) => t.id === label);
+  return entry ? params.tissueStiffness[entry.key] : 0;
+}
+
+/**
+ * The unit direction the tip drifts toward: opposite the notch on the clock
+ * face, in the hub frame carried along to be perpendicular to `dir` (F4.3).
+ */
+function driftDirection(model: NeedleModel, dir: Vec3): Vec3 {
+  let up = sub(model.up, scale(dir, dot(model.up, dir)));
+  if (length(up) < 1e-9) up = sub(model.right, scale(dir, dot(model.right, dir)));
+  up = normalize(up);
+  const right = cross(dir, up);
+  const a = model.bevelAngle * DEG;
+  return add(scale(up, -Math.cos(a)), scale(right, -Math.sin(a)));
+}
+
+/**
  * Advances the tip by `mm` along its direction of travel, in steps of
  * params.stepMm. The depth never exceeds the needle's length (the hub stops at
  * the skin, F4.9). The tip never enters a bone voxel: when the next step would,
@@ -172,7 +202,8 @@ export function advance(model: NeedleModel, mm: number, volume: Volume): Advance
   let depth = model.depth;
   let tip = model.track[model.track.length - 1];
   const track = model.track.slice();
-  const tipDir = model.tipDir;
+  let tipDir = model.tipDir;
+  const driftPerMm = params.driftDegPerMm[model.tipType] * DEG;
   while (remaining > EPS) {
     const step = Math.min(params.stepMm, remaining, model.lengthMm - depth);
     if (step <= EPS) break;
@@ -182,6 +213,10 @@ export function advance(model: NeedleModel, mm: number, volume: Volume): Advance
       break;
     }
     boneContact = false;
+    // Bevel drift: the direction of travel turns a little away from the bevel
+    // face, in proportion to the tissue's stiffness at the tip (air: none).
+    const turn = driftPerMm * tissueStiffness(labelAt(volume, tip)) * step;
+    if (turn > 0) tipDir = normalize(add(tipDir, scale(driftDirection(model, tipDir), Math.tan(turn))));
     tip = next;
     track.push(tip);
     depth += step;

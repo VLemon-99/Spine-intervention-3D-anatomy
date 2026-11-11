@@ -100,9 +100,9 @@
       "dependsOn": [
         "F4-S3"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. params.driftDegPerMm per tip type (quincke 0.17, tuohy 0.05, curved 0.08; drafts). 22G Quincke drifts about 2.4 mm after 40 mm of muscle. rotateBevel(model, degrees) keeps bevelAngle in [0, 360)."
     },
     {
       "id": "F4-S5",

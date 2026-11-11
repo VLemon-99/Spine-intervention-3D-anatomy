@@ -2,6 +2,11 @@
   "reviewedByOwner": false,
   "notes": "Draft tuning numbers for the needle model. Only the owner marks this file reviewed. Later stories add fields; none are removed.",
   "stepMm": 0.25,
+  "driftDegPerMm": {
+    "quincke": 0.17,
+    "tuohy": 0.05,
+    "curved": 0.08
+  },
   "tissueStiffness": {
     "air": 0,
     "skinFat": 0.4,

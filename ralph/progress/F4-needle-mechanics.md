@@ -34,3 +34,9 @@
 - Files touched: src/needle/sample.ts, src/needle/model.ts, tests/needle/bone.test.ts, this log, the task file.
 - Test result: bone.test.ts 7/7, all needle tests 28/28; npm run check passed (unit 203, screen 186 passed / 6 skipped).
 - Next round should know: in the phantom the lamina's back surface (x 0, z 14) is the voxel boundary y = 24.5; skin starts at y = 42. The tip stops up to one step (0.25 mm) short of the surface because whole steps are used. advance() now calls assertStandardLayout on every call.
+
+## Round — 2026-11-11 07:03 — F4-S4 — done
+- What I did: added rotateBevel and bevel drift. Each step, after checking for bone, the direction of travel turns by driftDegPerMm[tipType] × tissueStiffness(label at the tip) × step toward the side opposite the notch. The clock face is the hub frame's up/right made perpendicular to the current direction. NeedleModel now carries tipType. New params field driftDegPerMm (validated: one non-negative number per tip type).
+- Files touched: src/needle/model.ts, src/needle/data.ts, src/needle/params.json, tests/needle/drift.test.ts, this log, the task file.
+- Test result: drift.test.ts 7/7, all needle tests 35/35; npm run check passed (unit 210, screen 186 passed / 6 skipped).
+- Next round should know: drift with today's drafts: 22G Quincke, 40 mm muscle, about 2.36 mm. Needle stiffness is NOT used yet (F4-S5 adds it). The tissue is looked up at the current tip position before the step. Quick numbers: `npx tsx -e "…"` with imports from './src/needle/model' and './tests/needle/volumes'.

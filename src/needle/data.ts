@@ -33,6 +33,11 @@ export interface NeedleParams {
   stepMm: number;
   /** Non-negative stiffness per tissue key; air is 0. */
   tissueStiffness: Record<TissueKey, number>;
+  /**
+   * Bevel drift per tip type: how many degrees per mm the direction of travel
+   * turns away from the bevel face in tissue of stiffness 1 (non-negative).
+   */
+  driftDegPerMm: Record<TipType, number>;
 }
 
 const MAX_STEP_MM = 0.5;
@@ -114,6 +119,14 @@ export function validateParams(data: unknown): NeedleParams {
     const known = new Set<string>(TISSUE_LABELS.map((label) => label.key));
     for (const key of Object.keys(stiffness)) {
       if (!known.has(key)) problems.push(`tissueStiffness.${key} is not a tissue in src/core/labels.ts`);
+    }
+  }
+  if (!isObject(data.driftDegPerMm)) {
+    problems.push('driftDegPerMm must be an object with one number per tip type');
+  } else {
+    for (const tipType of TIP_TYPES) {
+      const value = data.driftDegPerMm[tipType];
+      if (!isFiniteNumber(value) || value < 0) problems.push(`driftDegPerMm.${tipType} must be a number, 0 or more`);
     }
   }
   if (problems.length > 0) fail('params.json', problems);
