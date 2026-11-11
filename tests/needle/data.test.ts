@@ -140,3 +140,15 @@ describe('review flags', () => {
     expect(paramsJson.reviewedByOwner).toBe(false);
   });
 });
+
+describe('drift tuning numbers (F4-S4, F4-S5)', () => {
+  it('rejects a missing or negative drift per tip type and a non-positive stiffness power', () => {
+    const missing = goodParams();
+    delete (missing.driftDegPerMm as Record<string, unknown>).quincke;
+    expect(() => validateParams(missing)).toThrow(/driftDegPerMm\.quincke/);
+
+    const power = goodParams();
+    power.driftStiffnessPower = 0;
+    expect(() => validateParams(power)).toThrow(/driftStiffnessPower/);
+  });
+});

@@ -38,6 +38,11 @@ export interface NeedleParams {
    * turns away from the bevel face in tissue of stiffness 1 (non-negative).
    */
   driftDegPerMm: Record<TipType, number>;
+  /**
+   * How strongly the needle's own stiffness (catalogue) reduces drift: the
+   * drift is divided by stiffness ^ driftStiffnessPower (positive number).
+   */
+  driftStiffnessPower: number;
 }
 
 const MAX_STEP_MM = 0.5;
@@ -128,6 +133,9 @@ export function validateParams(data: unknown): NeedleParams {
       const value = data.driftDegPerMm[tipType];
       if (!isFiniteNumber(value) || value < 0) problems.push(`driftDegPerMm.${tipType} must be a number, 0 or more`);
     }
+  }
+  if (!isFiniteNumber(data.driftStiffnessPower) || data.driftStiffnessPower <= 0) {
+    problems.push('driftStiffnessPower must be a positive number');
   }
   if (problems.length > 0) fail('params.json', problems);
   return data as unknown as NeedleParams;

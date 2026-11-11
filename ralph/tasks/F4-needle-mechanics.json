@@ -123,9 +123,9 @@
       "dependsOn": [
         "F4-S4"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. Drift is divided by stiffness ^ params.driftStiffnessPower (0.5, draft). After 40 mm of muscle: 22G 2.36 mm, 25G 4.52 mm."
     },
     {
       "id": "F4-S6",

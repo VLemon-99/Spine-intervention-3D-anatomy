@@ -40,6 +40,8 @@ export interface NeedleModel {
   readonly needleId: string;
   readonly lengthMm: number;
   readonly tipType: TipType;
+  /** Relative bending stiffness from the catalogue (a stiffer needle drifts less). */
+  readonly stiffness: number;
   readonly preBend: number;
   readonly entryPoint: Vec3;
   /** Unit insertion direction at creation. */
@@ -133,6 +135,7 @@ export function createNeedle(input: CreateNeedleInput): NeedleModel {
     needleId: spec.id,
     lengthMm: spec.lengthMm,
     tipType: spec.tipType,
+    stiffness: spec.stiffness,
     preBend: finiteOr(input.preBend, 0),
     entryPoint: copy(input.entryPoint),
     insertionDir,
@@ -203,7 +206,9 @@ export function advance(model: NeedleModel, mm: number, volume: Volume): Advance
   let tip = model.track[model.track.length - 1];
   const track = model.track.slice();
   let tipDir = model.tipDir;
-  const driftPerMm = params.driftDegPerMm[model.tipType] * DEG;
+  // Drift per mm in tissue of stiffness 1: by tip type, less for a stiffer needle (F4.4).
+  const driftPerMm =
+    (params.driftDegPerMm[model.tipType] * DEG) / Math.pow(model.stiffness, params.driftStiffnessPower);
   while (remaining > EPS) {
     const step = Math.min(params.stepMm, remaining, model.lengthMm - depth);
     if (step <= EPS) break;
@@ -214,7 +219,7 @@ export function advance(model: NeedleModel, mm: number, volume: Volume): Advance
     }
     boneContact = false;
     // Bevel drift: the direction of travel turns a little away from the bevel
-    // face, in proportion to the tissue's stiffness at the tip (air: none).
+    // face, in proportion to the tissue's stiffness at the tip (air: none, F4.4).
     const turn = driftPerMm * tissueStiffness(labelAt(volume, tip)) * step;
     if (turn > 0) tipDir = normalize(add(tipDir, scale(driftDirection(model, tipDir), Math.tan(turn))));
     tip = next;

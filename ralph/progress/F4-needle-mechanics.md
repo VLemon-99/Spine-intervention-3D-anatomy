@@ -40,3 +40,9 @@
 - Files touched: src/needle/model.ts, src/needle/data.ts, src/needle/params.json, tests/needle/drift.test.ts, this log, the task file.
 - Test result: drift.test.ts 7/7, all needle tests 35/35; npm run check passed (unit 210, screen 186 passed / 6 skipped).
 - Next round should know: drift with today's drafts: 22G Quincke, 40 mm muscle, about 2.36 mm. Needle stiffness is NOT used yet (F4-S5 adds it). The tissue is looked up at the current tip position before the step. Quick numbers: `npx tsx -e "…"` with imports from './src/needle/model' and './tests/needle/volumes'.
+
+## Round — 2026-11-11 07:08 — F4-S5 — done
+- What I did: drift now also depends on the needle: it is divided by catalogue stiffness ^ driftStiffnessPower (new params field, 0.5 draft, validated as positive). With power 1 a 25G would drift about 3.7× a 22G (8.7 mm at 40 mm), which looked too much, so 0.5 was chosen (about 1.9×) — a proposal for the owner to tune. Tissue and depth ordering already held from F4-S4. Added a validator test for the drift fields in data.test.ts (an extension, no existing test changed).
+- Files touched: src/needle/model.ts, src/needle/data.ts, src/needle/params.json, tests/needle/driftOrder.test.ts, tests/needle/data.test.ts, this log, the task file.
+- Test result: driftOrder.test.ts 3/3, drift.test.ts 7/7, all needle tests 39/39; npm run check passed (unit 214, screen 186 passed / 6 skipped).
+- Next round should know: drift after 40 mm muscle: 22G 2.36 mm, 25G 4.52 mm. Among muscle/skinFat/ligamentumFlavum the stiffest is ligamentumFlavum (1.8), softest skinFat (0.4).

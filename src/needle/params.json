@@ -7,6 +7,7 @@
     "tuohy": 0.05,
     "curved": 0.08
   },
+  "driftStiffnessPower": 0.5,
   "tissueStiffness": {
     "air": 0,
     "skinFat": 0.4,
