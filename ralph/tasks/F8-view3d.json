@@ -25,9 +25,9 @@
       "zone": "view3d",
       "priority": 1,
       "dependsOn": [],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "buildSurface in src/view3d/surface.ts: non-indexed triangle mesh (positions + normals Float32Array), counter-clockwise winding seen from outside. Throws for non-identity orientation."
     },
     {
       "id": "F8-S2",
