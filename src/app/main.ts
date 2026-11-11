@@ -1,4 +1,5 @@
 // App entry point. Only the app zone edits this file.
+// 0. Checks the browser can use WebGL2; if not, shows only a message (F12.5).
 // 1. Builds the layout and mounts every zone (each builds its own panel).
 // 2. Puts the synthetic phantom and its landmarks in the store as the current
 //    volume (the anatomy loader replaces this in F1).
@@ -19,11 +20,15 @@ import { mount as mountView3d } from '../view3d/index';
 import { showDisclaimer } from './disclaimer';
 import { getLayout, mount as mountApp } from './index';
 import { appStorage, storageKey } from './storage';
+import { canUseWebgl2, showWebgl2Missing } from './webgl2';
 
 const DISCLAIMER_KEY = storageKey('disclaimerAccepted', 1);
 
 const root = document.getElementById('app');
-if (root) {
+if (root && !canUseWebgl2(() => document.createElement('canvas'))) {
+  // Nothing else is mounted, not even the disclaimer: there is nothing to use.
+  showWebgl2Missing(root);
+} else if (root) {
   store.set({ volume: createPhantom(), landmarks: createPhantomLandmarks() });
 
   mountApp(root);

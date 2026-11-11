@@ -46,9 +46,9 @@
       "zone": "app",
       "priority": 2,
       "dependsOn": [],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-11. src/app/webgl2.ts (canUseWebgl2, showWebgl2Missing); main.ts checks before mounting any zone and shows only the message when WebGL2 is missing."
     },
     {
       "id": "F12-S3",
