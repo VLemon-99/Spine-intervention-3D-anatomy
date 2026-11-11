@@ -72,9 +72,9 @@
       "dependsOn": [
         "F8-S2"
       ],
-      "status": "todo",
+      "status": "blocked",
       "attempts": 0,
-      "notes": ""
+      "notes": "Blocked before any code (no attempt used). Conflict with an existing test: F8-S3 says 'the start camera now shows the whole C-arm from source to detector' (source is 650 mm from the isocentre), but tests/e2e/view3d/toggle.spec.ts › 'the start camera looks at the middle of the volume' (added in F8-S2, beyond F8-S2's acceptance criteria) requires the start camera to be less than 50 mm from the target for a 5 mm test volume. Loops may not change an existing test. Owner decision needed: allow changing that test's upper bound (e.g. 'far enough to see the whole C-arm: distance > 650 mm', keeping the target check), or drop the 'whole C-arm' camera requirement from F8-S3. Then set this story back to todo."
     },
     {
       "id": "F8-S4",
