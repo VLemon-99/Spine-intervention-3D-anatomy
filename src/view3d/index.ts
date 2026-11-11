@@ -140,7 +140,7 @@ export function mount(element: HTMLElement): void {
     return {
       shown,
       toggleEnabled: !toggle.disabled,
-      objects: [view.bone, view.needle].map((object) => ({
+      objects: [view.bone, ...view.layers.values(), view.needle].map((object) => ({
         name: object.name,
         visible: object.visible,
         triangles: object instanceof Mesh ? triangleCount(object.geometry) : 0,

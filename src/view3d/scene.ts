@@ -15,15 +15,13 @@ import {
   Scene,
   Vector3,
 } from 'three';
-import { TISSUE } from '../core/labels';
 import type { NeedleState, Volume } from '../core/types';
+import { BONE_LABELS, LAYERS, layerObjectName, type LayerId } from './layers';
 import { buildSurface } from './surface';
 
 /** Background colour of the 3D canvas. */
 export const BACKGROUND = 0x0b1016;
 
-/** Labels drawn as the always-shown bone surface. */
-export const BONE_LABELS: readonly number[] = [TISSUE.corticalBone, TISSUE.cancellousBone];
 
 const FOV_DEG = 40;
 /** Direction from the target to the start camera: behind the patient's back, a little to the left and toward the head. */
@@ -36,6 +34,8 @@ export interface View3dScene {
   target: Vector3;
   /** The bone surface mesh (named 'bone'). */
   bone: Mesh<BufferGeometry, MeshLambertMaterial>;
+  /** One surface per layer (named 'layer-<id>'), in LAYERS order. */
+  layers: Map<LayerId, Mesh<BufferGeometry, MeshLambertMaterial>>;
   /** The needle shaft, hub to tip, as a line (named 'needle'); hidden when there is no needle. */
   needle: Line<BufferGeometry, LineBasicMaterial>;
   /** Rebuild the needle line from the needle state (null hides it). */
@@ -80,6 +80,23 @@ export function createView3dScene(): View3dScene {
   bone.name = 'bone';
   scene.add(bone);
 
+  const layers = new Map<LayerId, Mesh<BufferGeometry, MeshLambertMaterial>>();
+  for (const layer of LAYERS) {
+    const seeThrough = layer.opacity < 1;
+    const material = new MeshLambertMaterial({
+      color: layer.colour,
+      transparent: seeThrough,
+      opacity: layer.opacity,
+      // A see-through layer must not hide what lies behind it.
+      depthWrite: !seeThrough,
+    });
+    const mesh = new Mesh(meshGeometry(null, layer.labels), material);
+    mesh.name = layerObjectName(layer.id);
+    mesh.visible = layer.startVisible;
+    layers.set(layer.id, mesh);
+    scene.add(mesh);
+  }
+
   const needle = new Line(new BufferGeometry(), new LineBasicMaterial({ color: 0x7fd8ff }));
   needle.name = 'needle';
   needle.visible = false;
@@ -116,11 +133,18 @@ export function createView3dScene(): View3dScene {
     camera,
     target,
     bone,
+    layers,
     needle,
     setVolume(volume) {
       const old = bone.geometry;
       bone.geometry = meshGeometry(volume, BONE_LABELS);
       old.dispose();
+      for (const layer of LAYERS) {
+        const mesh = layers.get(layer.id)!;
+        const previous = mesh.geometry;
+        mesh.geometry = meshGeometry(volume, layer.labels);
+        previous.dispose();
+      }
       fitCamera(volume);
     },
     setNeedle(state) {

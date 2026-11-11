@@ -165,9 +165,9 @@
       "dependsOn": [
         "F8-S2"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Layer list (ids, names, labels, colours, opacity, startVisible) in src/view3d/layers.ts, with BONE_LABELS moved there. scene.ts builds one Mesh per layer (view.layers Map, named layer-<id>), rebuilt in setVolume. Soft tissue opacity 0.2 with depthWrite off; thecal 0.6."
     },
     {
       "id": "F8-S8",

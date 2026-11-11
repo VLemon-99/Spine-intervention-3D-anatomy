@@ -42,3 +42,9 @@
 - Files touched: src/view3d/index.ts, src/view3d/scene.ts, tests/e2e/view3d/needle.spec.ts, tests/e2e/view3d/view3dPage.ts, ralph/tasks/F8-view3d.json, ralph/progress/F8-view3d.md
 - Test result: verify passed (4/4); all view3d screen tests 16/16; npm run check passed (182 unit, 202 screen passed, 6 skipped).
 - Next round should know: F8-S3 is still blocked (owner decision). Next eligible: F8-S7 (layers). In the getter, objects are listed as [view.bone, view.needle] — add new objects there; triangles counts only Mesh objects.
+
+## Round — 2026-11-11 07:40 — F8-S7 — done
+- What I did: Added src/view3d/layers.ts (BONE_LABELS + the four owner-chosen layers with label ids, colour, opacity and start visibility) and one surface Mesh per layer in the scene ('layer-nerves', 'layer-vessels', 'layer-thecal', 'layer-soft'), rebuilt with the bone when the volume changes. Soft tissue is see-through (opacity 0.2, no depth write) and hidden at start.
+- Files touched: src/view3d/layers.ts, src/view3d/scene.ts, src/view3d/index.ts, tests/view3d/layers.test.ts, tests/e2e/view3d/layers.spec.ts, ralph/tasks/F8-view3d.json, ralph/progress/F8-view3d.md
+- Test result: verify passed (unit 2/2, screen 4/4); npm run check passed (184 unit, 206 screen passed, 6 skipped).
+- Next round should know: F8-S8 (layer toggle buttons) is next. view.layers.get(id) gives each layer Mesh; flip .visible then requestDraw(). Layer button names are in LAYERS[].name. F8-S3 still blocked.
