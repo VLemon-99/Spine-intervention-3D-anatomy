@@ -11,13 +11,14 @@ import { Mesh, WebGLRenderer } from 'three';
 import { registerDebugGetter } from '../core/debugRegistry';
 import { store } from '../core/store';
 import type { NeedleState, Vec3, Volume } from '../core/types';
+import { LAYERS } from './layers';
 import { createView3dScene, triangleCount } from './scene';
 
 // Every button is at least 44×44 px (F12 owns the final layout).
 const BUTTON_STYLE: Partial<CSSStyleDeclaration> = {
-  minWidth: '64px',
+  minWidth: '44px',
   minHeight: '44px',
-  padding: '0 10px',
+  padding: '0 8px',
   fontSize: '14px',
   cursor: 'pointer',
   borderRadius: '6px',
@@ -53,6 +54,13 @@ export function mount(element: HTMLElement): void {
   toggle.title = 'Show or hide the 3D see-through view';
   Object.assign(toggle.style, BUTTON_STYLE);
   row.append(heading, toggle);
+
+  /** Show an on/off button's state. */
+  const paint = (button: HTMLButtonElement, on: boolean): void => {
+    button.setAttribute('aria-pressed', String(on));
+    button.style.background = on ? '#cfe3ff' : '#f2f4f7';
+    button.style.fontWeight = on ? '700' : '400';
+  };
 
   const area = document.createElement('div');
   Object.assign(area.style, { flex: '1 1 auto', minHeight: '0', position: 'relative', display: 'none' });
@@ -109,10 +117,9 @@ export function mount(element: HTMLElement): void {
 
   const setShown = (on: boolean): void => {
     shown = on;
-    toggle.setAttribute('aria-pressed', String(on));
-    toggle.style.background = on ? '#cfe3ff' : '#f2f4f7';
-    toggle.style.fontWeight = on ? '700' : '400';
+    paint(toggle, on);
     area.style.display = on ? 'block' : 'none';
+    for (const button of layerButtons) button.style.display = on ? '' : 'none';
     if (on && !renderer) {
       renderer = new WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
       renderer.setPixelRatio(1);
@@ -120,6 +127,26 @@ export function mount(element: HTMLElement): void {
     }
     if (on) resize();
   };
+
+  // One toggle per layer, shown while the 3D view is on (F8.4).
+  const layerButtons: HTMLButtonElement[] = [];
+  for (const layer of LAYERS) {
+    const mesh = view.layers.get(layer.id)!;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.testid = `layer-toggle-${layer.id}`;
+    button.textContent = layer.name;
+    button.title = `Show or hide the ${layer.name.toLowerCase()} layer`;
+    Object.assign(button.style, BUTTON_STYLE);
+    paint(button, mesh.visible);
+    button.addEventListener('click', () => {
+      mesh.visible = !mesh.visible;
+      paint(button, mesh.visible);
+      requestDraw();
+    });
+    layerButtons.push(button);
+  }
+  row.append(...layerButtons);
 
   setShown(false);
   syncVolume(store.get().volume);

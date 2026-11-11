@@ -8,6 +8,7 @@
 - Zone screen-test helpers live in tests/e2e/view3d/view3dPage.ts: getView3d(page), sceneObject(info, name), press(page, testId), expectOnScreen, countNonBackgroundPixels (3D canvas vs its top-left background pixel), putTestVolume(page, n, boneVoxels) (store trick like setPose).
 - To add a scene object to window.__sim.view3d().objects, add it to the list in the registerDebugGetter call in src/view3d/index.ts; call requestDraw() after any scene change (draw on demand).
 - Don't add test checks beyond the story's acceptance criteria when a later story is planned to change that behaviour: loops can't edit an existing test later (this blocked F8-S3).
+- The layer buttons are hidden with style.display = 'none' in setShown (src/view3d/index.ts); F8-S9 (exam mode) must hide them the same way.
 - `npm install` is needed first in a fresh cloud session (node_modules is not committed).
 
 ## Rounds
@@ -48,3 +49,9 @@
 - Files touched: src/view3d/layers.ts, src/view3d/scene.ts, src/view3d/index.ts, tests/view3d/layers.test.ts, tests/e2e/view3d/layers.spec.ts, ralph/tasks/F8-view3d.json, ralph/progress/F8-view3d.md
 - Test result: verify passed (unit 2/2, screen 4/4); npm run check passed (184 unit, 206 screen passed, 6 skipped).
 - Next round should know: F8-S8 (layer toggle buttons) is next. view.layers.get(id) gives each layer Mesh; flip .visible then requestDraw(). Layer button names are in LAYERS[].name. F8-S3 still blocked.
+
+## Round — 2026-11-11 07:55 — F8-S8 — done
+- What I did: Added the four layer toggles (Nerves, Vessels, Thecal sac, Soft tissue; test ids layer-toggle-<id>, aria-pressed) in the toggle row, shown only while the 3D view is on. Each press flips its layer's visible flag and redraws. Narrowed the button minimum width to 44 px so all five fit in one row on the tablet (checked with a throwaway screenshot, deleted).
+- Files touched: src/view3d/index.ts, tests/e2e/view3d/layerToggles.spec.ts, ralph/tasks/F8-view3d.json, ralph/progress/F8-view3d.md
+- Test result: verify 6/6 passed; all view3d screen tests 26/26; npm run check passed (184 unit, 212 screen passed, 6 skipped).
+- Next round should know: Every remaining story (F8-S3 blocked; F8-S5, F8-S6, F8-S9 depend on it) waits on the owner's F8-S3 decision, so no story is eligible until then.

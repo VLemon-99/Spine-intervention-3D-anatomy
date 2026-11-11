@@ -187,9 +187,9 @@
       "dependsOn": [
         "F8-S7"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Four layer buttons (layer-toggle-<id>, aria-pressed) in the same row as the title and the 3D view toggle, shown only while the view is on; each flips its layer Mesh's visible flag and redraws. Buttons now minWidth 44px, padding 0 8px; in the tablet set-up all five fit on one row (checked with a screenshot)."
     },
     {
       "id": "F8-S9",
