@@ -163,3 +163,17 @@ describe('pre-bend tuning number (F4-S7)', () => {
     expect(() => validateParams(negative)).toThrow(/bendDegPerMmPerDeg/);
   });
 });
+
+describe('track memory tuning numbers (F4-S8)', () => {
+  it('rejects a missing or negative trackMemoryDepthMm and a trackSteerFraction outside 0–1', () => {
+    const missing = goodParams();
+    delete missing.trackMemoryDepthMm;
+    expect(() => validateParams(missing)).toThrow(/trackMemoryDepthMm/);
+    const negative = goodParams();
+    negative.trackMemoryDepthMm = -1;
+    expect(() => validateParams(negative)).toThrow(/trackMemoryDepthMm/);
+    const steer = goodParams();
+    steer.trackSteerFraction = 1.5;
+    expect(() => validateParams(steer)).toThrow(/trackSteerFraction/);
+  });
+});

@@ -90,15 +90,29 @@ const DEG = Math.PI / 180;
 /** A step this short (mm) or shorter counts as no movement. */
 const EPS = 1e-9;
 
-/** Rotates v by the rotation that takes unit vector `from` onto unit vector `to` (Rodrigues). */
-function rotateBetween(v: Vec3, from: Vec3, to: Vec3): Vec3 {
+/**
+ * Rotates v by the rotation that takes unit vector `from` onto unit vector `to`
+ * (Rodrigues), or by `fraction` of that rotation's angle.
+ */
+function rotateBetween(v: Vec3, from: Vec3, to: Vec3, fraction = 1): Vec3 {
   const axis = cross(from, to);
-  const s = length(axis);
-  const c = dot(from, to);
-  if (s < 1e-15) return copy(v); // no change (a 180° flip cannot happen: hub angles stay well below 90°)
-  const k = scale(axis, 1 / s);
+  const sinFull = length(axis);
+  if (sinFull < 1e-15) return copy(v); // no change (a 180° flip cannot happen: hub angles stay well below 90°)
+  const k = scale(axis, 1 / sinFull);
+  const angle = Math.atan2(sinFull, dot(from, to)) * fraction;
+  const c = Math.cos(angle);
+  const s = Math.sin(angle);
   // v cosθ + (k × v) sinθ + k (k·v)(1 − cosθ)
   return add(add(scale(v, c), scale(cross(k, v), s)), scale(k, dot(k, v) * (1 - c)));
+}
+
+/** Rotates every track point (and the tip direction) rigidly about the entry point. */
+function rotateTrack(model: NeedleModel, from: Vec3, to: Vec3): Pick<NeedleModel, 'track' | 'tipDir'> {
+  const entry = model.entryPoint;
+  return {
+    track: model.track.map((p, i) => (i === 0 ? copy(entry) : add(entry, rotateBetween(sub(p, entry), from, to)))),
+    tipDir: normalize(rotateBetween(model.tipDir, from, to)),
+  };
 }
 
 /** Builds the hub frame for an insertion direction (see the top of this file). */
@@ -165,17 +179,23 @@ export function createNeedle(input: CreateNeedleInput): NeedleModel {
 }
 
 /**
- * Sets the hub angles (degrees, relative to the insertion direction). The whole
- * needle pivots rigidly about the entry point, so the tip moves to the opposite
- * side of the hub (F4.2).
+ * Sets the hub angles (degrees, relative to the insertion direction).
+ * - At params.trackMemoryDepthMm (10 mm) or less, the whole needle pivots
+ *   rigidly about the entry point, so the tip moves to the opposite side of the
+ *   hub (F4.2).
+ * - Deeper, the inserted part stays in its track (F4.8): only the outside part
+ *   follows the hub, and the tip's direction of travel turns by just
+ *   params.trackSteerFraction of the hub change (owner decision 2026-11-11).
  */
 export function setHubAngles(model: NeedleModel, angles: HubAngles): NeedleModel {
   const next: HubAngles = { pitch: finiteOr(angles.pitch, 0), yaw: finiteOr(angles.yaw, 0) };
   const from = hubDirection(model, model.hubAngles);
   const to = hubDirection(model, next);
-  const entry = model.entryPoint;
-  const track = model.track.map((p, i) => (i === 0 ? copy(entry) : add(entry, rotateBetween(sub(p, entry), from, to))));
-  return { ...model, hubAngles: next, track, tipDir: normalize(rotateBetween(model.tipDir, from, to)) };
+  if (model.depth > params.trackMemoryDepthMm) {
+    const tipDir = normalize(rotateBetween(model.tipDir, from, to, params.trackSteerFraction));
+    return { ...model, hubAngles: next, tipDir };
+  }
+  return { ...model, hubAngles: next, ...rotateTrack(model, from, to) };
 }
 
 /**
@@ -267,11 +287,18 @@ export function withdraw(model: NeedleModel, mm: number): NeedleModel {
     }
   }
   if (depth === 0) track.length = 1;
+  const hubDir = hubDirection(model, model.hubAngles);
   const tipDir =
-    track.length >= 2
-      ? normalize(sub(track[track.length - 1], track[track.length - 2]))
-      : hubDirection(model, model.hubAngles);
-  return { ...model, depth, track, tipDir, boneContact };
+    track.length >= 2 ? normalize(sub(track[track.length - 1], track[track.length - 2])) : hubDir;
+  const pulled: NeedleModel = { ...model, depth, track, tipDir, boneContact };
+  // Back at a shallow depth the needle is free again (F4.8): it straightens
+  // along the current hub angle, turning what is left of the track rigidly so
+  // it starts out along the hub direction, and re-advancing cuts a new track.
+  if (depth <= params.trackMemoryDepthMm && track.length >= 2) {
+    const startDir = normalize(sub(track[1], track[0]));
+    return { ...pulled, ...rotateTrack(pulled, startDir, hubDir) };
+  }
+  return pulled;
 }
 
 /** The shared NeedleState (src/core/types.ts): a fresh copy, safe to hand out. */

@@ -9,6 +9,8 @@
   },
   "driftStiffnessPower": 0.5,
   "bendDegPerMmPerDeg": 0.02,
+  "trackMemoryDepthMm": 10,
+  "trackSteerFraction": 0.05,
   "tissueStiffness": {
     "air": 0,
     "skinFat": 0.4,

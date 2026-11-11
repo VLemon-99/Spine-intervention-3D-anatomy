@@ -194,9 +194,9 @@
       "dependsOn": [
         "F4-S7"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. params.trackMemoryDepthMm 10, trackSteerFraction 0.05 (draft). Deeper than 10 mm, setHubAngles keeps the track and turns tipDir by 5% of the hub change; withdraw() to 10 mm or less turns the remaining track rigidly so it starts along the hub direction."
     },
     {
       "id": "F4-S9",

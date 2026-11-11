@@ -48,6 +48,10 @@ export interface NeedleParams {
    * per degree of bend, in tissue of stiffness 1 (non-negative).
    */
   bendDegPerMmPerDeg: number;
+  /** Deeper than this (mm), a hub change no longer pivots the inserted part: it stays in its track (F4.8). */
+  trackMemoryDepthMm: number;
+  /** While in its track, the share (0–1) of a hub change that still steers the tip's direction of travel. */
+  trackSteerFraction: number;
 }
 
 const MAX_STEP_MM = 0.5;
@@ -144,6 +148,12 @@ export function validateParams(data: unknown): NeedleParams {
   }
   if (!isFiniteNumber(data.bendDegPerMmPerDeg) || data.bendDegPerMmPerDeg < 0) {
     problems.push('bendDegPerMmPerDeg must be a number, 0 or more');
+  }
+  if (!isFiniteNumber(data.trackMemoryDepthMm) || data.trackMemoryDepthMm < 0) {
+    problems.push('trackMemoryDepthMm must be a number, 0 or more');
+  }
+  if (!isFiniteNumber(data.trackSteerFraction) || data.trackSteerFraction < 0 || data.trackSteerFraction > 1) {
+    problems.push('trackSteerFraction must be a number from 0 to 1');
   }
   if (problems.length > 0) fail('params.json', problems);
   return data as unknown as NeedleParams;

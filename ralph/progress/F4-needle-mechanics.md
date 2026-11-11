@@ -58,3 +58,9 @@
 - Files touched: src/needle/model.ts, src/needle/data.ts, src/needle/params.json, tests/needle/preBend.test.ts, tests/needle/data.test.ts, this log, the task file.
 - Test result: preBend.test.ts 6/6, all needle tests 50/50; npm run check passed (unit 224, screen 186 passed / 6 skipped).
 - Next round should know: the bend is not reduced by needle stiffness (only bevel drift is). Offsets at 40 mm muscle, 22G Quincke: 0° 2.36, 15° 6.46, 30° 10.43 mm; RF cannula 4.83 mm. F4-S8's tests use preBend 0, but track memory must keep working with a bend.
+
+## Round — 2026-11-11 07:22 — F4-S8 — done
+- What I did: added track memory. setHubAngles: at depth ≤ trackMemoryDepthMm the needle pivots rigidly as before; deeper, the track is kept, only the outside part follows (the shaft's hub point is computed from the hub angle), and tipDir turns by trackSteerFraction of the hub rotation (rotateBetween now takes a fraction). withdraw(): when the depth ends at ≤ 10 mm, the remaining track is turned rigidly about the entry point so its first segment lies along the current hub direction ("straightens along the new hub angle"); re-advancing then cuts a new track. New params fields trackMemoryDepthMm (10) and trackSteerFraction (0.05, draft), validated, with a validator test.
+- Files touched: src/needle/model.ts, src/needle/data.ts, src/needle/params.json, tests/needle/trackMemory.test.ts, tests/needle/data.test.ts, this log, the task file.
+- Test result: trackMemory.test.ts 6/6, all needle tests 55/55; npm run check passed (unit 231, screen 186 passed / 6 skipped).
+- Next round should know: at exactly 10 mm the needle still pivots (memory only for depth > 10). A withdrawal that ends at ≤ 10 mm also realigns when nothing was changed (no visible effect then, the track already starts along the hub direction).
