@@ -51,9 +51,9 @@
       "dependsOn": [
         "F4-S1"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. model.ts keeps an internal NeedleModel (track = points entry→tip, tipDir = direction of travel). advance() already returns { state, boneContact } (always false until F4-S3). Hub changes rotate the whole track rigidly about the entry point."
     },
     {
       "id": "F4-S3",
