@@ -216,9 +216,9 @@
         "F12-S7",
         "F12-S8"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-12: tests/e2e/app/touchTargets.spec.ts checks every visible app-zone button/toggle (outside [data-slot]) on disclaimer, home, picker (Practice + Exam), quiz, About, History (+ clear dialog), sim top bar. No button was too small. The quiz and other slots got data-slot so other zones' content is skipped."
     },
     {
       "id": "F12-S10",

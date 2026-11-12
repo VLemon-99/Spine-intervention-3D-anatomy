@@ -16,6 +16,7 @@
 - Serve a fake manifest in a screen test with `page.route('**/data/manifest.json', route => route.fulfill({...}))` before `page.goto`.
 - Screen tests can reach the app's own history instance by importing '/src/app/history.ts' inside page.evaluate (same trick as setPose with the store).
 - In the app's one stylesheet (src/app/index.ts), a @media block must come after the rules it overrides (same specificity: later wins). `.app-slot` is defined near the end.
+- Any element with a data-slot attribute holds another zone's content; the app's touch-target check skips everything inside it. Give new zone slots a data-slot.
 - Hidden panels still get the spacebar shortcut on desktop (the C-arm zone reads only data-disclaimer), so a desktop Shot test can pass while the simulator screen is hidden.
 
 ## Rounds
@@ -80,3 +81,9 @@
 - Files touched: src/app/index.ts, tests/e2e/app/layout.spec.ts (new).
 - Test result: verify passed (layout 6/6, then the whole screen suite). npm run check: lint + types OK, 199 unit passed, 252 screen passed (6 skipped).
 - Next round should know: next eligible story is F12-S9 (touch-target check of every app-zone screen) — F12-S10 is also eligible; S9 has the lower priority number.
+
+## Round — 2026-11-12 — F12-S9 — done
+- What I did: Added one screen test that walks every app-zone screen (disclaimer, home, procedure picker via Practice and Exam, quiz, About, History with and without the clear dialog, simulator top bar) and, on the tablet, checks every visible button/toggle outside [data-slot] is at least 44×44 px; the desktop run checks each screen is reachable by click. Marked the quiz slot and the hidden 'other' slot with data-slot. No button needed fixing. Checked that the test fails when .app-button is shrunk (then restored).
+- Files touched: src/app/index.ts (data-slot on two slots), tests/e2e/app/touchTargets.spec.ts (new).
+- Test result: verify passed (touchTargets 4/4; npm run check: lint + types OK, 199 unit passed, 256 screen passed, 6 skipped).
+- Next round should know: next eligible story is F12-S10 (procedure picker list). Then F12-S11.

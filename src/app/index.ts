@@ -110,6 +110,7 @@ export function mount(element: HTMLElement): void {
   const needle = slot('needle');
   const view3d = slot('view3d');
   const other = document.createElement('div');
+  other.dataset.slot = 'other';
   other.hidden = true;
 
   root.append(fluoro, carm, needle, view3d);
@@ -137,6 +138,8 @@ export function mount(element: HTMLElement): void {
   quizTitle.className = 'app-page-title';
   quizTitle.textContent = 'Quiz';
   const quiz = document.createElement('div');
+  // data-slot marks content that belongs to another zone (its own touch-target checks cover it).
+  quiz.dataset.slot = 'quiz';
   quizScreen.append(quizTitle, quiz);
 
   // About page (disclaimer, version, dataset credits).
