@@ -11,7 +11,7 @@ import { Mesh, WebGLRenderer } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { registerDebugGetter } from '../core/debugRegistry';
 import { store } from '../core/store';
-import type { CArmPose, NeedleState, Vec3, Volume } from '../core/types';
+import type { CArmPose, Mode, NeedleState, Vec3, Volume } from '../core/types';
 import { LAYERS } from './layers';
 import { createView3dScene, triangleCount } from './scene';
 
@@ -142,6 +142,7 @@ export function mount(element: HTMLElement): void {
     paint(toggle, on);
     area.style.display = on ? 'block' : 'none';
     for (const button of layerButtons) button.style.display = on ? '' : 'none';
+    controls.enabled = on;
     if (on && !renderer) {
       renderer = new WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
       renderer.setPixelRatio(1);
@@ -179,16 +180,33 @@ export function mount(element: HTMLElement): void {
     requestDraw();
   };
 
+  // Exam mode (F8.5): the view is hidden and the toggle disabled. Leaving
+  // Exam mode enables the toggle again; the view stays off until the learner
+  // turns it on (owner decision 2026-11-11).
+  const syncMode = (mode: Mode): void => {
+    const exam = mode === 'exam';
+    if (exam === toggle.disabled) return;
+    toggle.disabled = exam;
+    toggle.style.cursor = exam ? 'not-allowed' : 'pointer';
+    toggle.style.opacity = exam ? '0.5' : '1';
+    toggle.title = exam ? 'The 3D view is not available in Exam mode' : 'Show or hide the 3D see-through view';
+    if (exam) setShown(false);
+  };
+
   setShown(false);
+  syncMode(store.get().mode);
   syncPose(store.get().pose);
   syncVolume(store.get().volume);
   syncNeedle(store.get().needle);
   store.subscribe((state) => {
+    syncMode(state.mode);
     syncPose(state.pose);
     syncVolume(state.volume);
     syncNeedle(state.needle);
   });
-  toggle.addEventListener('click', () => setShown(!shown));
+  toggle.addEventListener('click', () => {
+    if (!toggle.disabled) setShown(!shown);
+  });
 
   registerDebugGetter('view3d', () => {
     const { position } = view.camera;

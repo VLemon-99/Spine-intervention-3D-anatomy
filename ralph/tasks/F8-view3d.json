@@ -212,9 +212,9 @@
         "F8-S8",
         "F8-S6"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "syncMode in src/view3d/index.ts: entering 'exam' hides the view (setShown(false): canvas area, layer buttons, orbit controls off) and disables the toggle; leaving 'exam' re-enables the toggle with the view still off. The click handler also checks disabled. Test helper setMode in tests/e2e/view3d/view3dPage.ts."
     }
   ]
 }

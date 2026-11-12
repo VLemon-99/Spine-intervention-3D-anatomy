@@ -1,6 +1,6 @@
 // Screen-test helpers of the view3d zone (not a spec file).
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import type { NeedleState, Vec3 } from '../../../src/core/types';
+import type { Mode, NeedleState, Vec3 } from '../../../src/core/types';
 
 /** What window.__sim.view3d() returns. */
 export interface View3dInfo {
@@ -165,4 +165,13 @@ export async function makePageScrollable(page: Page): Promise<void> {
 /** The page's scroll position and zoom (visual viewport scale). */
 export async function pageScrollAndZoom(page: Page): Promise<{ x: number; y: number; scale: number }> {
   return page.evaluate(() => ({ x: window.scrollX, y: window.scrollY, scale: window.visualViewport?.scale ?? 1 }));
+}
+
+/** Set store.mode through the app's own store module (the same trick as setPose). Test-only. */
+export async function setMode(page: Page, mode: Mode): Promise<void> {
+  await page.evaluate(async (m) => {
+    const storeModule = '/src/core/store.ts';
+    const { store } = (await import(/* @vite-ignore */ storeModule)) as typeof import('../../../src/core/store');
+    store.set({ mode: m });
+  }, mode);
 }

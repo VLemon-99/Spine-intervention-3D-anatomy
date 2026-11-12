@@ -76,3 +76,9 @@
 - Files touched: src/view3d/index.ts, tests/e2e/view3d/touch.ts, tests/e2e/view3d/orbitTouch.spec.ts, ralph/tasks/F8-view3d.json, ralph/progress/F8-view3d.md
 - Test result: verify passed (3 tablet + 3 desktop, 6 skipped as set-up-specific); npm run check passed (185 unit, 222 screen passed, 12 skipped).
 - Next round should know: F8-S9 (exam mode) is the last story and runs the whole check. The layer buttons and canvas area are hidden via style.display in setShown; controls should be disabled (controls.enabled = false) while hidden.
+
+## Round — 2026-11-12 — F8-S9 — done
+- What I did: Exam mode hides the 3D view (canvas, layer toggles, orbit controls off, nothing drawn) and disables the 3D view toggle (toggleEnabled false; clicks and taps do nothing). Leaving Exam mode enables the toggle again with the view off, per the owner decision. Screen tests in both set-ups set store.mode through the dev server's store module.
+- Files touched: src/view3d/index.ts, tests/e2e/view3d/examMode.spec.ts, tests/e2e/view3d/view3dPage.ts, ralph/tasks/F8-view3d.json, ralph/progress/F8-view3d.md
+- Test result: verify passed (examMode 6/6, then npm run check: lint, types, 185 unit, 228 screen passed, 12 skipped as set-up-specific).
+- Next round should know: All F8 stories are done. Final step: full test run, push, pull request.
