@@ -265,9 +265,9 @@
         "F12-S9",
         "F12-S10"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": "Unblocked 2026-11-11: the shared contract now has the bus event 'attemptFinished' (src/core/store.ts)."
+      "notes": "Unblocked 2026-11-11: the shared contract now has the bus event 'attemptFinished' (src/core/store.ts). Done 2026-11-12: src/app/index.ts listens for 'attemptFinished', calls history.add (invalid records refused) and refreshes the History screen when it is open."
     }
   ]
 }

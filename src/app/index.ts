@@ -197,6 +197,14 @@ export function mount(element: HTMLElement): void {
       }),
     );
   };
+  // Finished procedures (F10.5) and quiz sessions (F11.4) hand their record
+  // over on the bus; the app saves it. history.add() checks the record and
+  // ignores an invalid one; it never throws.
+  bus.on('attemptFinished', (record) => {
+    history.add(record);
+    if (!historyScreen.element.hidden && !shell.hidden) historyScreen.refresh();
+  });
+
   listProcedures(store.get().procedures);
   store.subscribe((state) => listProcedures(state.procedures));
 

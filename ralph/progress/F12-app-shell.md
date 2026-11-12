@@ -93,3 +93,9 @@
 - Files touched: src/app/index.ts, tests/e2e/app/procedurePicker.spec.ts (new).
 - Test result: verify passed (10/10). npm run check: lint + types OK, 199 unit passed, 266 screen passed (6 skipped).
 - Next round should know: last story F12-S11 — listen for bus 'attemptFinished', add to `history` (history.add already refuses invalid records), refresh the History screen if open, then run npm run check. After it no todo story remains: push and open the PR.
+
+## Round — 2026-11-12 — F12-S11 — done
+- What I did: The app zone listens for the bus event 'attemptFinished' and saves the record with history.add(), which checks it (invalid records are ignored, nothing throws); the History screen refreshes if it is open.
+- Files touched: src/app/index.ts, tests/e2e/app/historyFromBus.spec.ts (new).
+- Test result: verify passed (historyFromBus 6/6; npm run check: lint + types OK, 199 unit passed, 272 screen passed, 6 skipped).
+- Next round should know: all F12 stories are done. For the owner's review: the spacebar still takes a shot while a non-simulator screen is shown (the C-arm zone reads only data-disclaimer; teaching it data-screen is the planned later shared change); History shows procedure ids rather than titles.
