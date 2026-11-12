@@ -2,6 +2,17 @@
 
 > One entry per meaningful choice, newest at the top. This stops future sessions and loop rounds from quietly undoing past decisions. Loop rounds don't edit this file — they record proposals in their progress log, and an interactive session adds them here after review.
 
+## 2026-11-12 — F3 owner answers: region picker, start region, C-arm keys and labels
+- **Decision:**
+  - **'Phantom' leaves the region picker once real regions exist.** The picker lists `store.regions` and adds the loaded region only when it is not among them, so 'Phantom' appears only while the synthetic phantom is the loaded volume (today's build, and screen tests). With real regions loaded, it is not offered.
+  - **The lumbar region (`lumbosacral`) loads at start** once real regions exist. This is for the anatomy loader (F1) and the app shell (F12), not the C-arm zone.
+  - **C-arm keys accepted as planned:** J / L oblique, I / K tilt, N / M table left/right, U / O head/foot, Y / H height; 1° per press, 5° with Shift, 5 mm for table moves.
+  - **Table slider end labels accepted for now:** left/right reads R … L (+ = toward the patient's left), head/foot FOOT … HEAD, height DOWN … UP.
+  - **F key and Fluoro pedal held together:** releasing either one stops fluoro (safe default).
+- **Why:** The owner answered the open questions from the F3 loop (2026-11-12).
+- **Alternatives considered:** Keeping 'Phantom' as a permanent test entry; starting on the cervical region; tracking each fluoro source separately.
+- **Revisit if:** Learners find the table labels confusing (F12 layout review), or another start region is wanted per procedure.
+
 ## 2026-11-11 — F12-S3 may update rememberDisclaimer.spec.ts
 - **Decision:** F12-S3 (home screen) may update `tests/e2e/app/rememberDisclaimer.spec.ts` so its tests choose Free play before checking the panels or taking a Shot (or check the home screen after the reload). Its disclaimer checks stay the same.
 - **Why:** That test was written in F12-S1, before the home screen existed, and assumed the panels come straight after the disclaimer. With the home screen (F12.2) they no longer do; the test's purpose (the disclaimer is remembered, and the app works with storage blocked) is unchanged.
