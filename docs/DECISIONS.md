@@ -2,6 +2,39 @@
 
 > One entry per meaningful choice, newest at the top. This stops future sessions and loop rounds from quietly undoing past decisions. Loop rounds don't edit this file — they record proposals in their progress log, and an interactive session adds them here after review.
 
+## 2026-11-12 — F3 owner answers: region picker, start region, C-arm keys and labels
+- **Decision:**
+  - **'Phantom' leaves the region picker once real regions exist.** The picker lists `store.regions` and adds the loaded region only when it is not among them, so 'Phantom' appears only while the synthetic phantom is the loaded volume (today's build, and screen tests). With real regions loaded, it is not offered.
+  - **The lumbar region (`lumbosacral`) loads at start** once real regions exist. This is for the anatomy loader (F1) and the app shell (F12), not the C-arm zone.
+  - **C-arm keys accepted as planned:** J / L oblique, I / K tilt, N / M table left/right, U / O head/foot, Y / H height; 1° per press, 5° with Shift, 5 mm for table moves.
+  - **Table slider end labels accepted for now:** left/right reads R … L (+ = toward the patient's left), head/foot FOOT … HEAD, height DOWN … UP.
+  - **F key and Fluoro pedal held together:** releasing either one stops fluoro (safe default).
+- **Why:** The owner answered the open questions from the F3 loop (2026-11-12).
+- **Alternatives considered:** Keeping 'Phantom' as a permanent test entry; starting on the cervical region; tracking each fluoro source separately.
+- **Revisit if:** Learners find the table labels confusing (F12 layout review), or another start region is wanted per procedure.
+
+## 2026-11-11 — F12-S3 may update rememberDisclaimer.spec.ts
+- **Decision:** F12-S3 (home screen) may update `tests/e2e/app/rememberDisclaimer.spec.ts` so its tests choose Free play before checking the panels or taking a Shot (or check the home screen after the reload). Its disclaimer checks stay the same.
+- **Why:** That test was written in F12-S1, before the home screen existed, and assumed the panels come straight after the disclaimer. With the home screen (F12.2) they no longer do; the test's purpose (the disclaimer is remembered, and the app works with storage blocked) is unchanged.
+- **Alternatives considered:** Skipping the home screen when the disclaimer was remembered (goes against the home-screen decision above).
+- **Revisit if:** —
+
+## 2026-11-11 — F4, F8 and F12 planning choices
+- **Decision (owner accepted every planning default):**
+  - **Needle lever rule vs track memory:** the F4.2 lever rule (tip moves opposite the hub by inserted ÷ outside length) applies while the needle is 10 mm deep or less; deeper, track memory (F4.8) holds the inserted part in its track.
+  - **Needle clock face:** 12 o'clock = toward the patient's head (made perpendicular to the needle); for a needle going straight into the back, 3 o'clock is the patient's right. The hub notch marks the bevel opening; the tip drifts to the opposite side.
+  - **Pre-bend direction:** the bend points away from the hub notch (the side the bevel drift goes, so both add up). The curved RF cannula's curve is built in (from the catalogue).
+  - **3D view:** off when the app starts; nerve roots, vessels and thecal sac shown, soft tissue hidden. "Soft tissue" = skin/fat, muscle, disc, ligamentum flavum, epidural space, joint space; the thecal sac layer includes the spinal cord. The C-arm in the 3D view follows the live pose. After Exam mode the view stays off until turned on.
+  - **Home screen:** the app opens on the home screen after the disclaimer. History and About are reached from the home screen; the other screens have a Home button. The mode is set when a choice is made on the home screen.
+  - **Shared test helper:** F12 may change `tests/fixtures/acceptDisclaimer.ts` so it skips a disclaimer that is not shown (remembered) and then chooses Free play, so every existing screen test still lands on the four panels. Its name and use stay the same.
+  - **Screen flag:** the app sets `data-screen` on `<html>` (`home`, `sim`, `procedures`, `quiz`, `about`, `history`). Teaching page-wide shortcuts to ignore keys off the simulator screen is a later change in those zones.
+  - **Shared contract (`src/core/`) extended:** `store.procedures` (`{ id, title }`, filled by the procedures zone), bus event `procedureRequest` (a procedure id; the procedures zone starts the case), bus event `attemptFinished` (an `AttemptRecord`, emitted by procedures and quiz, saved by the app shell). F12-S10 and F12-S11 are unblocked.
+  - **About page:** the app reads the dataset credits from `data/manifest.json` itself (fields `sourceDataset`, `licence`, `attribution` per region, as F1 writes them). Without a real dataset it shows "Images are computed from a synthetic test phantom; no patient data is used."
+  - **No WebGL2:** only the message is shown, without the disclaimer.
+- **Why:** Asked during F4, F8 and F12 planning; the owner accepted the recommended options. The spec's F4.2 and F4.8 disagree for deep needles; the bend rule matches common practice; a closed 3D view saves tablet graphics memory; a home screen is what learners expect, and changing the shared helper keeps every existing screen test valid without touching a test file; the shared contract lets the app, procedures and quiz work without importing each other.
+- **Alternatives considered:** Lever rule at every depth; bend toward the notch; 3D view on at start; opening straight into Free play with a Home button (no helper change); keeping attempt hand-over undecided until F10.
+- **Revisit if:** The needle feels wrong to the owner at the 10 mm switch-over; learners want the 3D view open by default; F10 or F11 need more from the procedure contract (e.g. descriptions or regions in the picker).
+
 ## 2026-11-10 — F1–F3 story review: shared-contract additions and story fixes
 - **Decision:**
   - **Shared contract (`src/core/`) extended before the loops start:** `store.lastImageKind` (`'shot'` / `'fluoro'`), `store.regions` plus the bus event `regionRequest`, optional `Landmarks.sacrum` and `Landmarks.iliacCrest`, and a shared shortcut list (`src/core/shortcuts.ts`) that the help overlay shows.
@@ -122,3 +155,9 @@
 - **Why:** Lets work run unattended and in parallel while keeping every change small, tested and reviewable.
 - **Alternatives considered:** Fully interactive sessions (slower, needs constant attention).
 - **Revisit if:** Loops regularly produce work that fails review — fix the spec and tests first.
+
+## 2026-11-11 — F8 start camera shows the whole C-arm
+- **Decision:** The 3D view's start camera is far enough back to show the whole C-arm (source to detector). The F8-S2 screen test that required the start camera to be less than 50 mm from a small test volume is changed to require more than 650 mm. The F8-S3 loop round makes that change in the same commit as the camera change.
+- **Why:** F8-S3 asks for the whole C-arm in the start view (the source is 650 mm from the isocentre). The F8-S2 loop had added the 50 mm limit as an extra check beyond its acceptance criteria, so the two contradicted each other and the loop blocked F8-S3.
+- **Alternatives considered:** Dropping the "whole C-arm" camera requirement from F8-S3 (the learner would have to zoom out to find the C-arm).
+- **Revisit if:** The C-arm looks too small on the tablet and learners prefer a close-up start view.

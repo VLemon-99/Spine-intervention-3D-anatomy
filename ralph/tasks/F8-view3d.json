@@ -1,0 +1,220 @@
+{
+  "feature": "F8",
+  "name": "3D see-through view",
+  "branch": "ralph/F8-view3d",
+  "zone": "view3d",
+  "dependsOnFeatures": [
+    "F0"
+  ],
+  "stories": [
+    {
+      "id": "F8-S1",
+      "title": "Build a surface mesh around the voxels of chosen tissue labels",
+      "description": "Create src/view3d/surface.ts with buildSurface(volume, labels): a triangle mesh (positions and normals as Float32Arrays, patient coordinates in mm) made of the voxel faces that separate a voxel whose label is in `labels` from one that is not (voxels outside the grid count as not in the set). Each such face is two triangles, normals point out of the set. Use the volume's origin and spacing; a volume that is not in the standard layout (identity orientation, decision 2026-11-10) is rejected with a clear error. Plain TypeScript with no browser code, so it is unit-testable; no edits in src/core/. The blocky look is the simplest surface that meets F8.1; smoothing is not asked for.",
+      "specRefs": [
+        "F8.1"
+      ],
+      "acceptance": [
+        "Unit test: one bone voxel in the middle of a 3×3×3 test volume gives 12 triangles whose corners lie on that voxel's faces (±half a voxel from its centre), with normals pointing outward",
+        "Unit test: two neighbouring bone voxels give 20 triangles (the shared face is left out)",
+        "Unit test: a bone voxel on the edge of the grid still gets its outer face",
+        "Unit test (phantom, bone labels): the mesh is not empty, and for every triangle the point half a voxel behind its centre (against the normal) is bone and the point half a voxel in front is not",
+        "Unit test: a volume with a non-identity orientation is rejected"
+      ],
+      "verify": "npx vitest run tests/view3d/surface.test.ts",
+      "zone": "view3d",
+      "priority": 1,
+      "dependsOn": [],
+      "status": "done",
+      "attempts": 0,
+      "notes": "buildSurface in src/view3d/surface.ts: non-indexed triangle mesh (positions + normals Float32Array), counter-clockwise winding seen from outside. Throws for non-identity orientation."
+    },
+    {
+      "id": "F8-S2",
+      "title": "Add the 3D view toggle and a Three.js scene showing the bone surface",
+      "description": "In the 3D view panel add a '3D view' toggle button (test id view3d-toggle, aria-pressed). Owner decision 2026-11-11: the view is off at start. When on, a Three.js WebGLRenderer canvas (test id view3d-canvas, preserveDrawingBuffer on so tests can read it) fills the panel below the toggle row and shows the bone surface (scene object named 'bone', built with buildSurface from the store's volume and the bone labels) with simple lighting; the start camera shows the whole volume. When off, the canvas is hidden and nothing is drawn. The scene is rebuilt when the store's volume changes. Draw on demand (when something changed), not in a constant loop. The 3D view only reads the store, never changes it. Register a read-only getter with registerDebugGetter('view3d', …) (src/core/debugRegistry.ts) so window.__sim.view3d() returns { shown, toggleEnabled, objects: [{ name, visible, triangles }], camera: { position, target } }; later stories add fields. Read every value from the Three.js objects themselves, not from the store, so the tests really check the scene. Layout: the 3D view panel is one quarter of the screen (F0 layout; about 500×370 px in the tablet set-up) and will also hold four layer toggles — keep the toggle row compact. Every button is at least 44×44 px and this zone's own screen tests check it (F12 owns the final layout). No edits in src/core/ or src/app/.",
+      "specRefs": [
+        "F8.1"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups): at start window.__sim.view3d().shown is false and the canvas is hidden",
+        "Screen test (both set-ups; click on desktop, tap on tablet): the toggle turns the view on — shown is true, aria-pressed is 'true', the objects list contains a visible 'bone' with more than 0 triangles, and the canvas has pixels that differ from its background colour",
+        "Screen test (both set-ups): a second click or tap turns it off again — shown is false and the canvas is hidden",
+        "Screen test (both set-ups): putting a different, small test volume in the store (through the dev server's store module, the same trick as setPose) changes the 'bone' triangle count",
+        "Screen test (both set-ups): the toggle is at least 44×44 px and visible without scrolling the page"
+      ],
+      "verify": "npx playwright test tests/e2e/view3d/toggle.spec.ts",
+      "zone": "view3d",
+      "priority": 2,
+      "dependsOn": [
+        "F8-S1"
+      ],
+      "status": "done",
+      "attempts": 0,
+      "notes": "Scene in src/view3d/scene.ts (createView3dScene: scene, camera with up = +z, target Vector3, 'bone' mesh, setVolume, setAspect); panel, renderer, draw-on-demand and the view3d debug getter in src/view3d/index.ts. Renderer is created on first show. Screen-test helpers in tests/e2e/view3d/view3dPage.ts (getView3d, press, expectOnScreen, countNonBackgroundPixels, putTestVolume)."
+    },
+    {
+      "id": "F8-S3",
+      "title": "Show the C-arm source, detector and beam outline, following the current pose",
+      "description": "Add src/view3d/carmModel.ts with a plain function that, for a pose, returns the X-ray source point, the detector centre and the detector's four corners (DETECTOR_SIZE_MM square, along the projection's detectorRight and detectorUp) from createProjection in src/core/geometry.ts (read-only). In the scene add objects named 'source' (a small sphere), 'detector' (a flat square) and 'beam' (lines from the source to the four detector corners). They follow the live C-arm pose in the store (owner decision 2026-11-11: the 3D view shows where the C-arm is now, not where the last image was taken). Extend window.__sim.view3d() with carm: { source, detectorCentre, detectorCorners }, read from the scene objects themselves. The start camera now shows the whole C-arm from source to detector. Tests set poses with setPose from tests/fixtures/simPage.ts and compute the expected points in the test process with createProjection. No edits in src/core/ or src/app/. Owner decision 2026-11-11 (unblocks this story): in tests/e2e/view3d/toggle.spec.ts › 'the start camera looks at the middle of the volume', replace the upper bound `expect(distance).toBeLessThan(50)` with `expect(distance).toBeGreaterThan(650)` (far enough to see the whole C-arm), in the same commit as the camera change; keep the target check and everything else in that test unchanged. This is the only existing test this story may change.",
+      "specRefs": [
+        "F8.1",
+        "F8.2"
+      ],
+      "acceptance": [
+        "Unit test: for three poses (including a table offset) the function's source and detector centre equal createProjection's, and the corners are 150 mm from the detector centre along its right and up directions",
+        "Screen test (both set-ups): with the 3D view on, the objects list contains visible 'source', 'detector' and 'beam' objects",
+        "Screen test (both set-ups): after each of three setPose calls (one with oblique and tilt, one with table offsets, one lateral), the reported source, detector centre and corners are within 0.5 mm of createProjection(pose) (F8.2)",
+        "The F8-S2 start-camera test is changed exactly as the owner decided (distance > 650 mm instead of < 50 mm) and passes in both set-ups"
+      ],
+      "verify": "npx vitest run tests/view3d/carmModel.test.ts && npx playwright test tests/e2e/view3d/carm.spec.ts",
+      "zone": "view3d",
+      "priority": 3,
+      "dependsOn": [
+        "F8-S2"
+      ],
+      "status": "done",
+      "attempts": 0,
+      "notes": "carmModel(pose) in src/view3d/carmModel.ts (corners: top-left, top-right, bottom-right, bottom-left). Scene objects 'source' (sphere at mesh.position), 'detector' (indexed 4-vertex square, corners in world coordinates), 'beam' (LineSegments source→corners), moved by view.setPose on every store.pose change. view3d().carm reads them from the scene. Start camera now frames the volume plus the C-arm (target stays at the volume centre). Owner-approved test change made: toggle.spec.ts start-camera upper bound < 50 → > 650 mm."
+    },
+    {
+      "id": "F8-S4",
+      "title": "Show the needle in the 3D scene, following the needle state",
+      "description": "Add a scene object named 'needle': a thin line or tube along the store's needle shaft (NeedleState.shaft, hub to tip, src/core/types.ts). It is not visible when the store has no needle, and it is rebuilt when the needle state changes. Extend window.__sim.view3d() with needle: { hub, tip } (or null), read from the scene object's own geometry. The needle model (F4) may not be merged yet, so tests put a hand-made NeedleState (a straight shaft through known points, then a bent one) into the store through the dev server's store module, the same trick as setPose. No edits in src/core/, src/needle/ or src/app/.",
+      "specRefs": [
+        "F8.1",
+        "F8.2"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups): with the 3D view on and no needle in the store, 'needle' is not visible and window.__sim.view3d().needle is null",
+        "Screen test (both set-ups): after the test puts a needle in the store, 'needle' is visible and the reported hub and tip are within 0.5 mm of the first and last shaft points (F8.2)",
+        "Screen test (both set-ups): after the test changes the needle (a deeper, bent shaft), the reported hub and tip follow within 0.5 mm",
+        "Screen test (both set-ups): after the test sets the needle back to null, 'needle' is not visible"
+      ],
+      "verify": "npx playwright test tests/e2e/view3d/needle.spec.ts",
+      "zone": "view3d",
+      "priority": 4,
+      "dependsOn": [
+        "F8-S2"
+      ],
+      "status": "done",
+      "attempts": 0,
+      "notes": "'needle' is a Three.js Line through every shaft point (world coordinates), drawn on top of the bone (depthTest off). Hidden when store.needle is null. view3d().needle reads hub/tip from the line's own position attribute. Test helpers testNeedle/putNeedle in tests/e2e/view3d/view3dPage.ts."
+    },
+    {
+      "id": "F8-S5",
+      "title": "Orbit and zoom the 3D view with the mouse (desktop)",
+      "description": "Use Three.js OrbitControls (three/examples/jsm/controls/OrbitControls.js — part of the existing three package, so no new dependency) on the 3D canvas: mouse drag orbits the camera around its target and the wheel zooms in and out. Redraw when the camera moves. The wheel over the canvas must not scroll the page. window.__sim.view3d().camera already reports position and target (F8-S2). The tablet gestures are the next story.",
+      "specRefs": [
+        "F8.3"
+      ],
+      "acceptance": [
+        "Screen test (desktop): a mouse drag across the canvas changes the camera position, and its distance to the target stays the same within 1%",
+        "Screen test (desktop): wheel steps toward the screen reduce the camera's distance to the target; steps the other way increase it",
+        "Screen test (desktop): the page does not scroll while wheeling over the canvas",
+        "The tests of F8-S2 to F8-S4 still pass unchanged"
+      ],
+      "verify": "npx playwright test tests/e2e/view3d/orbitMouse.spec.ts tests/e2e/view3d",
+      "zone": "view3d",
+      "priority": 5,
+      "dependsOn": [
+        "F8-S3",
+        "F8-S4"
+      ],
+      "status": "done",
+      "attempts": 0,
+      "notes": "OrbitControls on the 3D canvas in src/view3d/index.ts, sharing view.target; damping and pan off; min/max distance 10 / 20000 mm; 'change' → requestDraw; controls.update() after each volume change. OrbitControls itself prevents wheel scrolling and sets touch-action: none on the canvas. Helpers cameraDistance, makePageScrollable, pageScrollAndZoom added to tests/e2e/view3d/view3dPage.ts."
+    },
+    {
+      "id": "F8-S6",
+      "title": "Orbit with one finger and zoom with a pinch on the tablet",
+      "description": "Make the touch gestures work on the 3D canvas: one-finger drag orbits, a two-finger pinch zooms (OrbitControls supports both; the canvas needs touch-action: none so the browser does not scroll or zoom the page instead). Add the zone's screen-test helper tests/e2e/view3d/touch.ts (not a spec file; nothing in tests/fixtures/ changes) with a one-finger drag and a two-finger pinch: Playwright has no built-in multi-touch, but a CDP session with Input.dispatchTouchEvent (touchStart / touchMove / touchEnd, one or two touch points) works in Chromium.",
+      "specRefs": [
+        "F8.3"
+      ],
+      "acceptance": [
+        "Screen test (tablet): a one-finger drag across the canvas changes the camera position, and its distance to the target stays the same within 1%",
+        "Screen test (tablet): pinching the fingers apart reduces the camera's distance to the target; pinching them together increases it",
+        "Screen test (tablet): the page does not scroll or zoom during the gestures",
+        "The desktop tests of F8-S5 still pass unchanged"
+      ],
+      "verify": "npx playwright test tests/e2e/view3d/orbitTouch.spec.ts tests/e2e/view3d/orbitMouse.spec.ts",
+      "zone": "view3d",
+      "priority": 6,
+      "dependsOn": [
+        "F8-S5"
+      ],
+      "status": "done",
+      "attempts": 0,
+      "notes": "OrbitControls (F8-S5) already handles one-finger orbit and two-finger dolly; this story added touch-action: none on the canvas explicitly in src/view3d/index.ts, the CDP touch helper tests/e2e/view3d/touch.ts (oneFingerDrag, pinch) and tablet tests. Checked the no-scroll/zoom test fails with touch-action: auto (temporary change, reverted)."
+    },
+    {
+      "id": "F8-S7",
+      "title": "Add surfaces for the four soft-tissue layers",
+      "description": "Create src/view3d/layers.ts with the layer list (owner decision 2026-11-11): 'nerves' (nerve root), 'vessels' (artery, vein), 'thecal' (thecal sac and spinal cord) and 'soft' (skin/fat, muscle, disc, ligamentum flavum, epidural space, joint space), using the label ids in src/core/labels.ts (read-only); bone (cortical and cancellous) stays the always-shown 'bone' object. Build one scene object per layer (named 'layer-nerves', 'layer-vessels', 'layer-thecal', 'layer-soft') with buildSurface, each with its own colour; the soft-tissue layer is see-through so the bone stays visible. Owner decision for the start: nerves, vessels and thecal sac shown, soft tissue hidden. The objects are rebuilt with the bone when the volume changes. The on-screen toggles are the next story.",
+      "specRefs": [
+        "F8.4"
+      ],
+      "acceptance": [
+        "Unit test: every tissue label in src/core/labels.ts except air belongs to exactly one of bone and the four layers",
+        "Screen test (both set-ups): with the 3D view on, the objects list contains the four layer objects, each with more than 0 triangles on the phantom",
+        "Screen test (both set-ups): at start 'layer-nerves', 'layer-vessels' and 'layer-thecal' are visible and 'layer-soft' is not"
+      ],
+      "verify": "npx vitest run tests/view3d/layers.test.ts && npx playwright test tests/e2e/view3d/layers.spec.ts",
+      "zone": "view3d",
+      "priority": 7,
+      "dependsOn": [
+        "F8-S2"
+      ],
+      "status": "done",
+      "attempts": 0,
+      "notes": "Layer list (ids, names, labels, colours, opacity, startVisible) in src/view3d/layers.ts, with BONE_LABELS moved there. scene.ts builds one Mesh per layer (view.layers Map, named layer-<id>), rebuilt in setVolume. Soft tissue opacity 0.2 with depthWrite off; thecal 0.6."
+    },
+    {
+      "id": "F8-S8",
+      "title": "Add on-screen toggles that show or hide each layer",
+      "description": "Add four toggle buttons in the 3D view panel, shown while the 3D view is on: 'Nerves', 'Vessels', 'Thecal sac', 'Soft tissue' (test ids layer-toggle-nerves, layer-toggle-vessels, layer-toggle-thecal, layer-toggle-soft; aria-pressed shows the state). Each click or tap shows or hides its layer object and redraws. Layout: the 3D view panel is one quarter of the screen (about 500×370 px in the tablet set-up) — put the five toggles in one compact row (or two) above the canvas. Every button is at least 44×44 px and this zone's own screen tests check it (F12 owns the final layout).",
+      "specRefs": [
+        "F8.4"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups; click on desktop, tap on tablet): each of the four toggles flips its layer object's visible flag in window.__sim.view3d() and its own aria-pressed, and leaves the other layers unchanged",
+        "Screen test (both set-ups): toggling a layer twice returns it to its start state",
+        "Screen test (both set-ups): the four layer toggles and the 3D view toggle are each at least 44×44 px and visible without scrolling the page"
+      ],
+      "verify": "npx playwright test tests/e2e/view3d/layerToggles.spec.ts",
+      "zone": "view3d",
+      "priority": 8,
+      "dependsOn": [
+        "F8-S7"
+      ],
+      "status": "done",
+      "attempts": 0,
+      "notes": "Four layer buttons (layer-toggle-<id>, aria-pressed) in the same row as the title and the 3D view toggle, shown only while the view is on; each flips its layer Mesh's visible flag and redraws. Buttons now minWidth 44px, padding 0 8px; in the tablet set-up all five fit on one row (checked with a screenshot)."
+    },
+    {
+      "id": "F8-S9",
+      "title": "Hide the 3D view and disable its toggle in Exam mode",
+      "description": "When the store's mode is 'exam', the 3D view is hidden (canvas and layer toggles hidden, nothing drawn, window.__sim.view3d().shown false) and the view3d-toggle is disabled, so clicks and taps do nothing (toggleEnabled false). When the mode changes away from 'exam' the toggle works again; owner decision 2026-11-11: the view stays off until the learner turns it on. The home screen that sets the mode is F12, so tests set store.mode through the dev server's store module (the same trick as setPose). This is the feature's last loop story: run the whole check.",
+      "specRefs": [
+        "F8.5"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups): with the 3D view on, setting the mode to 'exam' hides it — shown false, canvas hidden, layer toggles hidden — and the toggle is disabled",
+        "Screen test (both set-ups; click on desktop, tap on tablet): in exam mode a click or tap on the toggle does not show the view",
+        "Screen test (both set-ups): after setting the mode to 'practice' the toggle is enabled again and turns the view on",
+        "npm run check passes"
+      ],
+      "verify": "npx playwright test tests/e2e/view3d/examMode.spec.ts && npm run check",
+      "zone": "view3d",
+      "priority": 9,
+      "dependsOn": [
+        "F8-S8",
+        "F8-S6"
+      ],
+      "status": "done",
+      "attempts": 0,
+      "notes": "syncMode in src/view3d/index.ts: entering 'exam' hides the view (setShown(false): canvas area, layer buttons, orbit controls off) and disables the toggle; leaving 'exam' re-enables the toggle with the view still off. The click handler also checks disabled. Test helper setMode in tests/e2e/view3d/view3dPage.ts."
+    }
+  ]
+}

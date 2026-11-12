@@ -1,7 +1,18 @@
 // Central store for the state that crosses zones, plus a small typed event bus.
 // Plain TypeScript, no browser code. The 3D view only reads the store.
 
-import type { CArmPose, ImageKind, Landmarks, Mode, NeedleState, RegionEntry, TissueEvent, Volume } from './types';
+import type {
+  AttemptRecord,
+  CArmPose,
+  ImageKind,
+  Landmarks,
+  Mode,
+  NeedleState,
+  ProcedureEntry,
+  RegionEntry,
+  TissueEvent,
+  Volume,
+} from './types';
 
 export interface SimState {
   /** Current C-arm and table position. */
@@ -34,6 +45,11 @@ export interface SimState {
    * from the manifest. Empty until then (and on a build without real regions).
    */
   regions: RegionEntry[];
+  /**
+   * Procedures the learner can pick in Practice and Exam, filled by the
+   * procedures zone (F10). Empty until then.
+   */
+  procedures: ProcedureEntry[];
 }
 
 export type StateListener = (state: Readonly<SimState>) => void;
@@ -60,6 +76,7 @@ export function initialState(): SimState {
     needle: null,
     contrast: null,
     regions: [],
+    procedures: [],
   };
 }
 
@@ -96,6 +113,16 @@ export interface BusEvents {
    * The anatomy zone loads it and puts the volume and landmarks in the store.
    */
   regionRequest: string;
+  /**
+   * The learner picked a procedure in the procedure picker (payload: its id).
+   * The procedures zone starts the case (briefing, caseStart).
+   */
+  procedureRequest: string;
+  /**
+   * An attempt has finished (a procedure, F10.5, or a quiz session, F11.4).
+   * The app shell saves the record in the learner's history (F12.4).
+   */
+  attemptFinished: AttemptRecord;
 }
 
 export type BusEventName = keyof BusEvents;

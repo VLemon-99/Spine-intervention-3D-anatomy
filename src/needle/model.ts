@@ -1,0 +1,319 @@
+// Needle physics model (F4). Pure functions: each returns a new model and never
+// changes its input, so the same inputs always give the same path (F4.10).
+// Plain TypeScript, no browser code.
+//
+// Hub frame (owner decision 2026-11-11): 12 o'clock ("up") = the patient's
+// head (+z) made perpendicular to the insertion direction (+y, the back,
+// when the needle points within 10° of the z axis); 3 o'clock ("right") =
+// insertion direction × up. For a needle going straight into the prone
+// patient's back, 3 o'clock is the patient's right (−x).
+//
+// The outside part of the needle lies on a straight line through the skin
+// entry point (the fulcrum). Its direction, hub → fulcrum, is the insertion
+// direction turned by `pitch` degrees toward 12 o'clock and `yaw` degrees
+// toward 3 o'clock. The inserted part is the track: the points the tip has
+// passed, from the entry point to the tip.
+
+import type { NeedleState, Vec3, Volume } from '../core/types';
+import { TISSUE_LABELS, isBone } from '../core/labels';
+import { needleSpec, params, type NeedleSpec, type TipType } from './data';
+import { assertStandardLayout, labelAt } from './sample';
+
+export interface HubAngles {
+  pitch: number;
+  yaw: number;
+}
+
+export interface CreateNeedleInput {
+  /** Catalogue id (src/needle/catalogue.json). */
+  needleId: string;
+  /** Skin entry point (the fulcrum), mm. */
+  entryPoint: Vec3;
+  /** Insertion direction (F5 passes the beam direction); need not be unit length. */
+  direction: Vec3;
+  /** Pre-bend of the tip in degrees. */
+  preBend: number;
+}
+
+/** The model's internal state. Treat as read-only; use the functions below to change it. */
+export interface NeedleModel {
+  readonly needleId: string;
+  readonly lengthMm: number;
+  readonly tipType: TipType;
+  /** Relative bending stiffness from the catalogue (a stiffer needle drifts less). */
+  readonly stiffness: number;
+  /** Effective pre-bend in degrees (0–30, or the catalogue curve of a curved-tip needle). */
+  readonly preBend: number;
+  readonly entryPoint: Vec3;
+  /** Unit insertion direction at creation. */
+  readonly insertionDir: Vec3;
+  /** Unit 12 o'clock direction of the hub frame. */
+  readonly up: Vec3;
+  /** Unit 3 o'clock direction of the hub frame. */
+  readonly right: Vec3;
+  readonly hubAngles: HubAngles;
+  readonly bevelAngle: number;
+  /** Inserted length below the skin, mm (0 … lengthMm). */
+  readonly depth: number;
+  /** Inserted part: points from the entry point to the tip (always starts with the entry point). */
+  readonly track: readonly Vec3[];
+  /** Unit direction the tip moves in when advanced. */
+  readonly tipDir: Vec3;
+  /** True while the tip rests against bone (set by advance, cleared by withdraw). */
+  readonly boneContact: boolean;
+}
+
+export interface AdvanceResult {
+  state: NeedleModel;
+  /** True when the tip is stopped against bone (F4.7). */
+  boneContact: boolean;
+}
+
+// --- small vector helpers (mm) ---
+const add = (a: Vec3, b: Vec3): Vec3 => ({ x: a.x + b.x, y: a.y + b.y, z: a.z + b.z });
+const sub = (a: Vec3, b: Vec3): Vec3 => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z });
+const scale = (a: Vec3, s: number): Vec3 => ({ x: a.x * s, y: a.y * s, z: a.z * s });
+const dot = (a: Vec3, b: Vec3): number => a.x * b.x + a.y * b.y + a.z * b.z;
+const cross = (a: Vec3, b: Vec3): Vec3 => ({
+  x: a.y * b.z - a.z * b.y,
+  y: a.z * b.x - a.x * b.z,
+  z: a.x * b.y - a.y * b.x,
+});
+const length = (a: Vec3): number => Math.hypot(a.x, a.y, a.z);
+function normalize(a: Vec3): Vec3 {
+  const l = length(a);
+  if (!(l > 0) || !Number.isFinite(l)) throw new Error('A needle direction must be a non-zero vector');
+  return scale(a, 1 / l);
+}
+const copy = (a: Vec3): Vec3 => ({ x: a.x, y: a.y, z: a.z });
+const DEG = Math.PI / 180;
+/** A step this short (mm) or shorter counts as no movement. */
+const EPS = 1e-9;
+
+/**
+ * Rotates v by the rotation that takes unit vector `from` onto unit vector `to`
+ * (Rodrigues), or by `fraction` of that rotation's angle.
+ */
+function rotateBetween(v: Vec3, from: Vec3, to: Vec3, fraction = 1): Vec3 {
+  const axis = cross(from, to);
+  const sinFull = length(axis);
+  if (sinFull < 1e-15) return copy(v); // no change (a 180° flip cannot happen: hub angles stay well below 90°)
+  const k = scale(axis, 1 / sinFull);
+  const angle = Math.atan2(sinFull, dot(from, to)) * fraction;
+  const c = Math.cos(angle);
+  const s = Math.sin(angle);
+  // v cosθ + (k × v) sinθ + k (k·v)(1 − cosθ)
+  return add(add(scale(v, c), scale(cross(k, v), s)), scale(k, dot(k, v) * (1 - c)));
+}
+
+/** Rotates every track point (and the tip direction) rigidly about the entry point. */
+function rotateTrack(model: NeedleModel, from: Vec3, to: Vec3): Pick<NeedleModel, 'track' | 'tipDir'> {
+  const entry = model.entryPoint;
+  return {
+    track: model.track.map((p, i) => (i === 0 ? copy(entry) : add(entry, rotateBetween(sub(p, entry), from, to)))),
+    tipDir: normalize(rotateBetween(model.tipDir, from, to)),
+  };
+}
+
+/** Builds the hub frame for an insertion direction (see the top of this file). */
+function hubFrame(insertionDir: Vec3): { up: Vec3; right: Vec3 } {
+  const head: Vec3 = { x: 0, y: 0, z: 1 };
+  const back: Vec3 = { x: 0, y: 1, z: 0 };
+  const ref = Math.abs(dot(insertionDir, head)) > Math.cos(10 * DEG) ? back : head;
+  const up = normalize(sub(ref, scale(insertionDir, dot(ref, insertionDir))));
+  const right = normalize(cross(insertionDir, up));
+  return { up, right };
+}
+
+/** Unit direction hub → fulcrum for the given hub angles. */
+function hubDirection(model: Pick<NeedleModel, 'insertionDir' | 'up' | 'right'>, angles: HubAngles): Vec3 {
+  const p = angles.pitch * DEG;
+  const y = angles.yaw * DEG;
+  return normalize(
+    add(
+      add(scale(model.insertionDir, Math.cos(p) * Math.cos(y)), scale(model.up, Math.sin(p))),
+      scale(model.right, Math.cos(p) * Math.sin(y)),
+    ),
+  );
+}
+
+function finiteOr(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+/** Largest pre-bend a learner can set, degrees (F4.6, F5.1). */
+export const MAX_PRE_BEND_DEG = 30;
+
+/**
+ * The bend the model uses: a curved-tip needle has its catalogue curve built in
+ * (the requested preBend is ignored); otherwise the requested preBend clamped to
+ * 0–30°, and a non-number counts as 0.
+ */
+export function effectiveBend(spec: NeedleSpec, preBend: unknown): number {
+  if (spec.tipType === 'curved' && spec.tipCurveDeg !== undefined) return spec.tipCurveDeg;
+  return Math.min(MAX_PRE_BEND_DEG, Math.max(0, finiteOr(preBend, 0)));
+}
+
+/** A new needle whose tip sits at the entry point (depth 0), pointing along `direction`. */
+export function createNeedle(input: CreateNeedleInput): NeedleModel {
+  const spec = needleSpec(input.needleId);
+  const insertionDir = normalize(input.direction);
+  const { up, right } = hubFrame(insertionDir);
+  return {
+    needleId: spec.id,
+    lengthMm: spec.lengthMm,
+    tipType: spec.tipType,
+    stiffness: spec.stiffness,
+    preBend: effectiveBend(spec, input.preBend),
+    entryPoint: copy(input.entryPoint),
+    insertionDir,
+    up,
+    right,
+    hubAngles: { pitch: 0, yaw: 0 },
+    bevelAngle: 0,
+    depth: 0,
+    track: [copy(input.entryPoint)],
+    tipDir: insertionDir,
+    boneContact: false,
+  };
+}
+
+/**
+ * Sets the hub angles (degrees, relative to the insertion direction).
+ * - At params.trackMemoryDepthMm (10 mm) or less, the whole needle pivots
+ *   rigidly about the entry point, so the tip moves to the opposite side of the
+ *   hub (F4.2).
+ * - Deeper, the inserted part stays in its track (F4.8): only the outside part
+ *   follows the hub, and the tip's direction of travel turns by just
+ *   params.trackSteerFraction of the hub change (owner decision 2026-11-11).
+ */
+export function setHubAngles(model: NeedleModel, angles: HubAngles): NeedleModel {
+  const next: HubAngles = { pitch: finiteOr(angles.pitch, 0), yaw: finiteOr(angles.yaw, 0) };
+  const from = hubDirection(model, model.hubAngles);
+  const to = hubDirection(model, next);
+  if (model.depth > params.trackMemoryDepthMm) {
+    const tipDir = normalize(rotateBetween(model.tipDir, from, to, params.trackSteerFraction));
+    return { ...model, hubAngles: next, tipDir };
+  }
+  return { ...model, hubAngles: next, ...rotateTrack(model, from, to) };
+}
+
+/**
+ * Turns the hub so the notch moves by `degrees` on the clock face (positive =
+ * clockwise, from 12 toward 3 o'clock). bevelAngle stays between 0 and 360.
+ */
+export function rotateBevel(model: NeedleModel, degrees: number): NeedleModel {
+  const turned = (((model.bevelAngle + finiteOr(degrees, 0)) % 360) + 360) % 360;
+  return { ...model, bevelAngle: turned >= 360 - 1e-12 ? 0 : turned };
+}
+
+/** Tissue stiffness (params) for a label id; unknown labels count as air. */
+function tissueStiffness(label: number): number {
+  const entry = TISSUE_LABELS.find((t) => t.id === label);
+  return entry ? params.tissueStiffness[entry.key] : 0;
+}
+
+/**
+ * The unit direction the tip drifts toward: opposite the notch on the clock
+ * face, in the hub frame carried along to be perpendicular to `dir` (F4.3).
+ */
+function driftDirection(model: NeedleModel, dir: Vec3): Vec3 {
+  let up = sub(model.up, scale(dir, dot(model.up, dir)));
+  if (length(up) < 1e-9) up = sub(model.right, scale(dir, dot(model.right, dir)));
+  up = normalize(up);
+  const right = cross(dir, up);
+  const a = model.bevelAngle * DEG;
+  return add(scale(up, -Math.cos(a)), scale(right, -Math.sin(a)));
+}
+
+/**
+ * Advances the tip by `mm` along its direction of travel, in steps of
+ * params.stepMm. The depth never exceeds the needle's length (the hub stops at
+ * the skin, F4.9). The tip never enters a bone voxel: when the next step would,
+ * the tip stays where it is and boneContact is reported (F4.7).
+ */
+export function advance(model: NeedleModel, mm: number, volume: Volume): AdvanceResult {
+  assertStandardLayout(volume);
+  let boneContact = model.boneContact;
+  let remaining = Math.max(0, finiteOr(mm, 0));
+  let depth = model.depth;
+  let tip = model.track[model.track.length - 1];
+  const track = model.track.slice();
+  let tipDir = model.tipDir;
+  // Turn per mm in tissue of stiffness 1, toward the side away from the notch:
+  // bevel drift by tip type, less for a stiffer needle (F4.3, F4.4), plus the
+  // pre-bent tip's curve, which bends the same way (owner decision 2026-11-11, F4.6).
+  const turnPerMm =
+    (params.driftDegPerMm[model.tipType] * DEG) / Math.pow(model.stiffness, params.driftStiffnessPower) +
+    params.bendDegPerMmPerDeg * model.preBend * DEG;
+  while (remaining > EPS) {
+    const step = Math.min(params.stepMm, remaining, model.lengthMm - depth);
+    if (step <= EPS) break;
+    const next = add(tip, scale(tipDir, step));
+    if (isBone(labelAt(volume, next))) {
+      boneContact = true;
+      break;
+    }
+    boneContact = false;
+    // The direction of travel turns a little away from the bevel face, in
+    // proportion to the tissue's stiffness at the tip (air: none, F4.4).
+    const turn = turnPerMm * tissueStiffness(labelAt(volume, tip)) * step;
+    if (turn > 0) tipDir = normalize(add(tipDir, scale(driftDirection(model, tipDir), Math.tan(turn))));
+    tip = next;
+    track.push(tip);
+    depth += step;
+    remaining -= step;
+  }
+  if (model.lengthMm - depth <= EPS) depth = model.lengthMm;
+  return { state: { ...model, depth, track, tipDir, boneContact }, boneContact };
+}
+
+/** Pulls the tip back `mm` along its own track; the depth never goes below 0. */
+export function withdraw(model: NeedleModel, mm: number): NeedleModel {
+  let remaining = Math.min(Math.max(0, finiteOr(mm, 0)), model.depth);
+  const boneContact = remaining > EPS ? false : model.boneContact;
+  const depth = model.depth - remaining <= EPS ? 0 : model.depth - remaining;
+  const track = model.track.slice();
+  while (remaining > EPS && track.length > 1) {
+    const last = track[track.length - 1];
+    const prev = track[track.length - 2];
+    const segment = length(sub(last, prev));
+    if (segment <= remaining + EPS) {
+      track.pop();
+      remaining -= segment;
+    } else {
+      track[track.length - 1] = add(prev, scale(sub(last, prev), (segment - remaining) / segment));
+      remaining = 0;
+    }
+  }
+  if (depth === 0) track.length = 1;
+  const hubDir = hubDirection(model, model.hubAngles);
+  const tipDir =
+    track.length >= 2 ? normalize(sub(track[track.length - 1], track[track.length - 2])) : hubDir;
+  const pulled: NeedleModel = { ...model, depth, track, tipDir, boneContact };
+  // Back at a shallow depth the needle is free again (F4.8): it straightens
+  // along the current hub angle, turning what is left of the track rigidly so
+  // it starts out along the hub direction, and re-advancing cuts a new track.
+  if (depth <= params.trackMemoryDepthMm && track.length >= 2) {
+    const startDir = normalize(sub(track[1], track[0]));
+    return { ...pulled, ...rotateTrack(pulled, startDir, hubDir) };
+  }
+  return pulled;
+}
+
+/** The shared NeedleState (src/core/types.ts): a fresh copy, safe to hand out. */
+export function toNeedleState(model: NeedleModel): NeedleState {
+  const hubDir = hubDirection(model, model.hubAngles);
+  const hub = sub(model.entryPoint, scale(hubDir, model.lengthMm - model.depth));
+  const shaft = [hub, ...model.track.map(copy)];
+  return {
+    needleId: model.needleId,
+    preBend: model.preBend,
+    entryPoint: copy(model.entryPoint),
+    hubAngles: { ...model.hubAngles },
+    bevelAngle: model.bevelAngle,
+    insertedDepth: model.depth,
+    shaft,
+    tip: copy(shaft[shaft.length - 1]),
+  };
+}
