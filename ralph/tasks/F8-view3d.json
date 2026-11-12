@@ -144,9 +144,9 @@
       "dependsOn": [
         "F8-S5"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "OrbitControls (F8-S5) already handles one-finger orbit and two-finger dolly; this story added touch-action: none on the canvas explicitly in src/view3d/index.ts, the CDP touch helper tests/e2e/view3d/touch.ts (oneFingerDrag, pinch) and tablet tests. Checked the no-scroll/zoom test fails with touch-action: auto (temporary change, reverted)."
     },
     {
       "id": "F8-S7",

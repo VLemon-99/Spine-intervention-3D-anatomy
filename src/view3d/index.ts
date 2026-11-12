@@ -68,7 +68,16 @@ export function mount(element: HTMLElement): void {
   const canvas = document.createElement('canvas');
   canvas.dataset.testid = 'view3d-canvas';
   canvas.setAttribute('aria-label', '3D scene of the anatomy');
-  Object.assign(canvas.style, { position: 'absolute', inset: '0', width: '100%', height: '100%', display: 'block' });
+  // touch-action: none — finger drags and pinches on the canvas turn and zoom
+  // the 3D view instead of scrolling or zooming the page (F8.3).
+  Object.assign(canvas.style, {
+    position: 'absolute',
+    inset: '0',
+    width: '100%',
+    height: '100%',
+    display: 'block',
+    touchAction: 'none',
+  });
   area.append(canvas);
 
   panel.append(marker, row, area);

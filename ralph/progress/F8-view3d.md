@@ -11,6 +11,7 @@
 - The layer buttons are hidden with style.display = 'none' in setShown (src/view3d/index.ts); F8-S9 (exam mode) must hide them the same way.
 - To test that the page does not scroll, first call makePageScrollable(page) (adds a 3000 px spacer) — the app's layout is exactly 100vh, so without it the page could never scroll and the test would check nothing.
 - OrbitControls wheel: deltaY < 0 (page.mouse.wheel(0, -100)) zooms in.
+- Multi-touch in screen tests: tests/e2e/view3d/touch.ts (oneFingerDrag, pinch) via CDP Input.dispatchTouchEvent; works in the tablet set-up.
 - `npm install` is needed first in a fresh cloud session (node_modules is not committed).
 
 ## Rounds
@@ -69,3 +70,9 @@
 - Files touched: src/view3d/index.ts, tests/e2e/view3d/orbitMouse.spec.ts, tests/e2e/view3d/view3dPage.ts, ralph/tasks/F8-view3d.json, ralph/progress/F8-view3d.md
 - Test result: verify passed (orbitMouse 3/3 desktop; all view3d 33 passed, 3 skipped = desktop-only tests in the tablet set-up); npm run check passed (185 unit, 219 screen passed, 9 skipped).
 - Next round should know: F8-S6 (touch). OrbitControls already handles one-finger rotate and two-finger dolly and sets touch-action: none; the work is mainly the CDP touch helper tests/e2e/view3d/touch.ts and the tablet tests.
+
+## Round — 2026-11-12 — F8-S6 — done
+- What I did: Added the CDP touch helper (one-finger drag, two-finger pinch) and tablet-only screen tests: one-finger drag orbits at constant distance, pinch apart zooms in / together zooms out, and the page neither scrolls nor zooms (page made scrollable on purpose). The behaviour already worked through OrbitControls from F8-S5; I made the canvas's touch-action: none explicit in our own code, and confirmed the no-scroll test fails if touch-action is 'auto' (temporary change, reverted).
+- Files touched: src/view3d/index.ts, tests/e2e/view3d/touch.ts, tests/e2e/view3d/orbitTouch.spec.ts, ralph/tasks/F8-view3d.json, ralph/progress/F8-view3d.md
+- Test result: verify passed (3 tablet + 3 desktop, 6 skipped as set-up-specific); npm run check passed (185 unit, 222 screen passed, 12 skipped).
+- Next round should know: F8-S9 (exam mode) is the last story and runs the whole check. The layer buttons and canvas area are hidden via style.display in setShown; controls should be disabled (controls.enabled = false) while hidden.
