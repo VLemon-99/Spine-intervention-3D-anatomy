@@ -25,9 +25,9 @@
       "zone": "app",
       "priority": 1,
       "dependsOn": [],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-11. src/app/storage.ts (createSafeStorage, storageKey, appStorage); main.ts skips the disclaimer when spineFluoroTrainer.disclaimerAccepted.v1 is \"true\"; acceptDisclaimer fixture returns straight away when no accept button is shown."
     },
     {
       "id": "F12-S2",
@@ -46,14 +46,14 @@
       "zone": "app",
       "priority": 2,
       "dependsOn": [],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-11. src/app/webgl2.ts (canUseWebgl2, showWebgl2Missing); main.ts checks before mounting any zone and shows only the message when WebGL2 is missing."
     },
     {
       "id": "F12-S3",
       "title": "Add the home screen with Free play, and a Home button on the simulator screen",
-      "description": "After the disclaimer, the app shows a home screen (test id home-screen) instead of going straight to the four panels. It offers four choices (F12.2): Practice, Exam, Quiz and Free play (test ids home-practice, home-exam, home-quiz, home-freeplay), plus History and About (home-history, home-about; their screens come in later stories, so for now they may be disabled). This story makes Free play work: it sets the store's mode to 'freeplay' and shows the simulator screen (the existing four-panel layout). The simulator screen gets a slim top bar with a Home button (test id home-button) that goes back to the home screen; the four panels must still fit without scrolling. Every zone is still mounted once at start-up, as now (tests/e2e/app/panels.spec.ts checks it); the home screen only hides and shows the simulator screen. Owner decision 2026-11-11: the app sets data-screen on <html> ('home', 'sim', and later 'quiz', 'procedures', 'about', 'history') so zones with page-wide shortcuts can ignore keys off the simulator screen, the same way they read data-disclaimer; teaching other zones to read it is a later shared change. Shared-file change, explicitly allowed for this story (owner decision 2026-11-11): change tests/fixtures/acceptDisclaimer.ts so that, after the disclaimer, it also chooses Free play (click on desktop, tap on tablet) when the home screen is shown, so every existing screen test still lands on the four panels; its name and how it is called stay the same, and no test file changes. Layout: on the tablet every button is at least 44×44 px and this story's screen tests check the app's own buttons. Only the app zone edits src/app/main.ts.",
+      "description": "After the disclaimer, the app shows a home screen (test id home-screen) instead of going straight to the four panels. It offers four choices (F12.2): Practice, Exam, Quiz and Free play (test ids home-practice, home-exam, home-quiz, home-freeplay), plus History and About (home-history, home-about; their screens come in later stories, so for now they may be disabled). This story makes Free play work: it sets the store's mode to 'freeplay' and shows the simulator screen (the existing four-panel layout). The simulator screen gets a slim top bar with a Home button (test id home-button) that goes back to the home screen; the four panels must still fit without scrolling. Every zone is still mounted once at start-up, as now (tests/e2e/app/panels.spec.ts checks it); the home screen only hides and shows the simulator screen. Owner decision 2026-11-11: the app sets data-screen on <html> ('home', 'sim', and later 'quiz', 'procedures', 'about', 'history') so zones with page-wide shortcuts can ignore keys off the simulator screen, the same way they read data-disclaimer; teaching other zones to read it is a later shared change. Shared-file change, explicitly allowed for this story (owner decision 2026-11-11): change tests/fixtures/acceptDisclaimer.ts so that, after the disclaimer, it also chooses Free play (click on desktop, tap on tablet) when the home screen is shown, so every existing screen test still lands on the four panels; its name and how it is called stay the same, and no test file changes. Layout: on the tablet every button is at least 44×44 px and this story's screen tests check the app's own buttons. Only the app zone edits src/app/main.ts. Test change explicitly allowed for this story (owner decision 2026-11-11): tests/e2e/app/rememberDisclaimer.spec.ts (written in F12-S1) may be updated so that its tests choose Free play (home-freeplay; click on desktop, tap on tablet) before checking the panels or taking a Shot, or check the home screen instead of fluoro-panel after the reload. Its disclaimer checks stay as they are; no other existing test file changes.",
       "specRefs": [
         "F12.2"
       ],
@@ -62,7 +62,7 @@
         "Screen test (both set-ups; click on desktop, tap on tablet): Free play shows the four main panels, sets the store's mode to 'freeplay' (read through the dev server's store module) and sets data-screen to 'sim'",
         "Screen test (both set-ups): the Home button returns to the home screen (data-screen 'home') without changing the pose or the shot count",
         "Screen test (both set-ups): the home screen's buttons and the Home button are at least 44×44 px",
-        "The existing screen tests still pass unchanged (they reach the four panels through the updated acceptDisclaimer)"
+        "The existing screen tests still pass unchanged (they reach the four panels through the updated acceptDisclaimer), except tests/e2e/app/rememberDisclaimer.spec.ts, updated only as the description allows"
       ],
       "verify": "npx playwright test tests/e2e/app/home.spec.ts && npm run test:e2e",
       "zone": "app",
@@ -70,9 +70,9 @@
       "dependsOn": [
         "F12-S1"
       ],
-      "status": "todo",
-      "attempts": 0,
-      "notes": ""
+      "status": "done",
+      "attempts": 1,
+      "notes": "Unblocked 2026-11-11 by the owner: rememberDisclaimer.spec.ts may be updated as the description says. Attempt 1 (blocked) found that its 'after accepting and reloading…' test checks fluoro-panel right after the reload, and its 'with local storage blocked…' test taps Shot right after accepting; both now land on the home screen. The home-screen design from attempt 1 is in the progress log. Done 2026-11-12 (attempt 2): home screen + sim-screen with top bar and Home button in src/app/index.ts; data-screen 'home'/'sim'; acceptDisclaimer chooses Free play; rememberDisclaimer.spec.ts updated only to choose Free play before the panel check and the Shot."
     },
     {
       "id": "F12-S4",
@@ -95,9 +95,9 @@
       "dependsOn": [
         "F12-S3"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-12. One shared top bar (single home-button) above the sim grid, procedure picker and quiz screen; quiz zone now mounts into layout.quiz."
     },
     {
       "id": "F12-S5",
@@ -120,9 +120,9 @@
       "dependsOn": [
         "F12-S3"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": "The manifest field names must match what F1 writes (F1-S17/F1-S18). Check them when F1 is reviewed; if they differ, this story's reader needs a small fix."
+      "notes": "The manifest field names must match what F1 writes (F1-S17/F1-S18). Check them when F1 is reviewed; if they differ, this story's reader needs a small fix. Done 2026-11-12: src/app/about.ts (parseCredits, loadCredits, createAboutScreen); DISCLAIMER_TEXT exported from disclaimer.ts; manifest read from BASE_URL + 'data/manifest.json' each time About opens."
     },
     {
       "id": "F12-S6",
@@ -144,9 +144,9 @@
       "dependsOn": [
         "F12-S1"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-11. src/app/history.ts: createHistory(storage) with add/list/clear/available, toAttemptRecord(value) validator (returns a clean copy or null; F12-S11 can reuse it), module-level `history` on appStorage, key spineFluoroTrainer.history.v1."
     },
     {
       "id": "F12-S7",
@@ -169,9 +169,9 @@
         "F12-S6",
         "F12-S3"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-12: src/app/historyScreen.ts (createHistoryScreen(history), describeAttempt); opened from home-history, refreshed on each open; in-page clear dialog."
     },
     {
       "id": "F12-S8",
@@ -192,9 +192,9 @@
       "dependsOn": [
         "F12-S3"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-12: CSS-only @media (orientation: portrait) at the end of the app stylesheet: one column, fluoro slot aspect-ratio 1:1, other slots min 320 px, page scrolls. Landscape unchanged (already fitted). PLAN: re-check once all panels exist (after F5–F10)."
     },
     {
       "id": "F12-S9",
@@ -216,9 +216,9 @@
         "F12-S7",
         "F12-S8"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-12: tests/e2e/app/touchTargets.spec.ts checks every visible app-zone button/toggle (outside [data-slot]) on disclaimer, home, picker (Practice + Exam), quiz, About, History (+ clear dialog), sim top bar. No button was too small. The quiz and other slots got data-slot so other zones' content is skipped."
     },
     {
       "id": "F12-S10",
@@ -239,9 +239,9 @@
       "dependsOn": [
         "F12-S4"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": "Unblocked 2026-11-11: the shared contract now has store.procedures and the bus event 'procedureRequest' (src/core/store.ts)."
+      "notes": "Unblocked 2026-11-11: the shared contract now has store.procedures and the bus event 'procedureRequest' (src/core/store.ts). Done 2026-11-12: picker lists store.procedures as procedure-entry buttons (data-procedure-id), re-rendered when the procedures array changes; picking emits one 'procedureRequest' and shows the simulator screen without changing the mode."
     },
     {
       "id": "F12-S11",
@@ -265,9 +265,9 @@
         "F12-S9",
         "F12-S10"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": "Unblocked 2026-11-11: the shared contract now has the bus event 'attemptFinished' (src/core/store.ts)."
+      "notes": "Unblocked 2026-11-11: the shared contract now has the bus event 'attemptFinished' (src/core/store.ts). Done 2026-11-12: src/app/index.ts listens for 'attemptFinished', calls history.add (invalid records refused) and refreshes the History screen when it is open."
     }
   ]
 }
