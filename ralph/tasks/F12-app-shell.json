@@ -120,9 +120,9 @@
       "dependsOn": [
         "F12-S3"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": "The manifest field names must match what F1 writes (F1-S17/F1-S18). Check them when F1 is reviewed; if they differ, this story's reader needs a small fix."
+      "notes": "The manifest field names must match what F1 writes (F1-S17/F1-S18). Check them when F1 is reviewed; if they differ, this story's reader needs a small fix. Done 2026-11-12: src/app/about.ts (parseCredits, loadCredits, createAboutScreen); DISCLAIMER_TEXT exported from disclaimer.ts; manifest read from BASE_URL + 'data/manifest.json' each time About opens."
     },
     {
       "id": "F12-S6",

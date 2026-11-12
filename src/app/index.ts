@@ -1,14 +1,15 @@
-// App shell zone (disclaimer, home screen, modes, layout; history and About come in F12).
+// App shell zone (disclaimer, home screen, modes, layout, About; history comes in F12).
 // mount() builds the home screen (F12.2) and, below one slim top bar with the
 // Home button, the other screens: the simulator screen (four panel slots that
 // main.ts hands to the render, carm, needle and view3d zones), the procedure
-// picker (Practice / Exam) and the quiz screen (a slot for the quiz zone), plus
-// a hidden slot for zones without a panel.
+// picker (Practice / Exam), the quiz screen (a slot for the quiz zone) and the
+// About page, plus a hidden slot for zones without a panel.
 // Every zone is mounted once at start-up; the screens are only hidden and shown.
 // The screen on show is written to data-screen on <html> ('home', 'sim',
-// 'procedures', 'quiz'). The mode is set when a choice is made on the home screen.
+// 'procedures', 'quiz', 'about'). The mode is set when a choice is made on the home screen.
 import { store } from '../core/store';
 import type { Mode } from '../core/types';
+import { createAboutScreen } from './about';
 
 export interface AppLayout {
   fluoro: HTMLElement;
@@ -23,15 +24,16 @@ export interface AppLayout {
 
 let layout: AppLayout | null = null;
 
-export type Screen = 'home' | 'sim' | 'procedures' | 'quiz';
+export type Screen = 'home' | 'sim' | 'procedures' | 'quiz' | 'about';
 type ShellScreen = Exclude<Screen, 'home'>;
 const SCREEN_ATTRIBUTE = 'data-screen';
 
 interface HomeChoice {
   testid: string;
   label: string;
-  /** Missing for choices whose screens come in later stories (shown disabled). */
+  /** The mode set by this choice (About and History do not change it). */
   mode?: Mode;
+  /** Missing for choices whose screens come in later stories (shown disabled). */
   screen?: ShellScreen;
 }
 
@@ -41,7 +43,7 @@ const HOME_CHOICES: HomeChoice[] = [
   { testid: 'home-quiz', label: 'Quiz', mode: 'quiz', screen: 'quiz' },
   { testid: 'home-freeplay', label: 'Free play', mode: 'freeplay', screen: 'sim' },
   { testid: 'home-history', label: 'History' },
-  { testid: 'home-about', label: 'About' },
+  { testid: 'home-about', label: 'About', screen: 'about' },
 ];
 
 /** The slots created by the last mount(), or null before mounting. */
@@ -119,6 +121,9 @@ export function mount(element: HTMLElement): void {
   const quiz = document.createElement('div');
   quizScreen.append(quizTitle, quiz);
 
+  // About page (disclaimer, version, dataset credits).
+  const about = createAboutScreen();
+
   // Every screen but home sits below one top bar with the Home button.
   const shell = document.createElement('div');
   shell.className = 'app-shell';
@@ -126,10 +131,15 @@ export function mount(element: HTMLElement): void {
   topbar.className = 'app-topbar';
   const homeButton = makeButton('home-button', 'Home');
   topbar.append(homeButton);
-  shell.append(topbar, root, picker, quizScreen);
+  shell.append(topbar, root, picker, quizScreen, about.element);
 
   const home = document.createElement('div');
-  const shellScreens: Record<ShellScreen, HTMLElement> = { sim: root, procedures: picker, quiz: quizScreen };
+  const shellScreens: Record<ShellScreen, HTMLElement> = {
+    sim: root,
+    procedures: picker,
+    quiz: quizScreen,
+    about: about.element,
+  };
   const show = (screen: Screen): void => {
     home.hidden = screen !== 'home';
     shell.hidden = screen === 'home';
@@ -149,10 +159,11 @@ export function mount(element: HTMLElement): void {
   for (const choice of HOME_CHOICES) {
     const button = makeButton(choice.testid, choice.label);
     const { mode, screen } = choice;
-    if (mode && screen) {
+    if (screen) {
       button.addEventListener('click', () => {
-        store.set({ mode });
+        if (mode) store.set({ mode });
         if (screen === 'procedures') pickerTitle.textContent = choice.label;
+        if (screen === 'about') void about.refresh();
         show(screen);
       });
     } else {

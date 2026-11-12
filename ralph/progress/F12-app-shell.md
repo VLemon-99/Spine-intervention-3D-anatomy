@@ -12,6 +12,8 @@
 - Screen tests that press 'I understand' directly (not via acceptDisclaimer) land on whatever the app shows next; once the home screen exists (F12-S3) that is the home screen, not the panels. Write such tests so they do not assume the next screen.
 - `#app [hidden] { display: none !important; }` is needed: class rules like `.app-layout { display: grid }` otherwise override the hidden attribute.
 - Keep exactly one element with test id home-button: Playwright's getByTestId fails (strict mode) when several match, even if only one is visible. All non-home screens share one top bar (`.app-shell`).
+- `import { version } from '../../package.json'` type-checks and builds (moduleResolution bundler). In a Playwright spec, import JSON with `with { type: 'json' }`.
+- Serve a fake manifest in a screen test with `page.route('**/data/manifest.json', route => route.fulfill({...}))` before `page.goto`.
 - Hidden panels still get the spacebar shortcut on desktop (the C-arm zone reads only data-disclaimer), so a desktop Shot test can pass while the simulator screen is hidden.
 
 ## Rounds
@@ -58,3 +60,9 @@
 - Files touched: src/app/index.ts, src/app/main.ts, tests/e2e/app/modes.spec.ts (new).
 - Test result: verify passed (modes + panels: 16). npm run check: lint + types OK, 196 unit passed, 218 screen passed (6 skipped).
 - Next round should know: add new screens (about, history) to `shellScreens` and the `Screen` type in src/app/index.ts, and give their home buttons `screen` (no mode) in HOME_CHOICES — the click handler currently needs both mode and screen, so it must be loosened for About/History (they do not change the mode). Next eligible story: F12-S5.
+
+## Round — 2026-11-12 — F12-S5 — done
+- What I did: Added the About screen (about-screen) opened by home-about: the disclaimer (about-disclaimer, same DISCLAIMER_TEXT constant as the disclaimer screen), 'Version <package.json version>' (about-version) and the dataset credits (about-credit with -dataset/-licence/-attribution), read from data/manifest.json on each open. Only text fields are used, set with textContent; a region with non-text fields is left out. Missing/invalid/empty manifest → about-no-dataset phantom-only text. The home-screen click handler now allows a screen without a mode.
+- Files touched: src/app/about.ts (new), src/app/disclaimer.ts, src/app/index.ts, tests/app/about.test.ts (new), tests/e2e/app/about.spec.ts (new).
+- Test result: verify passed (about.spec 16/16; about.test 3/3). npm run check: lint + types OK, 199 unit passed, 234 screen passed (6 skipped).
+- Next round should know: next eligible story is F12-S7 (History screen; uses `history` from src/app/history.ts). F12-S8 (layout) is also eligible after it.
