@@ -603,9 +603,9 @@
         "F1-S18",
         "F1-S21"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. tools/anatomy/checkData.ts: checkDataFolder(folder, {maxRegionBytes?, maxTotalBytes?}) -> problems[] (manifest valid; named files exist; per region <= 25 MB, all <= MAX_TOTAL_BYTES 100 MB; header + landmarks valid; data unpacks to size; every body centre is bone of its own level). tests/anatomy/committedData.test.ts runs it on public/data (passes with the empty manifest) and on a phantom converted in a temp folder, plus four ways to break it. The F1.7 session adds the \"all three regions listed\" assertion."
     },
     {
       "id": "F1-S27",

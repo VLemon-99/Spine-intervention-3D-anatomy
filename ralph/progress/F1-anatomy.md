@@ -173,3 +173,9 @@
 - Files touched: src/anatomy/regionWiring.ts (new), src/anatomy/index.ts, tests/anatomy/regionEntries.test.ts (new), tests/e2e/anatomy/regionRequest.spec.ts (new), tests/e2e/anatomy/regionPage.ts, task file, this log.
 - Test result: verify passed (1 unit, 10 screen); `npm run check` green (237 unit tests, 62 screen tests passed); build has no `__sim`.
 - Next round should know: to know the initial listing is done in a screen test, wait for the data/manifest.json response before goto completes (see open() in regionRequest.spec.ts). F1-S20 is the last todo story.
+
+## Round — 2026-11-12 — F1-S20 — done
+- What I did: data-folder checker and the committed-data test (public/data today + converted phantom fixture, failing on a deleted file, a body centre in soft tissue, size limits, a short data file).
+- Files touched: tools/anatomy/checkData.ts, tests/anatomy/committedData.test.ts (new), task file, this log.
+- Test result: verify passed: committedData 6/6, `npm run check` green (243 unit tests, 62 screen tests in both set-ups), `npm run build` passes.
+- Next round should know: no `todo` stories remain. F1-S27 (needs F3's picker merged) and F1-S22 (real data with the owner) stay blocked by design.
