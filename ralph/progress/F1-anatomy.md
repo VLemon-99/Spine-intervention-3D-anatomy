@@ -161,3 +161,9 @@
 - Files touched: src/anatomy/loadRegion.ts (new), src/anatomy/index.ts, tests/anatomy/loadRegion.test.ts (new), task file, this log.
 - Test result: verify 9/9 passed; `npm run check` green (236 unit tests, 46 screen tests passed); `npm run build` also succeeds.
 - Next round should know: F1-S24 (browser check that a loaded region can be shown) is next. Default baseUrl 'data/' is relative to the page, which matches Vite serving public/data at /data/.
+
+## Round — 2026-11-12 — F1-S24 — done
+- What I did: anatomy screen-test helper and 3 screen tests (load a routed tiny region and see it in window.__sim and on the next image; empty committed manifest → no regions; unlisted name rejected), each in both set-ups.
+- Files touched: tests/e2e/anatomy/regionPage.ts and tests/e2e/anatomy/loadRegion.spec.ts (new), task file, this log.
+- Test result: verify 6/6 passed (3 tests × desktop/tablet); `npm run check` green (236 unit tests, 52 screen tests passed).
+- Next round should know: F1-S21 can reuse serveRegion/buildTinyRegion. While serveRegion is active, every data/* request not in the tiny set gets a 404 — so a test that wants the committed manifest must not call serveRegion.

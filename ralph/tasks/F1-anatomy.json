@@ -553,9 +553,9 @@
       "dependsOn": [
         "F1-S19"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. tests/e2e/anatomy/regionPage.ts: buildTinyRegion(name?) (24³ grid of 2 mm voxels, bone block labelled L4, written with writeRegion in the test process, plus a landmarks file and manifest), serveRegion(page, region) (page.route on **/data/*, 404 for anything else), listRegionsInPage(page), loadRegionInPage(page, name, {putInStore?}) -> {size, region} or {error}. No loader changes were needed."
     },
     {
       "id": "F1-S21",
