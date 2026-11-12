@@ -106,6 +106,14 @@ export interface RegionEntry {
   title: string;
 }
 
+/** One procedure on offer in the procedure picker (F10.1, F12.2; owner decision 2026-11-11). */
+export interface ProcedureEntry {
+  /** Procedure id, as in its case file, e.g. 'lumbar-tfesi-subpedicular'. */
+  id: string;
+  /** Text shown to the learner. */
+  title: string;
+}
+
 /** App mode (F6.1, F8.5, F10.4, F12.2). */
 export type Mode = 'practice' | 'exam' | 'quiz' | 'freeplay';
 

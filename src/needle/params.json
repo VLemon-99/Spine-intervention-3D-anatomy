@@ -1,0 +1,30 @@
+{
+  "reviewedByOwner": false,
+  "notes": "Draft tuning numbers for the needle model. Only the owner marks this file reviewed. Later stories add fields; none are removed.",
+  "stepMm": 0.25,
+  "driftDegPerMm": {
+    "quincke": 0.17,
+    "tuohy": 0.05,
+    "curved": 0.08
+  },
+  "driftStiffnessPower": 0.5,
+  "bendDegPerMmPerDeg": 0.02,
+  "trackMemoryDepthMm": 10,
+  "trackSteerFraction": 0.05,
+  "tissueStiffness": {
+    "air": 0,
+    "skinFat": 0.4,
+    "muscle": 1,
+    "corticalBone": 5,
+    "cancellousBone": 3,
+    "disc": 2,
+    "ligamentumFlavum": 1.8,
+    "epiduralSpace": 0.1,
+    "thecalSac": 0.2,
+    "spinalCord": 0.3,
+    "nerveRoot": 0.6,
+    "artery": 0.3,
+    "vein": 0.2,
+    "jointSpace": 0.5
+  }
+}

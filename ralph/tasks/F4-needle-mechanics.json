@@ -1,0 +1,227 @@
+{
+  "feature": "F4",
+  "name": "Needle mechanics",
+  "branch": "ralph/F4-needle-mechanics",
+  "zone": "needle",
+  "dependsOnFeatures": [
+    "F0"
+  ],
+  "stories": [
+    {
+      "id": "F4-S1",
+      "title": "Add the needle catalogue and the tuning-numbers file, each with a validator",
+      "description": "Create src/needle/catalogue.json and src/needle/params.json, plus src/needle/data.ts with hand-written validators (no schema library) that give clear messages, and typed exports of both files (JSON imports type-check in this project). Catalogue entries: id, name, gauge (number, e.g. 22), lengthMm, tipType ('quincke', 'tuohy' or 'curved'), stiffness (a positive relative number; a thicker needle is stiffer), and for the curved-tip RF cannula a built-in tip curve in degrees (tipCurveDeg). Entries needed (F4.1): 22G and 25G Quincke spinal needles at 89 mm (3.5\") and 127 mm (5\"), a 20G Tuohy epidural needle (89 mm), and one curved-tip RF cannula (gauge, length and curve are draft values). The catalogue carries \"reviewedByOwner\": false because its stiffness numbers are tuning. params.json starts with only what the first model stories need: \"reviewedByOwner\": false, stepMm (the model's step length, at most 0.5 mm) and tissueStiffness (one non-negative number per tissue key in src/core/labels.ts; air is 0 so nothing drifts in air). Later stories add their own fields to params.json and to its validator; they never remove one. Plain TypeScript in src/needle/, no browser code, no edits in src/core/ (NeedleState and Vec3 come from src/core/types.ts, read-only). All tuning numbers are drafts for the owner; tests check directions and order, not exact numbers (SPEC → How we verify).",
+      "specRefs": [
+        "F4.1"
+      ],
+      "acceptance": [
+        "Unit test: the committed catalogue passes its validator and contains the six needles from F4.1 (22G and 25G Quincke at 89 and 127 mm, 20G Tuohy, curved-tip RF cannula), each with gauge, length, tip type and stiffness",
+        "Unit test: the catalogue validator rejects a missing field, an unknown tip type, a non-positive length or stiffness, a duplicate id, and a curved-tip entry without its tip curve",
+        "Unit test: of two needles with the same tip type and length, the thicker one (smaller gauge number) is stiffer",
+        "Unit test: the committed params.json passes its validator, has a stiffness for every tissue key in src/core/labels.ts, gives air 0, and has stepMm of at most 0.5",
+        "Unit test: both files carry \"reviewedByOwner\": false"
+      ],
+      "verify": "npx vitest run tests/needle/data.test.ts",
+      "zone": "needle",
+      "priority": 1,
+      "dependsOn": [],
+      "status": "done",
+      "attempts": 0,
+      "notes": "Done. Catalogue ids: quincke-22g-89, quincke-22g-127, quincke-25g-89, quincke-25g-127, tuohy-20g-89, rf-curved-20g-100. data.ts exports catalogue, params, validateCatalogue, validateParams, needleSpec(id)."
+    },
+    {
+      "id": "F4-S2",
+      "title": "Model a straight needle that pivots at the skin entry point and keeps its length",
+      "description": "Create src/needle/model.ts with pure functions that return a new needle state and never change their input (this keeps the model deterministic, F4.10): createNeedle({ needleId, entryPoint, direction, preBend }) — the tip starts at the entry point (depth 0) pointing along `direction` (F5 will pass the beam direction, F5.3); setHubAngles(state, { pitch, yaw }); advance(state, mm, volume); withdraw(state, mm); toNeedleState(state) → the shared NeedleState (src/core/types.ts). Hub frame (owner decision 2026-11-11, also used later for the bevel clock face and by F5): 12 o'clock = the patient's head direction (+z) made perpendicular to the insertion direction (if the needle points within 10° of the z axis, use the back direction +y instead); 3 o'clock = insertion direction × 12 o'clock, so for a needle going straight into the prone patient's back 3 o'clock is the patient's right, as on the image. The needle's outside part lies on the line through the entry point (the fulcrum) whose direction (hub → fulcrum) is the insertion direction turned by `pitch` degrees toward 12 o'clock and by `yaw` degrees toward 3 o'clock. In this story the inserted part is a straight line in that direction, and every hub change pivots the whole needle rigidly about the fulcrum (so the tip moves to the opposite side of the hub). The track memory story (F4-S8) will change this for needles deeper than 10 mm, so this story's hub tests use depths under 10 mm only. Advance and withdraw move the tip along the shaft in steps of params.stepMm; the depth stays between 0 and the needle's length (the hub stops at the skin, F4.9). The shaft (NeedleState.shaft) runs from hub to tip: a straight outside part from the hub to the fulcrum plus the inserted part. Tests in this story use an all-air test volume (no drift in air): add the helper tests/needle/volumes.ts (not a test file) with uniformVolume(tissueLabel, sizeMm) that builds a uniform test volume in the standard layout (identity orientation, 1 mm voxels, centred on the origin). Plain TypeScript in src/needle/, no browser code, no edits in src/core/ (NeedleState and Vec3 come from src/core/types.ts, read-only). All tuning numbers are drafts for the owner; tests check directions and order, not exact numbers (SPEC → How we verify).",
+      "specRefs": [
+        "F4.2",
+        "F4.9"
+      ],
+      "acceptance": [
+        "Unit test: for several hub angles at depths under 10 mm, the shaft passes within 0.01 mm of the entry point",
+        "Unit test (straight needle, all-air volume, depth 8 mm): a small hub change moves the tip to the opposite side of the hub, and tip movement ÷ hub movement equals inserted length ÷ outside length within 5% (F4.2)",
+        "Unit test: after a series of advances, withdrawals and hub changes, the shaft's length (summed along its points) equals the catalogue length within 1% (F4.9)",
+        "Unit test: advancing 10 mm more than the needle's length leaves the depth equal to the length and the hub at the entry point; withdrawing more than the depth leaves the depth at 0",
+        "Unit test: toNeedleState returns a NeedleState whose tip equals the last shaft point, whose insertedDepth equals the depth, and whose needleId, preBend, entryPoint, hubAngles and bevelAngle match the inputs",
+        "Unit test: the input state is unchanged after each function call"
+      ],
+      "verify": "npx vitest run tests/needle/model.test.ts",
+      "zone": "needle",
+      "priority": 2,
+      "dependsOn": [
+        "F4-S1"
+      ],
+      "status": "done",
+      "attempts": 0,
+      "notes": "Done. model.ts keeps an internal NeedleModel (track = points entry→tip, tipDir = direction of travel). advance() already returns { state, boneContact } (always false until F4-S3). Hub changes rotate the whole track rigidly about the entry point."
+    },
+    {
+      "id": "F4-S3",
+      "title": "Stop the needle tip at the bone surface and report bone contact",
+      "description": "Add src/needle/sample.ts with labelAt(volume, point): the tissue label of the voxel nearest to a patient point (mm), using the volume's origin and spacing; points outside the grid count as air; a volume that is not in the standard layout (identity orientation, decision 2026-11-10) is rejected with a clear error. Make advance() look up the label at each step before moving: the tip never enters a bone voxel (src/core/labels.ts isBone). When the next step would enter bone the tip stays at the last position outside bone, and advance() returns { state, boneContact: true }; further advancing does not move the tip deeper and keeps reporting boneContact. Withdrawing clears the contact. Tests use the synthetic phantom (src/core/phantom.ts, its layout is documented at the top of the file): a needle entering the back skin at x = 0, z = 14 pointing toward the front (−y) meets the upper block's lamina (y = 24); a needle on the midline (x = 0, z = 0, between the laminae) passes the ligamentum flavum without bone contact. Plain TypeScript in src/needle/, no browser code, no edits in src/core/ (NeedleState and Vec3 come from src/core/types.ts, read-only). All tuning numbers are drafts for the owner; tests check directions and order, not exact numbers (SPEC → How we verify).",
+      "specRefs": [
+        "F4.7"
+      ],
+      "acceptance": [
+        "Unit test: labelAt returns the phantom's documented labels at test points (e.g. bone at a block centre, air outside the body), air outside the grid, and rejects a volume with a non-identity orientation",
+        "Unit test (phantom): advancing 40 mm toward the lamina stops the tip outside bone and within 1 mm of the bone surface, and reports boneContact",
+        "Unit test (phantom): advancing another 5 mm leaves the tip where it was (within 0.01 mm) and still reports boneContact",
+        "Unit test (phantom): after withdrawing 3 mm, boneContact is no longer reported; advancing again stops at the same surface",
+        "Unit test (phantom): advancing 25 mm along the midline between the laminae reports no bone contact and the tip's label is not bone"
+      ],
+      "verify": "npx vitest run tests/needle/bone.test.ts",
+      "zone": "needle",
+      "priority": 3,
+      "dependsOn": [
+        "F4-S2"
+      ],
+      "status": "done",
+      "attempts": 0,
+      "notes": "Done. sample.ts exports labelAt and assertStandardLayout. NeedleModel has a boneContact field (set by advance, cleared by any real withdrawal); advance() returns it too."
+    },
+    {
+      "id": "F4-S4",
+      "title": "Make a bevelled tip drift away from the bevel face as it advances",
+      "description": "Add rotateBevel(state, degrees) and bevel drift. bevelAngle is the clock-face angle of the hub notch (0 = 12 o'clock in the hub frame from F4-S2, 90 = 3 o'clock). The notch marks the side the bevel opening faces, as on real spinal needles, and the tip drifts toward the opposite side (F4.3: away from the bevel face). At each step the direction of travel turns a little toward that side; how much depends on a drift strength per tip type (new params.json field, e.g. driftPerTipType; Quincke drifts, the Tuohy and curved values are drafts) and on the tissue's stiffness at the tip (params tissueStiffness; air 0, so the air-volume tests of F4-S2 stay straight). The inserted part of the shaft now follows the path the tip actually took (the track), not a straight line. Tests use uniform muscle volumes from tests/needle/volumes.ts. Plain TypeScript in src/needle/, no browser code, no edits in src/core/ (NeedleState and Vec3 come from src/core/types.ts, read-only). All tuning numbers are drafts for the owner; tests check directions and order, not exact numbers (SPEC → How we verify).",
+      "specRefs": [
+        "F4.3"
+      ],
+      "acceptance": [
+        "Unit test (22G Quincke, uniform muscle, 40 mm): with the notch at 12 o'clock the tip ends up displaced toward 6 o'clock from the straight line, by a clearly measurable amount (more than 0.5 mm)",
+        "Unit test: with the bevel rotated 180° (notch at 6 o'clock) the displacement is toward 12 o'clock, of the same size within 10%",
+        "Unit test: with the notch at 3 o'clock the displacement is toward 9 o'clock",
+        "Unit test: the shaft still passes within 0.01 mm of the entry point and keeps its length within 1%",
+        "Unit test: in the all-air volume the needle stays straight (displacement below 0.01 mm)",
+        "The tests of F4-S2 and F4-S3 still pass unchanged"
+      ],
+      "verify": "npx vitest run tests/needle/drift.test.ts tests/needle/model.test.ts tests/needle/bone.test.ts",
+      "zone": "needle",
+      "priority": 4,
+      "dependsOn": [
+        "F4-S3"
+      ],
+      "status": "done",
+      "attempts": 0,
+      "notes": "Done. params.driftDegPerMm per tip type (quincke 0.17, tuohy 0.05, curved 0.08; drafts). 22G Quincke drifts about 2.4 mm after 40 mm of muscle. rotateBevel(model, degrees) keeps bevelAngle in [0, 360)."
+    },
+    {
+      "id": "F4-S5",
+      "title": "Make drift depend on needle gauge, tissue stiffness and depth",
+      "description": "Make the drift from F4-S4 depend on the needle (a less stiff needle drifts more; use the catalogue stiffness) and on the tissue (stiffer tissue gives more drift; use params tissueStiffness), and check that it grows with depth. The test compares two uniform volumes made from the two tissues that params.json says are stiffest and softest among muscle, skin/fat and ligamentum flavum (read from the file, so the owner can retune without breaking the test). All else equal in each comparison (same tip type, length, bevel, direction). Plain TypeScript in src/needle/, no browser code, no edits in src/core/ (NeedleState and Vec3 come from src/core/types.ts, read-only). All tuning numbers are drafts for the owner; tests check directions and order, not exact numbers (SPEC → How we verify).",
+      "specRefs": [
+        "F4.4"
+      ],
+      "acceptance": [
+        "Unit test: a 25G Quincke drifts more than a 22G Quincke of the same length after 40 mm in uniform muscle",
+        "Unit test: the same needle drifts more in the stiffer tissue than in the softer one",
+        "Unit test: the drift at 20 mm < at 30 mm < at 40 mm",
+        "The tests of F4-S4 still pass unchanged"
+      ],
+      "verify": "npx vitest run tests/needle/driftOrder.test.ts tests/needle/drift.test.ts",
+      "zone": "needle",
+      "priority": 5,
+      "dependsOn": [
+        "F4-S4"
+      ],
+      "status": "done",
+      "attempts": 0,
+      "notes": "Done. Drift is divided by stiffness ^ params.driftStiffnessPower (0.5, draft). After 40 mm of muscle: 22G 2.36 mm, 25G 4.52 mm."
+    },
+    {
+      "id": "F4-S6",
+      "title": "Check that spinning the needle while advancing gives a straighter path",
+      "description": "Add the unit test for F4.5: advance a 22G Quincke 40 mm through uniform muscle in 1 mm steps, rotating the bevel by 30° before each step (continuous spin), and compare the tip's distance from the straight line with the same advance without spinning. This should already work if drift is applied step by step in the current bevel direction; if it does not (e.g. the step is too coarse), fix the model in src/needle/, never the test. Plain TypeScript in src/needle/, no browser code, no edits in src/core/ (NeedleState and Vec3 come from src/core/types.ts, read-only). All tuning numbers are drafts for the owner; tests check directions and order, not exact numbers (SPEC → How we verify).",
+      "specRefs": [
+        "F4.5"
+      ],
+      "acceptance": [
+        "Unit test: with continuous spin the tip's distance from the straight line is less than 25% of the no-spin drift at 40 mm",
+        "Unit test: the same holds with the bevel rotated the other way (−30° per step)",
+        "The tests of F4-S4 and F4-S5 still pass unchanged"
+      ],
+      "verify": "npx vitest run tests/needle/spin.test.ts tests/needle/drift.test.ts tests/needle/driftOrder.test.ts",
+      "zone": "needle",
+      "priority": 6,
+      "dependsOn": [
+        "F4-S5"
+      ],
+      "status": "done",
+      "attempts": 0,
+      "notes": "Done without a model change: with ±30° spin per 1 mm step the drift at 40 mm is 0.22 mm vs 2.36 mm without spin (about 9%)."
+    },
+    {
+      "id": "F4-S7",
+      "title": "Make a pre-bent tip curve toward its bend as it advances",
+      "description": "Use the preBend given to createNeedle (0–30°; values outside are clamped, a non-number becomes 0): while advancing through tissue the path curves toward the bend, more for a larger bend (strength from a new params.json field, e.g. bendCurvaturePerDeg; draft). Owner decision 2026-11-11: the bend points away from the hub notch — the same side the bevel drift goes, the usual way a Quincke tip is bent so both effects add up — so rotating the hub (rotateBevel) turns the direction of the curve with it. The curved-tip RF cannula has its curve built in: its effective bend is the catalogue's tipCurveDeg (any preBend passed for it is ignored), and NeedleState.preBend reports the effective bend. Tests separate bend from bevel drift by comparing paths with and without a bend for the same needle and bevel. Plain TypeScript in src/needle/, no browser code, no edits in src/core/ (NeedleState and Vec3 come from src/core/types.ts, read-only). All tuning numbers are drafts for the owner; tests check directions and order, not exact numbers (SPEC → How we verify).",
+      "specRefs": [
+        "F4.6"
+      ],
+      "acceptance": [
+        "Unit test (uniform muscle, 40 mm): compared with the same needle unbent, a 15° pre-bend moves the tip toward the bend direction",
+        "Unit test: the extra displacement from the bend grows from 0° to 15° to 30°",
+        "Unit test: rotating the bevel by 90° before advancing turns the direction of the bend's displacement by 90° (within 10°)",
+        "Unit test: a preBend of 45 behaves like 30 and of −5 like 0",
+        "Unit test: the curved-tip cannula curves by its catalogue tip curve, and its NeedleState.preBend equals that curve",
+        "The tests of F4-S2 to F4-S6 still pass unchanged"
+      ],
+      "verify": "npx vitest run tests/needle/preBend.test.ts tests/needle",
+      "zone": "needle",
+      "priority": 7,
+      "dependsOn": [
+        "F4-S6"
+      ],
+      "status": "done",
+      "attempts": 0,
+      "notes": "Done. params.bendDegPerMmPerDeg 0.02 (draft). effectiveBend(spec, preBend) exported from model.ts. After 40 mm muscle, 22G Quincke tip offset: 0° 2.36 mm, 15° 6.46 mm, 30° 10.43 mm; curved RF cannula (15°) 4.83 mm."
+    },
+    {
+      "id": "F4-S8",
+      "title": "Add track memory: a deep needle keeps its track when the hub is moved",
+      "description": "Once the needle is deeper than params.trackMemoryDepthMm (new field, 10 mm — the number from F4.8), changing the hub angle no longer pivots the whole needle: the inserted part stays in its track, so the tip barely moves, and further advancing continues along the track's direction (the hub angle may steer it only very slightly; strength is a draft params field). Only the outside part (hub to fulcrum) follows the new hub angle, so the shaft still passes through the entry point and keeps its length. At depths of 10 mm or less the needle still pivots rigidly as in F4-S2 (so F4.2 keeps holding there): after withdrawing to under 10 mm the needle straightens along the new hub angle, and re-advancing cuts a new track in the new direction. Owner decision 2026-11-11: F4.2's lever rule applies at depths up to 10 mm and track memory beyond. Plain TypeScript in src/needle/, no browser code, no edits in src/core/ (NeedleState and Vec3 come from src/core/types.ts, read-only). All tuning numbers are drafts for the owner; tests check directions and order, not exact numbers (SPEC → How we verify).",
+      "specRefs": [
+        "F4.8"
+      ],
+      "acceptance": [
+        "Unit test (22G Quincke, uniform muscle, depth 40 mm): a 5° hub change moves the tip less than 1 mm",
+        "Unit test: after that 5° hub change, advancing 5 mm more puts the tip less than 1 mm from where the same 5 mm advance without the hub change puts it",
+        "Unit test: after withdrawing to 8 mm and re-advancing to 40 mm with the new hub angle, the tip is within 1 mm of the tip of a fresh needle inserted to 40 mm at that hub angle, and more than 2 mm from the old track's tip",
+        "Unit test: while deep, the shaft still passes within 0.01 mm of the entry point and keeps its length within 1%",
+        "The tests of F4-S2 to F4-S7 still pass unchanged"
+      ],
+      "verify": "npx vitest run tests/needle/trackMemory.test.ts tests/needle",
+      "zone": "needle",
+      "priority": 8,
+      "dependsOn": [
+        "F4-S7"
+      ],
+      "status": "done",
+      "attempts": 0,
+      "notes": "Done. params.trackMemoryDepthMm 10, trackSteerFraction 0.05 (draft). Deeper than 10 mm, setHubAngles keeps the track and turns tipDir by 5% of the hub change; withdraw() to 10 mm or less turns the remaining track rigidly so it starts along the hub direction."
+    },
+    {
+      "id": "F4-S9",
+      "title": "Check that the same inputs always give an identical needle path",
+      "description": "Add the unit test for F4.10: run one fixed sequence of actions on the synthetic phantom (choose a needle and a pre-bend, advance, change the hub angle at shallow and at deep depth, rotate the bevel, advance into bone, withdraw, re-advance) twice and compare the resulting NeedleState values and every advance() result exactly (deep equality, no tolerance). If anything differs, find the source (e.g. a hidden counter or Math.random) and fix it in src/needle/; anything random must take a seed from src/core/random.ts. This is the feature's last loop story: run the whole check. Plain TypeScript in src/needle/, no browser code, no edits in src/core/ (NeedleState and Vec3 come from src/core/types.ts, read-only). All tuning numbers are drafts for the owner; tests check directions and order, not exact numbers (SPEC → How we verify).",
+      "specRefs": [
+        "F4.10"
+      ],
+      "acceptance": [
+        "Unit test: two runs of the same action sequence give exactly equal NeedleState values after every step and exactly equal advance() results",
+        "Unit test: src/needle/ contains no call to Math.random",
+        "npm run check passes"
+      ],
+      "verify": "npx vitest run tests/needle/determinism.test.ts && npm run check",
+      "zone": "needle",
+      "priority": 9,
+      "dependsOn": [
+        "F4-S5",
+        "F4-S6",
+        "F4-S7",
+        "F4-S8"
+      ],
+      "status": "done",
+      "attempts": 0,
+      "notes": "Done without a model change: the model has no hidden state or randomness. Two runs of a 14-step sequence on the phantom are deeply equal (toStrictEqual)."
+    }
+  ]
+}

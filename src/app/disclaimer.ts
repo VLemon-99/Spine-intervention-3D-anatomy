@@ -1,5 +1,5 @@
-// Training disclaimer (docs/SPEC.md F0.2). Shown on every page load for now;
-// remembering acceptance is F12.1. It covers the whole app until the learner
+// Training disclaimer (docs/SPEC.md F0.2). main.ts shows it until the learner
+// has accepted it once (remembered in the browser, F12.1). It covers the whole app until the learner
 // clicks or taps 'I understand'.
 //
 // Other zones can check whether it is still shown — e.g. so page-wide
@@ -7,6 +7,10 @@
 // reading the attribute data-disclaimer="shown" on the <html> element.
 
 const ATTRIBUTE = 'data-disclaimer';
+
+/** The disclaimer wording (docs/DECISIONS.md, 2026-11-10). The About page shows the same text. */
+export const DISCLAIMER_TEXT =
+  'For training only — not for clinical use. This simulator approximates fluoroscopic images and needle behaviour for practice. Never use it to plan or guide treatment of a real patient.';
 
 /** True while the disclaimer is on screen. */
 export function isDisclaimerShown(): boolean {
@@ -42,8 +46,7 @@ export function showDisclaimer(parent: HTMLElement, onAccept?: () => void): void
   title.textContent = 'Spine Fluoro Trainer';
 
   const text = document.createElement('p');
-  text.textContent =
-    'For training only — not for clinical use. This simulator approximates fluoroscopic images and needle behaviour for practice. Never use it to plan or guide treatment of a real patient.';
+  text.textContent = DISCLAIMER_TEXT;
 
   const button = document.createElement('button');
   button.type = 'button';
