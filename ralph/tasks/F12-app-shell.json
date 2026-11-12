@@ -239,9 +239,9 @@
       "dependsOn": [
         "F12-S4"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": "Unblocked 2026-11-11: the shared contract now has store.procedures and the bus event 'procedureRequest' (src/core/store.ts)."
+      "notes": "Unblocked 2026-11-11: the shared contract now has store.procedures and the bus event 'procedureRequest' (src/core/store.ts). Done 2026-11-12: picker lists store.procedures as procedure-entry buttons (data-procedure-id), re-rendered when the procedures array changes; picking emits one 'procedureRequest' and shows the simulator screen without changing the mode."
     },
     {
       "id": "F12-S11",

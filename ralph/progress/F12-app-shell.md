@@ -87,3 +87,9 @@
 - Files touched: src/app/index.ts (data-slot on two slots), tests/e2e/app/touchTargets.spec.ts (new).
 - Test result: verify passed (touchTargets 4/4; npm run check: lint + types OK, 199 unit passed, 256 screen passed, 6 skipped).
 - Next round should know: next eligible story is F12-S10 (procedure picker list). Then F12-S11.
+
+## Round — 2026-11-12 — F12-S10 — done
+- What I did: The procedure picker now lists store.procedures as full-width buttons (test id procedure-entry, data-procedure-id; titles set as text) and follows changes through store.subscribe (re-renders only when the procedures array itself changes). Picking one emits exactly one 'procedureRequest' with its id and shows the simulator screen; the mode stays as chosen on the home screen. Empty list still shows procedure-picker-empty.
+- Files touched: src/app/index.ts, tests/e2e/app/procedurePicker.spec.ts (new).
+- Test result: verify passed (10/10). npm run check: lint + types OK, 199 unit passed, 266 screen passed (6 skipped).
+- Next round should know: last story F12-S11 — listen for bus 'attemptFinished', add to `history` (history.add already refuses invalid records), refresh the History screen if open, then run npm run check. After it no todo story remains: push and open the PR.

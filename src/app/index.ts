@@ -7,8 +7,8 @@
 // Every zone is mounted once at start-up; the screens are only hidden and shown.
 // The screen on show is written to data-screen on <html> ('home', 'sim',
 // 'procedures', 'quiz', 'about', 'history'). The mode is set when a choice is made on the home screen.
-import { store } from '../core/store';
-import type { Mode } from '../core/types';
+import { bus, store } from '../core/store';
+import type { Mode, ProcedureEntry } from '../core/types';
 import { createAboutScreen } from './about';
 import { history } from './history';
 import { createHistoryScreen } from './historyScreen';
@@ -71,6 +71,9 @@ export function mount(element: HTMLElement): void {
       flex: 1; min-height: 0; padding: 8px; box-sizing: border-box; }
     .app-page { flex: 1; min-height: 0; overflow: auto; padding: 16px; box-sizing: border-box; }
     .app-page-title { margin: 0 0 12px; font-size: 24px; }
+    .app-picker-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px;
+      max-width: 560px; }
+    .app-picker-list .app-button { width: 100%; text-align: left; padding: 8px 12px; }
     .app-history-list { padding-left: 24px; }
     .app-history-list li { margin: 0 0 8px; }
     .app-history-list li span, .app-history-list li strong { margin-right: 12px; }
@@ -118,7 +121,9 @@ export function mount(element: HTMLElement): void {
   // The simulator screen is the four-panel grid itself.
   root.dataset.testid = 'sim-screen';
 
-  // Procedure picker (Practice / Exam). Listing the procedures is F12-S10.
+  // Procedure picker (Practice / Exam): lists store.procedures (filled by the
+  // procedures zone, F10). Picking one emits 'procedureRequest' and opens the
+  // simulator screen; the procedures zone starts the case.
   const picker = document.createElement('div');
   picker.className = 'app-page';
   picker.dataset.testid = 'procedure-picker';
@@ -128,7 +133,9 @@ export function mount(element: HTMLElement): void {
   const pickerEmpty = document.createElement('p');
   pickerEmpty.dataset.testid = 'procedure-picker-empty';
   pickerEmpty.textContent = 'No procedures available yet';
-  picker.append(pickerTitle, pickerEmpty);
+  const pickerList = document.createElement('ul');
+  pickerList.className = 'app-picker-list';
+  picker.append(pickerTitle, pickerEmpty, pickerList);
 
   // Quiz screen: the quiz zone builds its content in `quiz` (F11).
   const quizScreen = document.createElement('div');
@@ -170,6 +177,28 @@ export function mount(element: HTMLElement): void {
     document.documentElement.setAttribute(SCREEN_ATTRIBUTE, screen);
   };
   homeButton.addEventListener('click', () => show('home'));
+
+  let listed: ProcedureEntry[] | null = null;
+  const listProcedures = (procedures: ProcedureEntry[]): void => {
+    if (procedures === listed) return;
+    listed = procedures;
+    pickerEmpty.hidden = procedures.length > 0;
+    pickerList.replaceChildren(
+      ...procedures.map(({ id, title }) => {
+        const item = document.createElement('li');
+        const button = makeButton('procedure-entry', title);
+        button.dataset.procedureId = id;
+        button.addEventListener('click', () => {
+          bus.emit('procedureRequest', id);
+          show('sim');
+        });
+        item.append(button);
+        return item;
+      }),
+    );
+  };
+  listProcedures(store.get().procedures);
+  store.subscribe((state) => listProcedures(state.procedures));
 
   // Home screen: the four choices plus History and About.
   home.className = 'app-home';
