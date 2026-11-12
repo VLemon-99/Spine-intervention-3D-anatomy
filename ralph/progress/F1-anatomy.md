@@ -13,6 +13,7 @@
 - Don't use `Math.min(...list)` / `Math.max(...list)` on voxel lists: real vertebrae have ~100k voxels and spreading that many arguments can overflow the stack. `landmarks.ts` has a `range(values)` loop helper.
 - typescript-eslint flags unused destructured names even with a leading `_` (e.g. `({ a: _a, ...rest })`); build the object another way.
 - To test the converter on realistic anatomy, write the phantom or the pelvis fixture out as an input folder with `writeNiftiFolder(dir, vol, source?)` from `tests/anatomy/niftiFolderFixture.ts` (one mask per vertebral level present, sacrum, hip_left/right, spinal_cord).
+- Node 22 has `Response`, `Blob` and `DecompressionStream` built in, so browser loader code can be unit-tested in Vitest's node environment with a fake fetch that returns `new Response(bytes)`.
 
 ## Rounds
 <!--
@@ -154,3 +155,9 @@
 - Files touched: tools/anatomy/convertCore.ts, tests/anatomy/convert.test.ts (approved assertion only), tests/anatomy/convertManifest.test.ts and tests/anatomy/niftiFolderFixture.ts (new), task file, this log.
 - Test result: verify 14/14 passed (first run failed because my new folder helper only wrote L1–L5 masks, so the thoracic test fixture had no bone; the helper now writes every vertebral level); `npm run check` green (227 unit tests, 46 screen tests passed). public/data/ untouched.
 - Next round should know: F1-S19 (loader) is next. Manifest files are named in each region entry; the loader should only fetch names from the manifest (isSafeFileName already checked by validateManifest).
+
+## Round — 2026-11-12 — F1-S19 — done
+- What I did: browser region loader (listRegions, loadRegion with phantom shortcut, gzip-signature check, full validation, injectable fetch) exported from src/anatomy/index.ts; 9 unit tests with files served from memory.
+- Files touched: src/anatomy/loadRegion.ts (new), src/anatomy/index.ts, tests/anatomy/loadRegion.test.ts (new), task file, this log.
+- Test result: verify 9/9 passed; `npm run check` green (236 unit tests, 46 screen tests passed); `npm run build` also succeeds.
+- Next round should know: F1-S24 (browser check that a loaded region can be shown) is next. Default baseUrl 'data/' is relative to the page, which matches Vite serving public/data at /data/.

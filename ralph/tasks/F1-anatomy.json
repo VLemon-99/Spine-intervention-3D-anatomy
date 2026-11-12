@@ -531,9 +531,9 @@
       "dependsOn": [
         "F1-S17"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. src/anatomy/loadRegion.ts (exported from src/anatomy/index.ts): listRegions(options) -> RegionEntry[] ({name, title}); loadRegion(name, options) -> {volume, landmarks}; options {fetch?, baseUrl? = \"data/\"}; PHANTOM_REGION = \"phantom\" returns createPhantom()/createPhantomLandmarks() without downloads. Names must be listed in the manifest; file names come only from the manifest entry. gunzipIfNeeded checks the 1f 8b signature before using DecompressionStream. Checks header (parseRegionHeader, region name, size vs manifest), data lengths, landmarks (parseLandmarksFile); reviewedByOwner is dropped from the returned landmarks. A missing manifest gives []; an invalid one throws."
     },
     {
       "id": "F1-S24",
