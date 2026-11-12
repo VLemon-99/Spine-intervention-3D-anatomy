@@ -179,3 +179,9 @@
 - Files touched: tools/anatomy/checkData.ts, tests/anatomy/committedData.test.ts (new), task file, this log.
 - Test result: verify passed: committedData 6/6, `npm run check` green (243 unit tests, 62 screen tests in both set-ups), `npm run build` passes.
 - Next round should know: no `todo` stories remain. F1-S27 (needs F3's picker merged) and F1-S22 (real data with the owner) stay blocked by design.
+
+## Round — 2026-11-12 — F1-S27 — done
+- What I did: the owner set the story to todo (F3 is merged). Added the end-to-end screen test: choosing a region in the C-arm panel's region picker loads it and the next image shows it.
+- Files touched: tests/e2e/anatomy/regionPicker.spec.ts (new), task file, this log.
+- Test result: verify 2/2 passed (desktop + tablet); `npm run check` green on the branch with main merged in (488 unit tests, 409 screen tests passed, 25 single-set-up tests skipped by design).
+- Next round should know: only F1-S22 remains (blocked by design: real data with the owner in an interactive session).

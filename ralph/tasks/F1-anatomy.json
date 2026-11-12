@@ -624,9 +624,9 @@
       "dependsOn": [
         "F1-S21"
       ],
-      "status": "blocked",
+      "status": "done",
       "attempts": 0,
-      "notes": "Blocked by design (2026-11-10), not by a failed attempt: needs F3's region picker merged into main. No owner decision is needed — once F1 and F3 are both merged, set this to 'todo' or do it in a short interactive session."
+      "notes": "Done 2026-11-12 (set to todo by the owner once F3 was merged). tests/e2e/anatomy/regionPicker.spec.ts: serves the tiny region, checks the C-arm panel picker offers \"Lumbosacral\" next to the loaded phantom, picks it (tap first on the tablet, then selectOption), and checks window.__sim volume name and size and that the next image differs from the phantom's. No app code changed."
     },
     {
       "id": "F1-S22",
