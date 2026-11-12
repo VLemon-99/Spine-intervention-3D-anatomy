@@ -141,3 +141,9 @@
 - Files touched: src/anatomy/manifestFormat.ts, public/data/manifest.json, tests/anatomy/manifestFormat.test.ts (all new), task file, this log.
 - Test result: verify 10/10 passed; `npm run check` green (221 unit tests, 46 screen tests passed).
 - Next round should know: 25 MB is taken as 25 000 000 bytes. Endplate normals must have length 1 (±0.001). Each manifest region has a `title`; F1-S18 can take it from REGIONS[region].title in tools/anatomy/regions.ts. Landmarks-file `region` may be any valid region name (so 'phantom' passes).
+
+## Round — 2026-11-12 — F1-S18 — blocked
+- What I did: (owner confirmed keeping the manifest `title` field; noted in F1-S17.) Read F1-S18 and found it conflicts with an existing test: tests/anatomy/convert.test.ts:129 expects the output folder to contain exactly the four region files, while F1-S18 must add landmarks.json and manifest.json there. Blocked rather than edit that test.
+- Files touched: task file, this log.
+- Test result: no code changed; suite was green at the start of the round (221 unit, 46 screen).
+- Next round should know: F1-S19 (loader) is eligible next — it depends only on F1-S17. F1-S20 and F1-S22 wait on F1-S18.
