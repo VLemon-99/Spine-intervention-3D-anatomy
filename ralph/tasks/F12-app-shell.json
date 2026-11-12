@@ -95,9 +95,9 @@
       "dependsOn": [
         "F12-S3"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-12. One shared top bar (single home-button) above the sim grid, procedure picker and quiz screen; quiz zone now mounts into layout.quiz."
     },
     {
       "id": "F12-S5",

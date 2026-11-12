@@ -11,6 +11,7 @@
 - `.claude/ralph-loop.local.md` is the loop's own state file; it is listed in `.git/info/exclude` (local only) and is never committed.
 - Screen tests that press 'I understand' directly (not via acceptDisclaimer) land on whatever the app shows next; once the home screen exists (F12-S3) that is the home screen, not the panels. Write such tests so they do not assume the next screen.
 - `#app [hidden] { display: none !important; }` is needed: class rules like `.app-layout { display: grid }` otherwise override the hidden attribute.
+- Keep exactly one element with test id home-button: Playwright's getByTestId fails (strict mode) when several match, even if only one is visible. All non-home screens share one top bar (`.app-shell`).
 - Hidden panels still get the spacebar shortcut on desktop (the C-arm zone reads only data-disclaimer), so a desktop Shot test can pass while the simulator screen is hidden.
 
 ## Rounds
@@ -51,3 +52,9 @@
 - Files touched: src/app/index.ts, tests/fixtures/acceptDisclaimer.ts, tests/e2e/app/home.spec.ts (new), tests/e2e/app/rememberDisclaimer.spec.ts.
 - Test result: verify passed (home.spec 10/10, then the whole screen suite). npm run check: lint + types OK, 196 unit passed, 208 screen passed (6 skipped).
 - Next round should know: screens live in a `screens` record inside mount() with a local `show(screen)`; S4/S5/S7 add 'procedures', 'quiz', 'about', 'history' there and enable their home buttons (home-history/home-about/home-practice/home-exam/home-quiz are currently disabled). Next eligible story: F12-S4.
+
+## Round — 2026-11-12 — F12-S4 — done
+- What I did: Practice / Exam set mode 'practice' / 'exam' and open the procedure picker (procedure-picker; h2 'Practice'/'Exam', test id procedure-picker-title; procedure-picker-empty 'No procedures available yet'); Quiz sets mode 'quiz' and opens quiz-screen, into which main.ts now mounts the quiz zone (layout.quiz). Restructured so every non-home screen sits in one `.app-shell` (100vh flex column) under a single top bar with home-button; the sim grid itself carries test id sim-screen. data-screen: 'procedures' / 'quiz'.
+- Files touched: src/app/index.ts, src/app/main.ts, tests/e2e/app/modes.spec.ts (new).
+- Test result: verify passed (modes + panels: 16). npm run check: lint + types OK, 196 unit passed, 218 screen passed (6 skipped).
+- Next round should know: add new screens (about, history) to `shellScreens` and the `Screen` type in src/app/index.ts, and give their home buttons `screen` (no mode) in HOME_CHOICES — the click handler currently needs both mode and screen, so it must be loosened for About/History (they do not change the mode). Next eligible story: F12-S5.

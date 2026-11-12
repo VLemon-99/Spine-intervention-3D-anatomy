@@ -38,7 +38,8 @@ if (root && !canUseWebgl2(() => document.createElement('canvas'))) {
     mountCarm(layout.carm);
     mountNeedle(layout.needle);
     mountView3d(layout.view3d);
-    for (const mountZone of [mountAnatomy, mountSim, mountContrast, mountProcedures, mountQuiz]) {
+    mountQuiz(layout.quiz);
+    for (const mountZone of [mountAnatomy, mountSim, mountContrast, mountProcedures]) {
       mountZone(layout.other);
     }
   }
