@@ -192,9 +192,9 @@
       "dependsOn": [
         "F12-S3"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-12: CSS-only @media (orientation: portrait) at the end of the app stylesheet: one column, fluoro slot aspect-ratio 1:1, other slots min 320 px, page scrolls. Landscape unchanged (already fitted). PLAN: re-check once all panels exist (after F5–F10)."
     },
     {
       "id": "F12-S9",

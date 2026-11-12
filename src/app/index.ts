@@ -83,6 +83,14 @@ export function mount(element: HTMLElement): void {
     .app-slot > .panel { flex: 1; min-width: 0; min-height: 0; border: 1px solid #2c3542; border-radius: 6px;
       background: #18202a; padding: 8px; box-sizing: border-box; overflow: hidden; }
     .panel-title { margin: 0 0 8px; font-size: 16px; font-weight: 600; }
+    /* Last, so it overrides the rules above. */
+    /* Portrait (F12.3): one column, fluoro panel first (as in the DOM order), page may scroll. */
+    @media (orientation: portrait) {
+      .app-shell { height: auto; min-height: 100vh; }
+      .app-layout { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-auto-rows: auto; flex: none; }
+      .app-slot { min-height: 320px; }
+      .app-slot[data-slot='fluoro'] { aspect-ratio: 1 / 1; }
+    }
   `;
 
   const root = document.createElement('div');

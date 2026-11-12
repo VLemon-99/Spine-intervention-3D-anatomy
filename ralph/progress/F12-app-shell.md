@@ -15,6 +15,7 @@
 - `import { version } from '../../package.json'` type-checks and builds (moduleResolution bundler). In a Playwright spec, import JSON with `with { type: 'json' }`.
 - Serve a fake manifest in a screen test with `page.route('**/data/manifest.json', route => route.fulfill({...}))` before `page.goto`.
 - Screen tests can reach the app's own history instance by importing '/src/app/history.ts' inside page.evaluate (same trick as setPose with the store).
+- In the app's one stylesheet (src/app/index.ts), a @media block must come after the rules it overrides (same specificity: later wins). `.app-slot` is defined near the end.
 - Hidden panels still get the spacebar shortcut on desktop (the C-arm zone reads only data-disclaimer), so a desktop Shot test can pass while the simulator screen is hidden.
 
 ## Rounds
@@ -73,3 +74,9 @@
 - Files touched: src/app/historyScreen.ts (new), src/app/index.ts, tests/e2e/app/history.spec.ts (new).
 - Test result: verify passed (12/12). npm run check: lint + types OK, 199 unit passed, 246 screen passed (6 skipped).
 - Next round should know: history entries show the procedure id, not its title (titles come with store.procedures; F12-S10/S11 may improve this only if a story asks). F12-S11 must refresh the screen if it is open when 'attemptFinished' arrives (historyScreen.refresh()). Next eligible story: F12-S8 (layout).
+
+## Round — 2026-11-12 — F12-S8 — done
+- What I did: Added a portrait layout with CSS only: `@media (orientation: portrait)` makes the shell grow with its content, the grid one column (DOM order = fluoro, C-arm, needle, 3D view), the fluoro slot square, the other slots at least 320 px. Landscape layout was already within the viewport; the new test checks it at 1280×800 and 1024×768. Checked a portrait screenshot by eye: image readable, panels stacked.
+- Files touched: src/app/index.ts, tests/e2e/app/layout.spec.ts (new).
+- Test result: verify passed (layout 6/6, then the whole screen suite). npm run check: lint + types OK, 199 unit passed, 252 screen passed (6 skipped).
+- Next round should know: next eligible story is F12-S9 (touch-target check of every app-zone screen) — F12-S10 is also eligible; S9 has the lower priority number.
