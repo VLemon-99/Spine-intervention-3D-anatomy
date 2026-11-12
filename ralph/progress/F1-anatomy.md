@@ -12,6 +12,7 @@
 - Converter logic is in `tools/anatomy/convertCore.ts` so tests can call `runConvertCli(args, { log, error })` without spawning a process; `convert.ts` just sets `process.exitCode`.
 - Don't use `Math.min(...list)` / `Math.max(...list)` on voxel lists: real vertebrae have ~100k voxels and spreading that many arguments can overflow the stack. `landmarks.ts` has a `range(values)` loop helper.
 - typescript-eslint flags unused destructured names even with a leading `_` (e.g. `({ a: _a, ...rest })`); build the object another way.
+- To test the converter on realistic anatomy, write the phantom or the pelvis fixture out as an input folder with `writeNiftiFolder(dir, vol, source?)` from `tests/anatomy/niftiFolderFixture.ts` (one mask per vertebral level present, sacrum, hip_left/right, spinal_cord).
 
 ## Rounds
 <!--
@@ -147,3 +148,9 @@
 - Files touched: task file, this log.
 - Test result: no code changed; suite was green at the start of the round (221 unit, 46 screen).
 - Next round should know: F1-S19 (loader) is eligible next — it depends only on F1-S17. F1-S20 and F1-S22 wait on F1-S18.
+
+## Round — 2026-11-12 — F1-S18 — done
+- What I did: the owner approved the test change, so I unblocked the story. The converter now computes landmarks, runs the soft-tissue modeller, writes the landmarks file and adds/replaces the region in manifest.json, with the 25 MB check (limit can be lowered for tests). Updated only the approved file-list assertion in convert.test.ts. 6 new tests in convertManifest.test.ts using the phantom and pelvis fixture written as NIfTI folders.
+- Files touched: tools/anatomy/convertCore.ts, tests/anatomy/convert.test.ts (approved assertion only), tests/anatomy/convertManifest.test.ts and tests/anatomy/niftiFolderFixture.ts (new), task file, this log.
+- Test result: verify 14/14 passed (first run failed because my new folder helper only wrote L1–L5 masks, so the thoracic test fixture had no bone; the helper now writes every vertebral level); `npm run check` green (227 unit tests, 46 screen tests passed). public/data/ untouched.
+- Next round should know: F1-S19 (loader) is next. Manifest files are named in each region entry; the loader should only fetch names from the manifest (isSafeFileName already checked by validateManifest).

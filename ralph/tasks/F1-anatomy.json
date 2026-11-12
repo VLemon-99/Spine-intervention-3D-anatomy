@@ -508,9 +508,9 @@
         "F1-S16",
         "F1-S17"
       ],
-      "status": "blocked",
+      "status": "done",
       "attempts": 0,
-      "notes": "Blocked before any code (no attempt used): the story conflicts with an existing test. F1-S18 must write <region>.landmarks.json and manifest.json into the output folder, but tests/anatomy/convert.test.ts (line 129, written in F1-S9 and part of this story's verify command) checks that the output folder holds exactly the four region files (header + three .bin.gz). The rules forbid changing an existing test to make it pass. Decision needed from the owner: allow that one assertion to be updated to list the two new files as well (landmarks.json and manifest.json), and allow the voxel-by-voxel label check in the same test to accept modelled soft tissue if the modeller ever adds any to that tiny fixture (it is not expected to, as the fixture has no closed canal or findable landmarks). Planned approach once unblocked: convertFolder runs computeRegionLandmarks + modelSoftTissue after resampling, writes landmarks + manifest through the existing scratch folder, checks checkRegionSize (limit overridable for tests) before moving files into place; tests convert the phantom and the pelvis fixture written out as NIfTI folders."
+      "notes": "Done 2026-11-12 (unblocked by the owner the same day). convertFolder(in, out, {maxRegionBytes?}) now: ... resample → computeRegionLandmarks → modelSoftTissue → writes region files + <region>.landmarks.json (reviewedByOwner false) + manifest.json via the scratch folder; size checked (header + 3 data + landmarks) before anything moves; manifest entries kept for other regions, replaced for this one, sorted cervical/thoracic/lumbosacral; entry levels = region levels present in the scan; title from REGIONS. Approved test change: only the file-list check in tests/anatomy/convert.test.ts (now also expects lumbosacral.landmarks.json and manifest.json); its voxel-by-voxel label check did not need relaxing. New helper tests/anatomy/niftiFolderFixture.ts writes the phantom or pelvis fixture as an input folder."
     },
     {
       "id": "F1-S19",

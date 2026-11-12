@@ -7,15 +7,29 @@
 //   source.json                 { region, sourceDataset, licence, attribution,
 //                                 optional window: { lower, upper } (HU),
 //                                 optional voxelSpacingMm: number or { x, y, z } }
-// Steps: read → standard layout → intensity window → labels and levels → crop → resample → write.
-import { existsSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, statSync } from 'node:fs';
+// Steps: read → standard layout → intensity window → labels and levels → crop → resample
+// → landmarks → soft-tissue modeller → write the region files and <region>.landmarks.json
+// → add or replace this region's entry in the output folder's manifest.json.
+import { existsSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { dataFileName, headerFileName, REGION_DATA_KINDS, type RegionHeader } from '../../src/anatomy/regionFormat';
+import {
+  checkRegionSize,
+  landmarksFileName,
+  MAX_REGION_BYTES,
+  parseLandmarksFile,
+  parseManifest,
+  type Manifest,
+  type ManifestRegion,
+} from '../../src/anatomy/manifestFormat';
+import { dataFileName, headerFileName, IDENTITY_ORIENTATION, REGION_DATA_KINDS, type RegionHeader } from '../../src/anatomy/regionFormat';
+import type { Landmarks } from '../../src/core/types';
 import { DEFAULT_HU_WINDOW, huVolumeToIntensity, makeHuWindow, type HuWindow } from './intensity';
 import { labelsFromMasks, levelsFromMasks, loadLabelMap, refineLabelsByHu, type Mask } from './labels';
+import { computeRegionLandmarks } from './landmarks';
 import { readNifti } from './nifti';
 import { cropToRegion, REGIONS, type RegionName } from './regions';
 import { checkTargetSpacing, DEFAULT_TARGET_SPACING_MM, resampleVolume } from './resample';
+import { modelSoftTissue } from './softTissue';
 import { applyLayoutPlan, planStandardLayout, type Size3 } from './standardLayout';
 import { writeRegion } from './writeRegion';
 
@@ -39,6 +53,29 @@ export interface ConvertReport {
   ignoredMasks: string[];
   /** Region levels with no bone in the scan. */
   missingLevels: string[];
+  landmarks: Landmarks;
+  /** Notes from the landmark finder (e.g. an iliac crest cut off by the scan's edge). */
+  landmarkNotes: string[];
+}
+
+export interface ConvertOptions {
+  /** Largest total size of the region's files (bytes); 25 MB unless a test lowers it. */
+  maxRegionBytes?: number;
+}
+
+const MANIFEST_NAME = 'manifest.json';
+
+/** Reads the output folder's manifest.json, or an empty one if there is none. */
+function readOutputManifest(outputFolder: string): Manifest {
+  const path = join(outputFolder, MANIFEST_NAME);
+  if (!existsSync(path)) return { formatVersion: 1, regions: [] };
+  let raw: unknown;
+  try {
+    raw = JSON.parse(readFileSync(path, 'utf8'));
+  } catch (e) {
+    throw new Error(`The output folder's manifest.json could not be read as JSON (${(e as Error).message})`, { cause: e });
+  }
+  return parseManifest(raw, `The output folder's manifest.json`);
 }
 
 /** Reads and checks source.json. */
@@ -97,7 +134,7 @@ function isFolder(path: string): boolean {
 const NIFTI_EXT = /\.nii(\.gz)?$/;
 
 /** Runs every step; writes nothing unless all of them succeed. */
-export function convertFolder(inputFolder: string, outputFolder: string): ConvertReport {
+export function convertFolder(inputFolder: string, outputFolder: string, options: ConvertOptions = {}): ConvertReport {
   if (!isFolder(inputFolder)) throw new Error(`Input folder not found: ${inputFolder}`);
   if (!isFolder(outputFolder)) throw new Error(`Output folder not found: ${outputFolder} (create it first)`);
   const ctPath = ['ct.nii.gz', 'ct.nii'].map((n) => join(inputFolder, n)).find((p) => existsSync(p));
@@ -109,6 +146,7 @@ export function convertFolder(inputFolder: string, outputFolder: string): Conver
 
   const source = readSourceInfo(sourcePath);
   const map = loadLabelMap();
+  const manifest = readOutputManifest(outputFolder);
 
   // Read → standard layout.
   const ct = readNifti(ctPath);
@@ -143,22 +181,71 @@ export function convertFolder(inputFolder: string, outputFolder: string): Conver
   );
   const resampled = resampleVolume(cropped, source.voxelSpacingMm);
 
+  // Landmarks (from bone and canal), then the modelled soft tissue.
+  const region = {
+    region: source.region,
+    size: resampled.size,
+    spacing: resampled.spacing,
+    origin: resampled.origin,
+    orientation: IDENTITY_ORIENTATION.map((d) => ({ ...d })) as typeof IDENTITY_ORIENTATION,
+    intensity: resampled.intensity,
+    labels: resampled.labels,
+    levels: resampled.levels!,
+  };
+  const found = computeRegionLandmarks(region);
+  const modelled = modelSoftTissue(region, found.landmarks);
+  const landmarksFile = parseLandmarksFile(
+    { reviewedByOwner: false, ...found.landmarks },
+    `Landmarks of region "${source.region}"`,
+  );
+
   // Write into a scratch folder first, then move the finished files into place.
   const scratch = mkdtempSync(join(outputFolder, `.partial-${source.region}-`));
   try {
-    const { header } = writeRegion(scratch, {
-      region: source.region,
-      size: resampled.size,
-      spacing: resampled.spacing,
-      origin: resampled.origin,
-      intensity: resampled.intensity,
-      labels: resampled.labels,
-      levels: resampled.levels!,
-    });
-    const names = [...REGION_DATA_KINDS.map((k) => dataFileName(source.region, k)), headerFileName(source.region)];
+    const { header } = writeRegion(scratch, { ...modelled, levels: modelled.levels });
+    const lmName = landmarksFileName(source.region);
+    writeFileSync(join(scratch, lmName), `${JSON.stringify(landmarksFile, null, 2)}\n`);
+    const names = [headerFileName(source.region), ...REGION_DATA_KINDS.map((k) => dataFileName(source.region, k)), lmName];
     const files = names.map((name) => ({ name, bytes: statSync(join(scratch, name)).size }));
-    for (const name of names) renameSync(join(scratch, name), join(outputFolder, name));
-    return { source, header, files, ignoredMasks: masked.ignored, missingLevels: cropped.missingLevels };
+    const size = checkRegionSize(
+      files.map((f) => f.bytes),
+      options.maxRegionBytes ?? MAX_REGION_BYTES,
+    );
+    if (!size.ok) throw new Error(`Region "${source.region}": ${size.message}`);
+
+    const entry: ManifestRegion = {
+      name: source.region,
+      title: REGIONS[source.region].title,
+      levels: REGIONS[source.region].levels.filter((l) => !cropped.missingLevels.includes(l)),
+      files: {
+        header: headerFileName(source.region),
+        intensity: header.files.intensity.name,
+        labels: header.files.labels.name,
+        levels: header.files.levels.name,
+        landmarks: lmName,
+      },
+      size: { ...header.size },
+      spacing: { ...header.spacing },
+      sourceDataset: source.sourceDataset,
+      licence: source.licence,
+      attribution: source.attribution,
+    };
+    const others = manifest.regions.filter((r) => r.name !== source.region);
+    const order = Object.keys(REGIONS);
+    const regions = [...others, entry].sort((a, b) => order.indexOf(a.name) - order.indexOf(b.name));
+    const updated = parseManifest({ ...manifest, regions }, 'The updated manifest');
+    writeFileSync(join(scratch, MANIFEST_NAME), `${JSON.stringify(updated, null, 2)}\n`);
+
+    for (const name of [...names, MANIFEST_NAME]) renameSync(join(scratch, name), join(outputFolder, name));
+    return {
+      source,
+      header,
+      files,
+      ignoredMasks: masked.ignored,
+      missingLevels: cropped.missingLevels,
+      landmarks: found.landmarks,
+      landmarkNotes: found.notes,
+    };
   } finally {
     rmSync(scratch, { recursive: true, force: true });
   }
@@ -176,6 +263,10 @@ export function formatReport(r: ConvertReport): string {
     `  total ${total} bytes (${(total / 1e6).toFixed(2)} MB)`,
     `Ignored masks (not in the mapping table): ${r.ignoredMasks.length ? r.ignoredMasks.join(', ') : 'none'}`,
     `Missing levels: ${r.missingLevels.length ? r.missingLevels.join(', ') : 'none'}`,
+    `Landmarks found for levels: ${r.landmarks.levels.map((l) => l.level).join(', ') || 'none'}` +
+      `${r.landmarks.sacrum ? '; sacrum' : ''}${r.landmarks.iliacCrest ? '; iliac crests' : ''}`,
+    ...r.landmarkNotes.map((n) => `Note: ${n}`),
+    'Manifest: manifest.json updated (other regions kept)',
   ].join('\n');
 }
 
@@ -185,14 +276,14 @@ export interface Output {
 }
 
 /** The command: returns the exit code (0 = success). */
-export function runConvertCli(args: readonly string[], out: Output = console): number {
+export function runConvertCli(args: readonly string[], out: Output = console, options: ConvertOptions = {}): number {
   const [inputFolder, outputFolder] = args;
   if (!inputFolder || !outputFolder) {
     out.error(USAGE);
     return 1;
   }
   try {
-    out.log(formatReport(convertFolder(inputFolder, outputFolder)));
+    out.log(formatReport(convertFolder(inputFolder, outputFolder, options)));
     return 0;
   } catch (e) {
     out.error(`Conversion failed: ${(e as Error).message}`);
