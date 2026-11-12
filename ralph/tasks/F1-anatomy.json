@@ -25,9 +25,9 @@
       "zone": "anatomy",
       "priority": 1,
       "dependsOn": [],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. tools/anatomy/nifti.ts exports readNifti(path) and parseNifti(bytes, name). Data comes back as Float32Array in file order (i fastest); affine is 4x4 rows in NIfTI RAS+ (sform > qform > spacing-only), affineSource says which. Fixture helper: tests/anatomy/niftiFixture.ts (makeNifti / writeNifti)."
     },
     {
       "id": "F1-S2",
@@ -47,9 +47,9 @@
       "zone": "anatomy",
       "priority": 2,
       "dependsOn": [],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. tools/anatomy/intensity.ts: DEFAULT_HU_WINDOW {lower:-1000, upper:2000}, makeHuWindow(lower, upper) (validates), huToIntensity(hu, window?), huVolumeToIntensity(array, window?) -> Uint8Array. NaN HU maps to 0."
     },
     {
       "id": "F1-S3",
@@ -70,9 +70,9 @@
       "dependsOn": [
         "F1-S1"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. tools/anatomy/standardLayout.ts: planStandardLayout(size, rasAffine) -> LayoutPlan (outSize, spacing, origin in app frame), applyLayoutPlan(plan, data) keeps the array type, toStandardLayout({size, affine, data}) does both. Rejects axes tilted > MAX_AXIS_TILT_DEG (5°) and two axes along one patient direction."
     },
     {
       "id": "F1-S4",
@@ -93,9 +93,9 @@
       "dependsOn": [
         "F1-S3"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. tools/anatomy/label-map.json (status draft, reviewedByOwner false, entries [{mask, tissue, level?}]) and tools/anatomy/labels.ts: loadLabelMap(), validateLabelMap(obj) -> problems[], labelsFromMasks(ctSize, masks[{name,size,data}], map) -> {labels, ignored}. Ribs and other TotalSegmentator masks not in the table are ignored and reported (ribs have no LEVEL_CODES entry) - owner may want to review in F1.7."
     },
     {
       "id": "F1-S25",
@@ -117,9 +117,9 @@
       "dependsOn": [
         "F1-S4"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. label-map.json gained \"thresholds\" {bone.corticalFromHu 600, unmasked airFromHu -1000 / skinFatFromHu -250 / muscleFromHu -20} (draft, for owner review) and \"thresholdsNote\". labels.ts: validateThresholds(map), refineLabelsByHu(labels, hu, thresholds) -> new Uint8Array; loadLabelMap checks both. Unmasked dense voxels (e.g. ribs, not in the table) become muscle, as the story asks."
     },
     {
       "id": "F1-S5",
@@ -140,9 +140,9 @@
       "dependsOn": [
         "F1-S4"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. labels.ts: levelsFromMasks(labels, masks, map) -> Uint8Array of LEVEL_IDS; first bone mask in table order wins on overlap; non-bone voxels forced to NO_LEVEL. Call it with the refined labels (after refineLabelsByHu)."
     },
     {
       "id": "F1-S6",
@@ -165,9 +165,9 @@
       "dependsOn": [
         "F1-S5"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. tools/anatomy/regions.ts: REGIONS (name, title, levels, includesIlium), CROP_MARGIN_MM = 10, SI_JOINT_DISTANCE_MM = 30 (box-shaped, per axis), cropToRegion(vol, region, {marginMm?, siJointDistanceMm?}) -> cropped {size, spacing, origin, intensity, labels, levels, box, missingLevels}. Lumbosacral keeps ilium within 30 mm of the sacrum and all ilium from the sacrum bottom upward (crests). Back reach = furthest-back non-air voxel in the box columns + margin. For the owner (F1.7): on a real supine CT the scanner table may count as non-air and stretch the crop backwards; check when converting real data."
     },
     {
       "id": "F1-S7",
@@ -190,9 +190,9 @@
       "dependsOn": [
         "F1-S3"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. tools/anatomy/resample.ts: DEFAULT_TARGET_SPACING_MM = 1, checkTargetSpacing(number | {x,y,z}), resampleVolume({size, spacing, origin, intensity, labels, levels?}, target) -> same shape. Origin (first voxel centre) unchanged; output count per axis = floor((n-1)*s/t)+1; same spacing returns copies."
     },
     {
       "id": "F1-S8",
@@ -212,9 +212,9 @@
       "dependsOn": [
         "F1-S3"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. src/anatomy/regionFormat.ts: REGION_FORMAT_VERSION 1, RegionHeader {formatVersion, region, size, spacing, origin, orientation (identity, as Vec3 list), files {intensity|labels|levels: {name, bytes}}}, validateRegionHeader -> string[], parseRegionHeader (throws), isValidRegionName, headerFileName, dataFileName. tools/anatomy/writeRegion.ts: writeRegion(folder, {region, size, spacing, origin, intensity, labels, levels}) -> {header, paths}."
     },
     {
       "id": "F1-S9",
@@ -241,9 +241,9 @@
         "F1-S7",
         "F1-S8"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. Logic in tools/anatomy/convertCore.ts (USAGE, readSourceInfo, convertFolder(in, out) -> ConvertReport {source, header, files, ignoredMasks, missingLevels}, formatReport, runConvertCli(args, out) -> exit code); tools/anatomy/convert.ts only calls runConvertCli. Output folder must already exist; files are written to a .partial-* scratch folder inside it and moved into place only when everything succeeded. Masks must match the CT size and affine. For F1.7: readNifti keeps a Float32 copy of each mask, so a full-size real CT with ~100 masks is read one mask at a time (each turned into 0/1 bytes straight away) — watch memory on very large scans."
     },
     {
       "id": "F1-S10",
@@ -264,9 +264,9 @@
       "dependsOn": [
         "F1-S5"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. tools/anatomy/landmarks.ts: TYPICAL_LEVELS (C3…L5), boneVoxelsByLevel, bodyVoxels (level bone with y in front of the canal = thecalSac/spinalCord voxels in the level's slices; without canal, the front 40% of the bone depth), centreInside (mean, snapped to the nearest body voxel if outside), findBodyLandmarks(vol) -> [{level, bodyCentre, superiorEndplate, inferiorEndplate}] head to foot. Endplates: least-squares plane through the top/bottom voxel of each body column at least 75% as tall as the tallest. For owner review on real data: if the real spinal_cord mask stops above the lumbar levels, the 40%-front fallback is used there."
     },
     {
       "id": "F1-S11",
@@ -288,9 +288,9 @@
       "dependsOn": [
         "F1-S10"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. landmarks.ts: findLevelParts(vol) -> body + endplates + pedicleCentre + optional foramenCentre per typical level. Pedicle = level bone in the canal's front-to-back range, beside the canal, up to PEDICLE_REACH_MM (10) past its side wall (stand-in canal behind the body if no canal voxels). Foramen = under the pedicle's (x, y), midway between the pedicle bottom and the highest bone of the next level (L5 -> sacrum) in the pedicle's footprint columns, moved off bone if needed. Pelvis fixture: tests/anatomy/pelvisFixture.ts (createPelvisFixture({topZ?}), PELVIS_TRUTH incl. sacrum, crests, SI gap, L5-S1 facet gap)."
     },
     {
       "id": "F1-S12",
@@ -310,9 +310,9 @@
       "dependsOn": [
         "F1-S11"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. landmarks.ts: superior articular tips = highest level-bone voxels behind the canal (j > canal back) and beside it (past its side wall, up to ARTICULAR_REACH_MM 20), middle of those top voxels snapped onto one; findLevelLandmarks(vol) -> complete LevelLandmarks[]; computeLandmarks(vol) -> Landmarks {region, levels}. A level whose tips cannot be found on both sides is left out."
     },
     {
       "id": "F1-S23",
@@ -335,9 +335,9 @@
       "dependsOn": [
         "F1-S12"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. landmarks.ts: computeRegionLandmarks(vol) -> {landmarks, notes}; computeLandmarks now returns its .landmarks. Sacrum: top S1_DEPTH_MM (35) of sacrum bone; endplate = plane fit on body columns within 2 canal half-widths of the midline (keeps the wings out); SAP tips as for vertebrae. Iliac crest: highest ilium voxels each side of the sacral canal midline (else any canal, else the volume centre); left out with a note if a side is missing or touches the top edge."
     },
     {
       "id": "F1-S13",
@@ -358,9 +358,9 @@
       "dependsOn": [
         "F1-S12"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. tools/anatomy/soft-tissue-params.json (draft, reviewedByOwner false: canal.maxAreaMm2 1500, ligamentumFlavum.thicknessMm 4). tools/anatomy/softTissue.ts: loadSoftTissueParams(), modelSoftTissue(vol, landmarks?, params?) -> copy with new labels (steps so far: canal), modelCanal(vol, labels, params). Canal per slice = 4-connected non-bone region grown from thecal sac/cord; open (edge or too big) slices use the nearest closed slice outline (union if equally near); ligamentum flavum only in open slices between two closed ones, behind the outline, stopping at bone. Only air/skinFat/muscle (and earlier epidural/LF) are overwritten."
     },
     {
       "id": "F1-S26",
@@ -382,9 +382,9 @@
       "dependsOn": [
         "F1-S13"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. softTissue.ts: modelThecalSac(vol, labels, params) runs first in modelSoftTissue; does nothing if any thecalSac voxel exists. Canal per slice = largest bone-enclosed non-bone area within [thecalSac.minCanalAreaMm2 50, canal.maxAreaMm2 1500]; tube of thecalSac.radiusMm 5 round its centroid, kept inside it; slices within the bones' height without a closed canal use the nearest one's outline and an interpolated centre. For real data: in the cervical spine the foramina transversaria are also bone-enclosed holes, but the canal is larger so \"largest\" picks it."
     },
     {
       "id": "F1-S14",
@@ -405,9 +405,9 @@
       "dependsOn": [
         "F1-S13"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. softTissue.ts: modelNerveRoots(vol, labels, landmarks, params) (third step, only when landmarks are given) and a reusable paintTube(vol, labels, path, radiusMm, label, mayReplace). Root = tube (nerveRoot.radiusMm 2) from the nearest thecal-sac voxel through the foramen centre, then outward and 30° downward for 15 mm. Replaces generic tissue, epidural and LF only."
     },
     {
       "id": "F1-S15",
@@ -429,9 +429,9 @@
       "dependsOn": [
         "F1-S13"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. softTissue.ts: modelJointSpaces(vol, labels, params) (last step so far; needs vol.levels). From every bone voxel, walk 13 directions (axes + diagonals) through air/skin-fat/muscle/joint voxels; reaching bone of a joint-forming level (neighbouring vertebral levels incl. L5-sacrum = facet; sacrum-ilium = SI) within jointSpace.maxWidthMm (4) marks the walked voxels. Facet voxels must be behind the canal front of their slice (sac/cord/epidural min j, filled from the nearest slice); no canal = no facets. On the pelvis fixture diagonal gaps add SI joint voxels up to 2 mm past the ideal gap box at its corners."
     },
     {
       "id": "F1-S16",
@@ -454,9 +454,9 @@
         "F1-S15",
         "F1-S26"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. softTissue.ts: modelSegmentalArteries(vol, labels, landmarks, params), run after the nerve roots and before the joints. L1-L5 only; per side with a foramen centre F: tube (segmentalArtery.radiusMm 1) from besideBodyMm (3) outside the body side wall (found by walking from the body centre along x; fallback 15 mm half-width) level with the body centre, to a midpoint, to F + (0, -foramenFrontMm 2, +foramenUpMm 3). Replaces only air/skin-fat/muscle/artery. CLINICAL: the course is a rough draft for the owner to review."
     },
     {
       "id": "F1-S17",
@@ -479,9 +479,9 @@
         "F1-S8",
         "F1-S23"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. src/anatomy/manifestFormat.ts: REGION_NAMES, MAX_REGION_BYTES = 25 000 000, Manifest {formatVersion 1, regions[{name, title, levels, files{header,intensity,labels,levels,landmarks}, size, spacing, sourceDataset, licence, attribution}]}, LandmarksFile = Landmarks + reviewedByOwner, validateManifest / validateLandmarksFile (string[]), parseManifest / parseLandmarksFile (throw), isSafeFileName, landmarksFileName, checkRegionSize(bytes[], limit?). public/data/manifest.json committed with no regions. Added a \"title\" per region (not named in the spec list) because store.regions needs {name, title} for the picker (F1-S21) - the owner confirmed on 2026-11-12 to keep it."
     },
     {
       "id": "F1-S18",
@@ -508,9 +508,9 @@
         "F1-S16",
         "F1-S17"
       ],
-      "status": "todo",
+      "status": "blocked",
       "attempts": 0,
-      "notes": ""
+      "notes": "Blocked before any code (no attempt used): the story conflicts with an existing test. F1-S18 must write <region>.landmarks.json and manifest.json into the output folder, but tests/anatomy/convert.test.ts (line 129, written in F1-S9 and part of this story's verify command) checks that the output folder holds exactly the four region files (header + three .bin.gz). The rules forbid changing an existing test to make it pass. Decision needed from the owner: allow that one assertion to be updated to list the two new files as well (landmarks.json and manifest.json), and allow the voxel-by-voxel label check in the same test to accept modelled soft tissue if the modeller ever adds any to that tiny fixture (it is not expected to, as the fixture has no closed canal or findable landmarks). Planned approach once unblocked: convertFolder runs computeRegionLandmarks + modelSoftTissue after resampling, writes landmarks + manifest through the existing scratch folder, checks checkRegionSize (limit overridable for tests) before moving files into place; tests convert the phantom and the pelvis fixture written out as NIfTI folders."
     },
     {
       "id": "F1-S19",

@@ -1,0 +1,36 @@
+{
+  "status": "draft",
+  "reviewedByOwner": false,
+  "note": "Draft numbers that shape the modelled soft tissue (CT segmentations do not contain these structures). Approximations for the owner to review on real anatomy; only the owner sets reviewedByOwner to true.",
+  "canal": {
+    "maxAreaMm2": 1500,
+    "note": "In each axial slice the bony canal is the non-bone area around the thecal sac enclosed by bone. If that area is larger than maxAreaMm2 or reaches the slice edge, the ring is open (between two vertebrae) and the outline of the nearest closed slice is carried across."
+  },
+  "ligamentumFlavum": {
+    "thicknessMm": 4,
+    "note": "Layer added behind the canal outline where there is no bone behind it (the gap between two laminae)."
+  },
+  "thecalSac": {
+    "radiusMm": 5,
+    "minCanalAreaMm2": 50,
+    "note": "Only when the scan has no thecal sac at all: a tube of this radius down the middle of the bony canal (kept inside it). The canal in a slice is the largest bone-enclosed non-bone area between minCanalAreaMm2 and canal.maxAreaMm2; slices without one take the outline of the nearest slice that has one."
+  },
+  "nerveRoot": {
+    "radiusMm": 2,
+    "lengthBeyondForamenMm": 15,
+    "downwardAngleDeg": 30,
+    "note": "At every foramen centre in the landmarks, on each side: a tube of this radius from the nearest thecal-sac voxel through the foramen centre, then on outward (away from the midline) and downward at this angle below horizontal for this length. Never replaces bone."
+  },
+  "jointSpace": {
+    "maxWidthMm": 4,
+    "note": "Joint space = non-bone voxels in a straight gap at most this wide between two different bones: a vertebral level and the level directly below it (facet joints, only behind the front of the canal so disc spaces are not counted), or sacrum and ilium (SI joints). Gaps are measured along the volume axes and their diagonals."
+  },
+  "segmentalArtery": {
+    "radiusMm": 1,
+    "besideBodyMm": 3,
+    "foramenFrontMm": 2,
+    "foramenUpMm": 3,
+    "fallbackBodyHalfWidthMm": 15,
+    "note": "Lumbar levels L1–L5 only, each side with a foramen centre: a thin tube from beside the vertebral body (besideBodyMm outside its side wall, level with the body centre) around the side of the body to the upper front part of the foramen (foramenFrontMm in front of and foramenUpMm above the foramen centre). Never replaces bone or nerve root. Clinical content: the course is for the owner to review."
+  }
+}

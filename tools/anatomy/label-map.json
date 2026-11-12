@@ -1,0 +1,226 @@
+{
+  "status": "draft",
+  "reviewedByOwner": false,
+  "note": "Draft mapping from TotalSegmentator mask names (file name without .nii/.nii.gz) to our tissue labels (src/core/labels.ts) and, for bones, a vertebral level. Mask names were written without network access and must be re-checked against the real download in F1.7. Bone masks first give cancellousBone; the CT-number thresholds below then split cortical from cancellous bone. Where masks overlap, bone wins, then the order of this list. Only the owner sets reviewedByOwner to true.",
+  "thresholdsNote": "Draft CT numbers (HU) for the owner to review. Bone voxels at or above bone.corticalFromHu are cortical bone, below it cancellous bone. Voxels covered by no mask get the highest class whose 'from' value their CT number reaches (air below unmasked.skinFatFromHu, skin/fat up to unmasked.muscleFromHu, muscle — generic soft tissue — above). Voxels labelled by a non-bone mask keep their label.",
+  "thresholds": {
+    "bone": {
+      "corticalFromHu": 600
+    },
+    "unmasked": {
+      "airFromHu": -1000,
+      "skinFatFromHu": -250,
+      "muscleFromHu": -20
+    }
+  },
+  "entries": [
+    {
+      "mask": "vertebrae_C1",
+      "tissue": "cancellousBone",
+      "level": "C1"
+    },
+    {
+      "mask": "vertebrae_C2",
+      "tissue": "cancellousBone",
+      "level": "C2"
+    },
+    {
+      "mask": "vertebrae_C3",
+      "tissue": "cancellousBone",
+      "level": "C3"
+    },
+    {
+      "mask": "vertebrae_C4",
+      "tissue": "cancellousBone",
+      "level": "C4"
+    },
+    {
+      "mask": "vertebrae_C5",
+      "tissue": "cancellousBone",
+      "level": "C5"
+    },
+    {
+      "mask": "vertebrae_C6",
+      "tissue": "cancellousBone",
+      "level": "C6"
+    },
+    {
+      "mask": "vertebrae_C7",
+      "tissue": "cancellousBone",
+      "level": "C7"
+    },
+    {
+      "mask": "vertebrae_T1",
+      "tissue": "cancellousBone",
+      "level": "T1"
+    },
+    {
+      "mask": "vertebrae_T2",
+      "tissue": "cancellousBone",
+      "level": "T2"
+    },
+    {
+      "mask": "vertebrae_T3",
+      "tissue": "cancellousBone",
+      "level": "T3"
+    },
+    {
+      "mask": "vertebrae_T4",
+      "tissue": "cancellousBone",
+      "level": "T4"
+    },
+    {
+      "mask": "vertebrae_T5",
+      "tissue": "cancellousBone",
+      "level": "T5"
+    },
+    {
+      "mask": "vertebrae_T6",
+      "tissue": "cancellousBone",
+      "level": "T6"
+    },
+    {
+      "mask": "vertebrae_T7",
+      "tissue": "cancellousBone",
+      "level": "T7"
+    },
+    {
+      "mask": "vertebrae_T8",
+      "tissue": "cancellousBone",
+      "level": "T8"
+    },
+    {
+      "mask": "vertebrae_T9",
+      "tissue": "cancellousBone",
+      "level": "T9"
+    },
+    {
+      "mask": "vertebrae_T10",
+      "tissue": "cancellousBone",
+      "level": "T10"
+    },
+    {
+      "mask": "vertebrae_T11",
+      "tissue": "cancellousBone",
+      "level": "T11"
+    },
+    {
+      "mask": "vertebrae_T12",
+      "tissue": "cancellousBone",
+      "level": "T12"
+    },
+    {
+      "mask": "vertebrae_L1",
+      "tissue": "cancellousBone",
+      "level": "L1"
+    },
+    {
+      "mask": "vertebrae_L2",
+      "tissue": "cancellousBone",
+      "level": "L2"
+    },
+    {
+      "mask": "vertebrae_L3",
+      "tissue": "cancellousBone",
+      "level": "L3"
+    },
+    {
+      "mask": "vertebrae_L4",
+      "tissue": "cancellousBone",
+      "level": "L4"
+    },
+    {
+      "mask": "vertebrae_L5",
+      "tissue": "cancellousBone",
+      "level": "L5"
+    },
+    {
+      "mask": "vertebrae_S1",
+      "tissue": "cancellousBone",
+      "level": "sacrum"
+    },
+    {
+      "mask": "sacrum",
+      "tissue": "cancellousBone",
+      "level": "sacrum"
+    },
+    {
+      "mask": "hip_left",
+      "tissue": "cancellousBone",
+      "level": "ilium"
+    },
+    {
+      "mask": "hip_right",
+      "tissue": "cancellousBone",
+      "level": "ilium"
+    },
+    {
+      "mask": "spinal_cord",
+      "tissue": "thecalSac"
+    },
+    {
+      "mask": "aorta",
+      "tissue": "artery"
+    },
+    {
+      "mask": "iliac_artery_left",
+      "tissue": "artery"
+    },
+    {
+      "mask": "iliac_artery_right",
+      "tissue": "artery"
+    },
+    {
+      "mask": "inferior_vena_cava",
+      "tissue": "vein"
+    },
+    {
+      "mask": "iliac_vena_left",
+      "tissue": "vein"
+    },
+    {
+      "mask": "iliac_vena_right",
+      "tissue": "vein"
+    },
+    {
+      "mask": "autochthon_left",
+      "tissue": "muscle"
+    },
+    {
+      "mask": "autochthon_right",
+      "tissue": "muscle"
+    },
+    {
+      "mask": "iliopsoas_left",
+      "tissue": "muscle"
+    },
+    {
+      "mask": "iliopsoas_right",
+      "tissue": "muscle"
+    },
+    {
+      "mask": "gluteus_maximus_left",
+      "tissue": "muscle"
+    },
+    {
+      "mask": "gluteus_maximus_right",
+      "tissue": "muscle"
+    },
+    {
+      "mask": "gluteus_medius_left",
+      "tissue": "muscle"
+    },
+    {
+      "mask": "gluteus_medius_right",
+      "tissue": "muscle"
+    },
+    {
+      "mask": "gluteus_minimus_left",
+      "tissue": "muscle"
+    },
+    {
+      "mask": "gluteus_minimus_right",
+      "tissue": "muscle"
+    }
+  ]
+}
