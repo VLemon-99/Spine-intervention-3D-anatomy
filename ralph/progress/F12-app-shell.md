@@ -14,6 +14,7 @@
 - Keep exactly one element with test id home-button: Playwright's getByTestId fails (strict mode) when several match, even if only one is visible. All non-home screens share one top bar (`.app-shell`).
 - `import { version } from '../../package.json'` type-checks and builds (moduleResolution bundler). In a Playwright spec, import JSON with `with { type: 'json' }`.
 - Serve a fake manifest in a screen test with `page.route('**/data/manifest.json', route => route.fulfill({...}))` before `page.goto`.
+- Screen tests can reach the app's own history instance by importing '/src/app/history.ts' inside page.evaluate (same trick as setPose with the store).
 - Hidden panels still get the spacebar shortcut on desktop (the C-arm zone reads only data-disclaimer), so a desktop Shot test can pass while the simulator screen is hidden.
 
 ## Rounds
@@ -66,3 +67,9 @@
 - Files touched: src/app/about.ts (new), src/app/disclaimer.ts, src/app/index.ts, tests/app/about.test.ts (new), tests/e2e/app/about.spec.ts (new).
 - Test result: verify passed (about.spec 16/16; about.test 3/3). npm run check: lint + types OK, 199 unit passed, 234 screen passed (6 skipped).
 - Next round should know: next eligible story is F12-S7 (History screen; uses `history` from src/app/history.ts). F12-S8 (layout) is also eligible after it.
+
+## Round — 2026-11-12 — F12-S7 — done
+- What I did: Added the History screen (history-screen) from home-history: entries (history-entry) newest first with date, mode, procedure id or 'Quiz', 'Score N', 'N shots', 'Fluoro N.N s', and an 'Unsafe' mark (history-unsafe); history-empty when there are none; history-clear opens an in-page dialog (history-clear-dialog, -confirm, -cancel); history-unavailable "History can't be saved in this browser" when storage is blocked. The screen re-reads the history each time it opens.
+- Files touched: src/app/historyScreen.ts (new), src/app/index.ts, tests/e2e/app/history.spec.ts (new).
+- Test result: verify passed (12/12). npm run check: lint + types OK, 199 unit passed, 246 screen passed (6 skipped).
+- Next round should know: history entries show the procedure id, not its title (titles come with store.procedures; F12-S10/S11 may improve this only if a story asks). F12-S11 must refresh the screen if it is open when 'attemptFinished' arrives (historyScreen.refresh()). Next eligible story: F12-S8 (layout).

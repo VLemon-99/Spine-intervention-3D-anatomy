@@ -169,9 +169,9 @@
         "F12-S6",
         "F12-S3"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done 2026-11-12: src/app/historyScreen.ts (createHistoryScreen(history), describeAttempt); opened from home-history, refreshed on each open; in-page clear dialog."
     },
     {
       "id": "F12-S8",

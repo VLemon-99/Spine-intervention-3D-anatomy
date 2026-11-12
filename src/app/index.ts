@@ -1,15 +1,17 @@
-// App shell zone (disclaimer, home screen, modes, layout, About; history comes in F12).
+// App shell zone (disclaimer, home screen, modes, layout, About, History).
 // mount() builds the home screen (F12.2) and, below one slim top bar with the
 // Home button, the other screens: the simulator screen (four panel slots that
 // main.ts hands to the render, carm, needle and view3d zones), the procedure
 // picker (Practice / Exam), the quiz screen (a slot for the quiz zone) and the
-// About page, plus a hidden slot for zones without a panel.
+// About and History pages, plus a hidden slot for zones without a panel.
 // Every zone is mounted once at start-up; the screens are only hidden and shown.
 // The screen on show is written to data-screen on <html> ('home', 'sim',
-// 'procedures', 'quiz', 'about'). The mode is set when a choice is made on the home screen.
+// 'procedures', 'quiz', 'about', 'history'). The mode is set when a choice is made on the home screen.
 import { store } from '../core/store';
 import type { Mode } from '../core/types';
 import { createAboutScreen } from './about';
+import { history } from './history';
+import { createHistoryScreen } from './historyScreen';
 
 export interface AppLayout {
   fluoro: HTMLElement;
@@ -24,7 +26,7 @@ export interface AppLayout {
 
 let layout: AppLayout | null = null;
 
-export type Screen = 'home' | 'sim' | 'procedures' | 'quiz' | 'about';
+export type Screen = 'home' | 'sim' | 'procedures' | 'quiz' | 'about' | 'history';
 type ShellScreen = Exclude<Screen, 'home'>;
 const SCREEN_ATTRIBUTE = 'data-screen';
 
@@ -42,7 +44,7 @@ const HOME_CHOICES: HomeChoice[] = [
   { testid: 'home-exam', label: 'Exam', mode: 'exam', screen: 'procedures' },
   { testid: 'home-quiz', label: 'Quiz', mode: 'quiz', screen: 'quiz' },
   { testid: 'home-freeplay', label: 'Free play', mode: 'freeplay', screen: 'sim' },
-  { testid: 'home-history', label: 'History' },
+  { testid: 'home-history', label: 'History', screen: 'history' },
   { testid: 'home-about', label: 'About', screen: 'about' },
 ];
 
@@ -69,6 +71,14 @@ export function mount(element: HTMLElement): void {
       flex: 1; min-height: 0; padding: 8px; box-sizing: border-box; }
     .app-page { flex: 1; min-height: 0; overflow: auto; padding: 16px; box-sizing: border-box; }
     .app-page-title { margin: 0 0 12px; font-size: 24px; }
+    .app-history-list { padding-left: 24px; }
+    .app-history-list li { margin: 0 0 8px; }
+    .app-history-list li span, .app-history-list li strong { margin-right: 12px; }
+    .app-history-list li strong { color: #ff8a80; }
+    .app-dialog { position: fixed; inset: 0; z-index: 900; display: flex; align-items: center; justify-content: center;
+      background: rgba(0, 0, 0, 0.6); padding: 16px; box-sizing: border-box; }
+    .app-dialog-card { max-width: 420px; background: #18202a; border: 1px solid #2c3542; border-radius: 8px; padding: 16px; }
+    .app-dialog-buttons { display: flex; gap: 12px; justify-content: flex-end; }
     .app-slot { min-width: 0; min-height: 0; display: flex; }
     .app-slot > .panel { flex: 1; min-width: 0; min-height: 0; border: 1px solid #2c3542; border-radius: 6px;
       background: #18202a; padding: 8px; box-sizing: border-box; overflow: hidden; }
@@ -123,6 +133,7 @@ export function mount(element: HTMLElement): void {
 
   // About page (disclaimer, version, dataset credits).
   const about = createAboutScreen();
+  const historyScreen = createHistoryScreen(history);
 
   // Every screen but home sits below one top bar with the Home button.
   const shell = document.createElement('div');
@@ -131,7 +142,7 @@ export function mount(element: HTMLElement): void {
   topbar.className = 'app-topbar';
   const homeButton = makeButton('home-button', 'Home');
   topbar.append(homeButton);
-  shell.append(topbar, root, picker, quizScreen, about.element);
+  shell.append(topbar, root, picker, quizScreen, about.element, historyScreen.element);
 
   const home = document.createElement('div');
   const shellScreens: Record<ShellScreen, HTMLElement> = {
@@ -139,6 +150,7 @@ export function mount(element: HTMLElement): void {
     procedures: picker,
     quiz: quizScreen,
     about: about.element,
+    history: historyScreen.element,
   };
   const show = (screen: Screen): void => {
     home.hidden = screen !== 'home';
@@ -164,6 +176,7 @@ export function mount(element: HTMLElement): void {
         if (mode) store.set({ mode });
         if (screen === 'procedures') pickerTitle.textContent = choice.label;
         if (screen === 'about') void about.refresh();
+        if (screen === 'history') historyScreen.refresh();
         show(screen);
       });
     } else {
