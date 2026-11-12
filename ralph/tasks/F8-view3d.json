@@ -25,9 +25,9 @@
       "zone": "view3d",
       "priority": 1,
       "dependsOn": [],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "buildSurface in src/view3d/surface.ts: non-indexed triangle mesh (positions + normals Float32Array), counter-clockwise winding seen from outside. Throws for non-identity orientation."
     },
     {
       "id": "F8-S2",
@@ -49,14 +49,14 @@
       "dependsOn": [
         "F8-S1"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Scene in src/view3d/scene.ts (createView3dScene: scene, camera with up = +z, target Vector3, 'bone' mesh, setVolume, setAspect); panel, renderer, draw-on-demand and the view3d debug getter in src/view3d/index.ts. Renderer is created on first show. Screen-test helpers in tests/e2e/view3d/view3dPage.ts (getView3d, press, expectOnScreen, countNonBackgroundPixels, putTestVolume)."
     },
     {
       "id": "F8-S3",
       "title": "Show the C-arm source, detector and beam outline, following the current pose",
-      "description": "Add src/view3d/carmModel.ts with a plain function that, for a pose, returns the X-ray source point, the detector centre and the detector's four corners (DETECTOR_SIZE_MM square, along the projection's detectorRight and detectorUp) from createProjection in src/core/geometry.ts (read-only). In the scene add objects named 'source' (a small sphere), 'detector' (a flat square) and 'beam' (lines from the source to the four detector corners). They follow the live C-arm pose in the store (owner decision 2026-11-11: the 3D view shows where the C-arm is now, not where the last image was taken). Extend window.__sim.view3d() with carm: { source, detectorCentre, detectorCorners }, read from the scene objects themselves. The start camera now shows the whole C-arm from source to detector. Tests set poses with setPose from tests/fixtures/simPage.ts and compute the expected points in the test process with createProjection. No edits in src/core/ or src/app/.",
+      "description": "Add src/view3d/carmModel.ts with a plain function that, for a pose, returns the X-ray source point, the detector centre and the detector's four corners (DETECTOR_SIZE_MM square, along the projection's detectorRight and detectorUp) from createProjection in src/core/geometry.ts (read-only). In the scene add objects named 'source' (a small sphere), 'detector' (a flat square) and 'beam' (lines from the source to the four detector corners). They follow the live C-arm pose in the store (owner decision 2026-11-11: the 3D view shows where the C-arm is now, not where the last image was taken). Extend window.__sim.view3d() with carm: { source, detectorCentre, detectorCorners }, read from the scene objects themselves. The start camera now shows the whole C-arm from source to detector. Tests set poses with setPose from tests/fixtures/simPage.ts and compute the expected points in the test process with createProjection. No edits in src/core/ or src/app/. Owner decision 2026-11-11 (unblocks this story): in tests/e2e/view3d/toggle.spec.ts › 'the start camera looks at the middle of the volume', replace the upper bound `expect(distance).toBeLessThan(50)` with `expect(distance).toBeGreaterThan(650)` (far enough to see the whole C-arm), in the same commit as the camera change; keep the target check and everything else in that test unchanged. This is the only existing test this story may change.",
       "specRefs": [
         "F8.1",
         "F8.2"
@@ -64,7 +64,8 @@
       "acceptance": [
         "Unit test: for three poses (including a table offset) the function's source and detector centre equal createProjection's, and the corners are 150 mm from the detector centre along its right and up directions",
         "Screen test (both set-ups): with the 3D view on, the objects list contains visible 'source', 'detector' and 'beam' objects",
-        "Screen test (both set-ups): after each of three setPose calls (one with oblique and tilt, one with table offsets, one lateral), the reported source, detector centre and corners are within 0.5 mm of createProjection(pose) (F8.2)"
+        "Screen test (both set-ups): after each of three setPose calls (one with oblique and tilt, one with table offsets, one lateral), the reported source, detector centre and corners are within 0.5 mm of createProjection(pose) (F8.2)",
+        "The F8-S2 start-camera test is changed exactly as the owner decided (distance > 650 mm instead of < 50 mm) and passes in both set-ups"
       ],
       "verify": "npx vitest run tests/view3d/carmModel.test.ts && npx playwright test tests/e2e/view3d/carm.spec.ts",
       "zone": "view3d",
@@ -72,9 +73,9 @@
       "dependsOn": [
         "F8-S2"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "carmModel(pose) in src/view3d/carmModel.ts (corners: top-left, top-right, bottom-right, bottom-left). Scene objects 'source' (sphere at mesh.position), 'detector' (indexed 4-vertex square, corners in world coordinates), 'beam' (LineSegments source→corners), moved by view.setPose on every store.pose change. view3d().carm reads them from the scene. Start camera now frames the volume plus the C-arm (target stays at the volume centre). Owner-approved test change made: toggle.spec.ts start-camera upper bound < 50 → > 650 mm."
     },
     {
       "id": "F8-S4",
@@ -96,9 +97,9 @@
       "dependsOn": [
         "F8-S2"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "'needle' is a Three.js Line through every shaft point (world coordinates), drawn on top of the bone (depthTest off). Hidden when store.needle is null. view3d().needle reads hub/tip from the line's own position attribute. Test helpers testNeedle/putNeedle in tests/e2e/view3d/view3dPage.ts."
     },
     {
       "id": "F8-S5",
@@ -120,9 +121,9 @@
         "F8-S3",
         "F8-S4"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "OrbitControls on the 3D canvas in src/view3d/index.ts, sharing view.target; damping and pan off; min/max distance 10 / 20000 mm; 'change' → requestDraw; controls.update() after each volume change. OrbitControls itself prevents wheel scrolling and sets touch-action: none on the canvas. Helpers cameraDistance, makePageScrollable, pageScrollAndZoom added to tests/e2e/view3d/view3dPage.ts."
     },
     {
       "id": "F8-S6",
@@ -143,9 +144,9 @@
       "dependsOn": [
         "F8-S5"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "OrbitControls (F8-S5) already handles one-finger orbit and two-finger dolly; this story added touch-action: none on the canvas explicitly in src/view3d/index.ts, the CDP touch helper tests/e2e/view3d/touch.ts (oneFingerDrag, pinch) and tablet tests. Checked the no-scroll/zoom test fails with touch-action: auto (temporary change, reverted)."
     },
     {
       "id": "F8-S7",
@@ -165,9 +166,9 @@
       "dependsOn": [
         "F8-S2"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Layer list (ids, names, labels, colours, opacity, startVisible) in src/view3d/layers.ts, with BONE_LABELS moved there. scene.ts builds one Mesh per layer (view.layers Map, named layer-<id>), rebuilt in setVolume. Soft tissue opacity 0.2 with depthWrite off; thecal 0.6."
     },
     {
       "id": "F8-S8",
@@ -187,9 +188,9 @@
       "dependsOn": [
         "F8-S7"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Four layer buttons (layer-toggle-<id>, aria-pressed) in the same row as the title and the 3D view toggle, shown only while the view is on; each flips its layer Mesh's visible flag and redraws. Buttons now minWidth 44px, padding 0 8px; in the tablet set-up all five fit on one row (checked with a screenshot)."
     },
     {
       "id": "F8-S9",
@@ -211,9 +212,9 @@
         "F8-S8",
         "F8-S6"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "syncMode in src/view3d/index.ts: entering 'exam' hides the view (setShown(false): canvas area, layer buttons, orbit controls off) and disables the toggle; leaving 'exam' re-enables the toggle with the view still off. The click handler also checks disabled. Test helper setMode in tests/e2e/view3d/view3dPage.ts."
     }
   ]
 }

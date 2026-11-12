@@ -155,3 +155,9 @@
 - **Why:** Lets work run unattended and in parallel while keeping every change small, tested and reviewable.
 - **Alternatives considered:** Fully interactive sessions (slower, needs constant attention).
 - **Revisit if:** Loops regularly produce work that fails review — fix the spec and tests first.
+
+## 2026-11-11 — F8 start camera shows the whole C-arm
+- **Decision:** The 3D view's start camera is far enough back to show the whole C-arm (source to detector). The F8-S2 screen test that required the start camera to be less than 50 mm from a small test volume is changed to require more than 650 mm. The F8-S3 loop round makes that change in the same commit as the camera change.
+- **Why:** F8-S3 asks for the whole C-arm in the start view (the source is 650 mm from the isocentre). The F8-S2 loop had added the 50 mm limit as an extra check beyond its acceptance criteria, so the two contradicted each other and the loop blocked F8-S3.
+- **Alternatives considered:** Dropping the "whole C-arm" camera requirement from F8-S3 (the learner would have to zoom out to find the C-arm).
+- **Revisit if:** The C-arm looks too small on the tablet and learners prefer a close-up start view.
