@@ -578,9 +578,9 @@
       "dependsOn": [
         "F1-S24"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": "Unblocked at the 2026-11-10 story review: the shared contract now has store.regions and the bus event 'regionRequest' (src/core/store.ts). The end-to-end check through F3's picker is F1-S27."
+      "notes": "Done. src/anatomy/regionWiring.ts: regionEntries(names) -> [{name, title}] with titles Cervical/Thoracic/Lumbosacral (unknown names dropped); wireRegions(store, bus, options) fills store.regions from listRegions and loads on regionRequest (unlisted names ignored, newest request wins, failure keeps the current volume and sets lastError); registerAnatomyDebug -> window.__sim.anatomy() = {loading, lastError}. mount() in src/anatomy/index.ts wires the app store/bus. store titles come from regionEntries as the story says, not from the manifest's title field (that one is kept for the owner/About page)."
     },
     {
       "id": "F1-S20",

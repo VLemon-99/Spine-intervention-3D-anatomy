@@ -122,3 +122,29 @@ export async function loadRegionInPage(
     { loader: LOADER, store: STORE, name, putInStore: options.putInStore ?? false },
   );
 }
+
+/** store.regions, read through the dev server's store module. */
+export async function regionsInStore(page: Page): Promise<{ name: string; title: string }[]> {
+  return page.evaluate(async (storeUrl) => {
+    const s = (await import(/* @vite-ignore */ storeUrl)) as typeof import('../../../src/core/store');
+    return s.store.get().regions;
+  }, STORE);
+}
+
+/** Sends a 'regionRequest' on the app's bus, as the region picker would. */
+export async function requestRegion(page: Page, name: string): Promise<void> {
+  await page.evaluate(
+    async ({ storeUrl, name }) => {
+      const s = (await import(/* @vite-ignore */ storeUrl)) as typeof import('../../../src/core/store');
+      s.bus.emit('regionRequest', name);
+    },
+    { storeUrl: STORE, name },
+  );
+}
+
+/** window.__sim.anatomy(): { loading, lastError }. */
+export async function anatomyStatus(page: Page): Promise<{ loading: boolean; lastError: string | null }> {
+  return page.evaluate(() =>
+    (window as unknown as { __sim: { anatomy(): { loading: boolean; lastError: string | null } } }).__sim.anatomy(),
+  );
+}

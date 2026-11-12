@@ -167,3 +167,9 @@
 - Files touched: tests/e2e/anatomy/regionPage.ts and tests/e2e/anatomy/loadRegion.spec.ts (new), task file, this log.
 - Test result: verify 6/6 passed (3 tests × desktop/tablet); `npm run check` green (236 unit tests, 52 screen tests passed).
 - Next round should know: F1-S21 can reuse serveRegion/buildTinyRegion. While serveRegion is active, every data/* request not in the tiny set gets a 404 — so a test that wants the committed manifest must not call serveRegion.
+
+## Round — 2026-11-12 — F1-S21 — done
+- What I did: region wiring (store.regions from the manifest, regionRequest → loadRegion → store, __sim.anatomy() status) mounted by the anatomy zone; 1 unit test and 5 screen tests (both set-ups) with helpers regionsInStore / requestRegion / anatomyStatus added to tests/e2e/anatomy/regionPage.ts.
+- Files touched: src/anatomy/regionWiring.ts (new), src/anatomy/index.ts, tests/anatomy/regionEntries.test.ts (new), tests/e2e/anatomy/regionRequest.spec.ts (new), tests/e2e/anatomy/regionPage.ts, task file, this log.
+- Test result: verify passed (1 unit, 10 screen); `npm run check` green (237 unit tests, 62 screen tests passed); build has no `__sim`.
+- Next round should know: to know the initial listing is done in a screen test, wait for the data/manifest.json response before goto completes (see open() in regionRequest.spec.ts). F1-S20 is the last todo story.
