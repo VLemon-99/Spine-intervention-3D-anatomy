@@ -1,0 +1,12 @@
+{
+  "reviewedByOwner": false,
+  "notes": "Draft. Stiffness is a relative bending stiffness (22G = 1), roughly in proportion to the outer diameter to the fourth power. Gauge, length and curve of the RF cannula are draft values. Only the owner marks this file reviewed.",
+  "needles": [
+    { "id": "quincke-22g-89", "name": "22G Quincke spinal needle, 3.5\" (89 mm)", "gauge": 22, "lengthMm": 89, "tipType": "quincke", "stiffness": 1 },
+    { "id": "quincke-22g-127", "name": "22G Quincke spinal needle, 5\" (127 mm)", "gauge": 22, "lengthMm": 127, "tipType": "quincke", "stiffness": 1 },
+    { "id": "quincke-25g-89", "name": "25G Quincke spinal needle, 3.5\" (89 mm)", "gauge": 25, "lengthMm": 89, "tipType": "quincke", "stiffness": 0.27 },
+    { "id": "quincke-25g-127", "name": "25G Quincke spinal needle, 5\" (127 mm)", "gauge": 25, "lengthMm": 127, "tipType": "quincke", "stiffness": 0.27 },
+    { "id": "tuohy-20g-89", "name": "20G Tuohy epidural needle, 3.5\" (89 mm)", "gauge": 20, "lengthMm": 89, "tipType": "tuohy", "stiffness": 2.56 },
+    { "id": "rf-curved-20g-100", "name": "20G curved-tip RF cannula, 100 mm", "gauge": 20, "lengthMm": 100, "tipType": "curved", "stiffness": 2.56, "tipCurveDeg": 15 }
+  ]
+}

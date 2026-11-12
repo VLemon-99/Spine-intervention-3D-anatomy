@@ -25,9 +25,9 @@
       "zone": "needle",
       "priority": 1,
       "dependsOn": [],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. Catalogue ids: quincke-22g-89, quincke-22g-127, quincke-25g-89, quincke-25g-127, tuohy-20g-89, rf-curved-20g-100. data.ts exports catalogue, params, validateCatalogue, validateParams, needleSpec(id)."
     },
     {
       "id": "F4-S2",
@@ -51,9 +51,9 @@
       "dependsOn": [
         "F4-S1"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. model.ts keeps an internal NeedleModel (track = points entry→tip, tipDir = direction of travel). advance() already returns { state, boneContact } (always false until F4-S3). Hub changes rotate the whole track rigidly about the entry point."
     },
     {
       "id": "F4-S3",
@@ -75,9 +75,9 @@
       "dependsOn": [
         "F4-S2"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. sample.ts exports labelAt and assertStandardLayout. NeedleModel has a boneContact field (set by advance, cleared by any real withdrawal); advance() returns it too."
     },
     {
       "id": "F4-S4",
@@ -100,9 +100,9 @@
       "dependsOn": [
         "F4-S3"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. params.driftDegPerMm per tip type (quincke 0.17, tuohy 0.05, curved 0.08; drafts). 22G Quincke drifts about 2.4 mm after 40 mm of muscle. rotateBevel(model, degrees) keeps bevelAngle in [0, 360)."
     },
     {
       "id": "F4-S5",
@@ -123,9 +123,9 @@
       "dependsOn": [
         "F4-S4"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. Drift is divided by stiffness ^ params.driftStiffnessPower (0.5, draft). After 40 mm of muscle: 22G 2.36 mm, 25G 4.52 mm."
     },
     {
       "id": "F4-S6",
@@ -145,9 +145,9 @@
       "dependsOn": [
         "F4-S5"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done without a model change: with ±30° spin per 1 mm step the drift at 40 mm is 0.22 mm vs 2.36 mm without spin (about 9%)."
     },
     {
       "id": "F4-S7",
@@ -170,9 +170,9 @@
       "dependsOn": [
         "F4-S6"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. params.bendDegPerMmPerDeg 0.02 (draft). effectiveBend(spec, preBend) exported from model.ts. After 40 mm muscle, 22G Quincke tip offset: 0° 2.36 mm, 15° 6.46 mm, 30° 10.43 mm; curved RF cannula (15°) 4.83 mm."
     },
     {
       "id": "F4-S8",
@@ -194,9 +194,9 @@
       "dependsOn": [
         "F4-S7"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. params.trackMemoryDepthMm 10, trackSteerFraction 0.05 (draft). Deeper than 10 mm, setHubAngles keeps the track and turns tipDir by 5% of the hub change; withdraw() to 10 mm or less turns the remaining track rigidly so it starts along the hub direction."
     },
     {
       "id": "F4-S9",
@@ -219,9 +219,9 @@
         "F4-S7",
         "F4-S8"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done without a model change: the model has no hidden state or randomness. Two runs of a 14-step sequence on the phantom are deeply equal (toStrictEqual)."
     }
   ]
 }
