@@ -70,9 +70,9 @@
       "dependsOn": [
         "F12-S1"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 1,
-      "notes": "Unblocked 2026-11-11 by the owner: rememberDisclaimer.spec.ts may be updated as the description says. Attempt 1 (blocked) found that its 'after accepting and reloading…' test checks fluoro-panel right after the reload, and its 'with local storage blocked…' test taps Shot right after accepting; both now land on the home screen. The home-screen design from attempt 1 is in the progress log."
+      "notes": "Unblocked 2026-11-11 by the owner: rememberDisclaimer.spec.ts may be updated as the description says. Attempt 1 (blocked) found that its 'after accepting and reloading…' test checks fluoro-panel right after the reload, and its 'with local storage blocked…' test taps Shot right after accepting; both now land on the home screen. The home-screen design from attempt 1 is in the progress log. Done 2026-11-12 (attempt 2): home screen + sim-screen with top bar and Home button in src/app/index.ts; data-screen 'home'/'sim'; acceptDisclaimer chooses Free play; rememberDisclaimer.spec.ts updated only to choose Free play before the panel check and the Shot."
     },
     {
       "id": "F12-S4",

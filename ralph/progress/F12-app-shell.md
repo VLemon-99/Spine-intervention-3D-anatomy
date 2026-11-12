@@ -10,6 +10,7 @@
 - To stub out WebGL2 in a screen test: `page.addInitScript` that wraps `HTMLCanvasElement.prototype.getContext` and returns null for 'webgl2' (other context ids go to the original).
 - `.claude/ralph-loop.local.md` is the loop's own state file; it is listed in `.git/info/exclude` (local only) and is never committed.
 - Screen tests that press 'I understand' directly (not via acceptDisclaimer) land on whatever the app shows next; once the home screen exists (F12-S3) that is the home screen, not the panels. Write such tests so they do not assume the next screen.
+- `#app [hidden] { display: none !important; }` is needed: class rules like `.app-layout { display: grid }` otherwise override the hidden attribute.
 - Hidden panels still get the spacebar shortcut on desktop (the C-arm zone reads only data-disclaimer), so a desktop Shot test can pass while the simulator screen is hidden.
 
 ## Rounds
@@ -44,3 +45,9 @@
 - Files touched: src/app/history.ts (new), tests/app/history.test.ts (new).
 - Test result: verify passed (10 unit). npm run check: lint + types OK, 196 unit passed, 198 screen passed (6 skipped).
 - Next round should know: F12-S3 is still blocked (owner decision on rememberDisclaimer.spec.ts), so every remaining todo story (S4, S5, S7–S11) waits on it. No story is eligible until the owner answers.
+
+## Round — 2026-11-12 — F12-S3 — done
+- What I did: Owner unblocked the story (may update rememberDisclaimer.spec.ts). Rebuilt the attempt-1 design: home screen (home-screen) with Practice, Exam, Quiz, Free play, History, About (all but Free play disabled for now); Free play sets mode 'freeplay' and shows sim-screen (top bar with home-button + the four-panel grid, still 100vh); data-screen on <html>. acceptDisclaimer now also presses Free play when the home screen is shown. rememberDisclaimer.spec.ts: only added a Free play press before the panel check (after reload) and before the Shot (storage blocked); disclaimer checks unchanged.
+- Files touched: src/app/index.ts, tests/fixtures/acceptDisclaimer.ts, tests/e2e/app/home.spec.ts (new), tests/e2e/app/rememberDisclaimer.spec.ts.
+- Test result: verify passed (home.spec 10/10, then the whole screen suite). npm run check: lint + types OK, 196 unit passed, 208 screen passed (6 skipped).
+- Next round should know: screens live in a `screens` record inside mount() with a local `show(screen)`; S4/S5/S7 add 'procedures', 'quiz', 'about', 'history' there and enable their home buttons (home-history/home-about/home-practice/home-exam/home-quiz are currently disabled). Next eligible story: F12-S4.
