@@ -274,7 +274,7 @@
       "dependsOn": [
         "F3-S9"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": "Unblocked at the 2026-11-10 story review: the shared contract now has store.regions and the bus event 'regionRequest' (src/core/store.ts). Owner answers 2026-11-12 (docs/DECISIONS.md): 'Phantom' is not kept once real regions exist — it is listed only while it is the loaded volume (exactly the 'plus the loaded region if it is not among them' rule; no change to the acceptance criteria); the lumbar region (lumbosacral) loads at start, which is F1/F12 work, not this story. The end-to-end check with F1's loader is F1-S27."
     }

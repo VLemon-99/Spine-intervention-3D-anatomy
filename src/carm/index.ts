@@ -69,7 +69,7 @@ export function mount(element: HTMLElement): void {
   // Region picker (F3.7) in a short row under the sliders.
   const regionRow = document.createElement('label');
   Object.assign(regionRow.style, { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', marginTop: '2px' });
-  regionRow.append('Region', buildRegionPicker(store));
+  regionRow.append('Region', buildRegionPicker(store, bus));
 
   panel.append(marker, header, buildSliders(store), regionRow, help.overlay);
   element.append(panel);

@@ -24,4 +24,20 @@ describe('regionEntries (F3.7)', () => {
     const regions = [{ name: 'lumbosacral', title: 'Lumbosacral' }];
     expect(regionEntries(regions, null)[0]).not.toBe(regions[0]);
   });
+
+  it('with cervical and lumbosacral on offer and the phantom loaded: those two, then Phantom', () => {
+    const regions = [
+      { name: 'cervical', title: 'Cervical' },
+      { name: 'lumbosacral', title: 'Lumbosacral' },
+    ];
+    expect(regionEntries(regions, 'phantom')).toEqual([...regions, { name: 'phantom', title: 'Phantom' }]);
+  });
+
+  it('with lumbosacral loaded there are exactly the two regions on offer (no Phantom)', () => {
+    const regions = [
+      { name: 'cervical', title: 'Cervical' },
+      { name: 'lumbosacral', title: 'Lumbosacral' },
+    ];
+    expect(regionEntries(regions, 'lumbosacral')).toEqual(regions);
+  });
 });

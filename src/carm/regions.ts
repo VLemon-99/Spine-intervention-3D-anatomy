@@ -1,8 +1,10 @@
 // Region picker (docs/SPEC.md F3.7): a drop-down showing the anatomy region
 // that is loaded. regionEntries() is a plain function so it can be unit-tested
-// and reused when real regions are on offer (F3-S10). Switching regions is
-// not part of this story: the picker only shows what is loaded.
-import type { Store } from '../core/store';
+// and reused for the real regions. Picking another region emits one
+// 'regionRequest' (F3-S10); the anatomy zone loads it. The picker itself loads
+// nothing and keeps showing the region that is loaded until a new volume arrives.
+// Picking a region takes no image and does not change the counters.
+import type { EventBus, Store } from '../core/store';
 import type { RegionEntry } from '../core/types';
 
 /** Titles for loaded regions that are not in the store's list (e.g. the synthetic phantom). */
@@ -18,7 +20,7 @@ export function regionEntries(regions: readonly RegionEntry[], loadedName: strin
 }
 
 /** Build the region picker, kept in step with the store's regions and loaded volume. */
-export function buildRegionPicker(store: Store): HTMLSelectElement {
+export function buildRegionPicker(store: Store, bus: EventBus): HTMLSelectElement {
   const select = document.createElement('select');
   select.dataset.testid = 'region-picker';
   select.setAttribute('aria-label', 'Anatomy region');
@@ -46,5 +48,13 @@ export function buildRegionPicker(store: Store): HTMLSelectElement {
   };
   store.subscribe(update);
   update();
+
+  select.addEventListener('change', () => {
+    const picked = select.value;
+    const loaded = store.get().volume?.region ?? null;
+    // Keep showing what is actually loaded until the new volume arrives.
+    if (loaded !== null) select.value = loaded;
+    if (picked !== loaded) bus.emit('regionRequest', picked);
+  });
   return select;
 }

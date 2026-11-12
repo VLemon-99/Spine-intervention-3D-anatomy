@@ -78,3 +78,9 @@
 - Files touched: src/carm/regions.ts, src/carm/index.ts, tests/carm/regions.test.ts, tests/e2e/carm/regionPicker.spec.ts, ralph/tasks/F3-carm.json, ralph/progress/F3-carm.md
 - Test result: verify 5 unit + 4 screen tests passed (both set-ups); npm run check green (144 unit tests, 115 screen tests passed, 19 skipped by set-up).
 - Next round should know: For S10, add a 'change' listener on the picker: if select.value differs from the loaded region, emit bus 'regionRequest' once, then set select.value back to the loaded region (the picker keeps showing what is loaded until a new volume arrives). The region row fits inside the tablet panel (checked by the screen test).
+
+## Round — 2026-11-12 22:38 — F3-S10 — done
+- What I did: buildRegionPicker(store, bus) now listens for 'change': it puts the picker back on the loaded region (store volume) and, if the picked region differs, emits exactly one 'regionRequest' with its name. Nothing is loaded by the picker, no image is taken, counters are untouched; when a new volume arrives the picker follows the store (and 'Phantom' drops out once a real region is loaded — owner decision 2026-11-12). Unit tests for cervical + lumbosacral with phantom / lumbosacral loaded; screen tests fill store.regions, record regionRequest on the bus and put a renamed volume in the store via '/src/core/store.ts'.
+- Files touched: src/carm/regions.ts, src/carm/index.ts, tests/carm/regions.test.ts, tests/e2e/carm/regionSwitch.spec.ts, ralph/tasks/F3-carm.json, ralph/progress/F3-carm.md
+- Test result: verify (regions unit 7/7, regionSwitch 8/8, npm run check) green: 319 unit tests, 349 screen tests passed, 19 skipped by set-up. (The branch now includes main as of 2026-11-12: F2, F4, F12.)
+- Next round should know: All F3 stories are done. Loading lumbosacral at start and the end-to-end check with the real loader are F1 work (F1-S27).
