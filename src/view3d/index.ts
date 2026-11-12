@@ -10,7 +10,7 @@
 import { Mesh, WebGLRenderer } from 'three';
 import { registerDebugGetter } from '../core/debugRegistry';
 import { store } from '../core/store';
-import type { NeedleState, Vec3, Volume } from '../core/types';
+import type { CArmPose, NeedleState, Vec3, Volume } from '../core/types';
 import { LAYERS } from './layers';
 import { createView3dScene, triangleCount } from './scene';
 
@@ -148,10 +148,21 @@ export function mount(element: HTMLElement): void {
   }
   row.append(...layerButtons);
 
+  // The C-arm follows the live pose (owner decision 2026-11-11), not the pose of the last image.
+  let builtPose: CArmPose | undefined;
+  const syncPose = (pose: CArmPose): void => {
+    if (pose === builtPose) return;
+    builtPose = pose;
+    view.setPose(pose);
+    requestDraw();
+  };
+
   setShown(false);
+  syncPose(store.get().pose);
   syncVolume(store.get().volume);
   syncNeedle(store.get().needle);
   store.subscribe((state) => {
+    syncPose(state.pose);
     syncVolume(state.volume);
     syncNeedle(state.needle);
   });
@@ -160,6 +171,9 @@ export function mount(element: HTMLElement): void {
   registerDebugGetter('view3d', () => {
     const { position } = view.camera;
     const target = view.target;
+    // Detector corners straight from the detector's own geometry.
+    const square = view.detector.geometry.getAttribute('position');
+    const corners: Vec3[] = [0, 1, 2, 3].map((i) => ({ x: square.getX(i), y: square.getY(i), z: square.getZ(i) }));
     // Hub and tip straight from the needle line's own geometry.
     const line = view.needle.geometry.getAttribute('position');
     const vertex = (i: number): Vec3 => ({ x: line.getX(i), y: line.getY(i), z: line.getZ(i) });
@@ -167,7 +181,7 @@ export function mount(element: HTMLElement): void {
     return {
       shown,
       toggleEnabled: !toggle.disabled,
-      objects: [view.bone, ...view.layers.values(), view.needle].map((object) => ({
+      objects: [view.bone, ...view.layers.values(), view.source, view.detector, view.beam, view.needle].map((object) => ({
         name: object.name,
         visible: object.visible,
         triangles: object instanceof Mesh ? triangleCount(object.geometry) : 0,
@@ -175,6 +189,15 @@ export function mount(element: HTMLElement): void {
       camera: {
         position: { x: position.x, y: position.y, z: position.z },
         target: { x: target.x, y: target.y, z: target.z },
+      },
+      carm: {
+        source: { x: view.source.position.x, y: view.source.position.y, z: view.source.position.z },
+        detectorCentre: {
+          x: (corners[0]!.x + corners[2]!.x) / 2,
+          y: (corners[0]!.y + corners[2]!.y) / 2,
+          z: (corners[0]!.z + corners[2]!.z) / 2,
+        },
+        detectorCorners: corners,
       },
       needle,
     };

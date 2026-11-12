@@ -7,15 +7,19 @@ import {
   BufferGeometry,
   Color,
   DirectionalLight,
+  DoubleSide,
   Line,
   LineBasicMaterial,
+  LineSegments,
   Mesh,
   MeshLambertMaterial,
   PerspectiveCamera,
   Scene,
+  SphereGeometry,
   Vector3,
 } from 'three';
-import type { NeedleState, Volume } from '../core/types';
+import type { CArmPose, NeedleState, Volume } from '../core/types';
+import { carmModel } from './carmModel';
 import { BONE_LABELS, LAYERS, layerObjectName, type LayerId } from './layers';
 import { buildSurface } from './surface';
 
@@ -38,6 +42,14 @@ export interface View3dScene {
   layers: Map<LayerId, Mesh<BufferGeometry, MeshLambertMaterial>>;
   /** The needle shaft, hub to tip, as a line (named 'needle'); hidden when there is no needle. */
   needle: Line<BufferGeometry, LineBasicMaterial>;
+  /** The X-ray source (named 'source'): a small sphere at mesh.position. */
+  source: Mesh<SphereGeometry, MeshLambertMaterial>;
+  /** The detector (named 'detector'): a flat square whose four vertices are its corners, in patient coordinates. */
+  detector: Mesh<BufferGeometry, MeshLambertMaterial>;
+  /** The beam outline (named 'beam'): lines from the source to the four detector corners. */
+  beam: LineSegments<BufferGeometry, LineBasicMaterial>;
+  /** Move the C-arm objects to a pose. */
+  setPose(pose: CArmPose): void;
   /** Rebuild the needle line from the needle state (null hides it). */
   setNeedle(needle: NeedleState | null): void;
   /** Rebuild the anatomy objects for a volume (or empty them for null) and reset the camera to show it. */
@@ -46,8 +58,9 @@ export interface View3dScene {
   setAspect(aspect: number): void;
 }
 
-/** Number of triangles drawn by a (non-indexed) geometry. */
+/** Number of triangles drawn by a geometry (indexed or not). */
 export function triangleCount(geometry: BufferGeometry): number {
+  if (geometry.index) return Math.floor(geometry.index.count / 3);
   const position = geometry.getAttribute('position');
   return position ? Math.floor(position.count / 3) : 0;
 }
@@ -105,6 +118,45 @@ export function createView3dScene(): View3dScene {
   needle.renderOrder = 1;
   scene.add(needle);
 
+  // The C-arm: source sphere, detector square (corners as vertices) and beam lines.
+  const source = new Mesh(new SphereGeometry(12, 16, 12), new MeshLambertMaterial({ color: 0xffb347 }));
+  source.name = 'source';
+  scene.add(source);
+
+  const detectorGeometry = new BufferGeometry();
+  detectorGeometry.setAttribute('position', new BufferAttribute(new Float32Array(12), 3));
+  detectorGeometry.setIndex([0, 1, 2, 0, 2, 3]);
+  const detector = new Mesh(
+    detectorGeometry,
+    new MeshLambertMaterial({ color: 0x8fa3b8, side: DoubleSide, transparent: true, opacity: 0.55, depthWrite: false }),
+  );
+  detector.name = 'detector';
+  scene.add(detector);
+
+  const beamGeometry = new BufferGeometry();
+  beamGeometry.setAttribute('position', new BufferAttribute(new Float32Array(24), 3));
+  const beam = new LineSegments(beamGeometry, new LineBasicMaterial({ color: 0xffb347, transparent: true, opacity: 0.6 }));
+  beam.name = 'beam';
+  scene.add(beam);
+
+  const setPose = (pose: CArmPose): void => {
+    const model = carmModel(pose);
+    source.position.set(model.source.x, model.source.y, model.source.z);
+    const corners = detectorGeometry.getAttribute('position') as BufferAttribute;
+    const lines = beamGeometry.getAttribute('position') as BufferAttribute;
+    model.detectorCorners.forEach((c, i) => {
+      corners.setXYZ(i, c.x, c.y, c.z);
+      lines.setXYZ(2 * i, model.source.x, model.source.y, model.source.z);
+      lines.setXYZ(2 * i + 1, c.x, c.y, c.z);
+    });
+    corners.needsUpdate = true;
+    lines.needsUpdate = true;
+    detectorGeometry.computeVertexNormals();
+    detectorGeometry.computeBoundingSphere();
+    beamGeometry.computeBoundingSphere();
+  };
+  setPose({ oblique: 0, tilt: 0, tableLeftRight: 0, tableHeadFoot: 0, tableHeight: 0 });
+
   const fitCamera = (volume: Volume | null): void => {
     let radius = 100;
     target.set(0, 0, 0);
@@ -118,6 +170,14 @@ export function createView3dScene(): View3dScene {
       );
       target.addVectors(min, max).multiplyScalar(0.5);
       radius = Math.max(1, min.distanceTo(max) / 2);
+    }
+    // Also take in the whole C-arm, source to detector, at its current pose.
+    radius = Math.max(radius, source.position.distanceTo(target) + 12);
+    const corners = detectorGeometry.getAttribute('position');
+    const corner = new Vector3();
+    for (let i = 0; i < corners.count; i++) {
+      corner.fromBufferAttribute(corners, i);
+      radius = Math.max(radius, corner.distanceTo(target));
     }
     const halfFov = (Math.min(FOV_DEG, FOV_DEG * Math.min(1, camera.aspect)) * Math.PI) / 360;
     const distance = (radius / Math.sin(halfFov)) * 1.05;
@@ -135,6 +195,10 @@ export function createView3dScene(): View3dScene {
     bone,
     layers,
     needle,
+    source,
+    detector,
+    beam,
+    setPose,
     setVolume(volume) {
       const old = bone.geometry;
       bone.geometry = meshGeometry(volume, BONE_LABELS);

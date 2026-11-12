@@ -55,3 +55,9 @@
 - Files touched: src/view3d/index.ts, tests/e2e/view3d/layerToggles.spec.ts, ralph/tasks/F8-view3d.json, ralph/progress/F8-view3d.md
 - Test result: verify 6/6 passed; all view3d screen tests 26/26; npm run check passed (184 unit, 212 screen passed, 6 skipped).
 - Next round should know: Every remaining story (F8-S3 blocked; F8-S5, F8-S6, F8-S9 depend on it) waits on the owner's F8-S3 decision, so no story is eligible until then.
+
+## Round — 2026-11-12 — F8-S3 — done
+- What I did: Added carmModel(pose) (source, detector centre, four detector corners from createProjection) with a unit test over three poses incl. table offsets. Added 'source', 'detector' and 'beam' scene objects that follow the live store pose, and window.__sim.view3d().carm read from those objects. The start camera now frames the whole C-arm. Changed the F8-S2 start-camera test's upper bound (< 50 mm → > 650 mm) exactly as the owner decided on 2026-11-11 (docs/DECISIONS.md); nothing else in that test changed.
+- Files touched: src/view3d/carmModel.ts, src/view3d/scene.ts, src/view3d/index.ts, tests/view3d/carmModel.test.ts, tests/e2e/view3d/carm.spec.ts, tests/e2e/view3d/toggle.spec.ts (owner-approved), tests/e2e/view3d/view3dPage.ts, ralph/tasks/F8-view3d.json, ralph/progress/F8-view3d.md
+- Test result: baseline check passed first; verify passed (unit 1/1, screen 4/4); all view3d screen tests 30/30; npm run check passed (185 unit, 216 screen passed, 6 skipped).
+- Next round should know: F8-S5 (mouse orbit) is next. Hand view.camera and view.target (the same Vector3 object) to OrbitControls; the camera is ~2 m from the target at start, so zoom limits must allow that distance.

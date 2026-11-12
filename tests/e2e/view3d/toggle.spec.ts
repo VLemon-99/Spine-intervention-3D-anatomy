@@ -72,9 +72,9 @@ test('the start camera looks at the middle of the volume', async ({ page }) => {
     camera.position.y - camera.target.y,
     camera.position.z - camera.target.z,
   );
-  // Far enough to see the whole 5 mm volume, not lost in the distance.
+  // Far enough to see the whole C-arm, source to detector (owner decision 2026-11-11).
   expect(distance).toBeGreaterThan(4);
-  expect(distance).toBeLessThan(50);
+  expect(distance).toBeGreaterThan(650);
 });
 
 test('the toggle is at least 44×44 px and visible without scrolling', async ({ page }) => {

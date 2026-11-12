@@ -8,6 +8,8 @@ export interface View3dInfo {
   toggleEnabled: boolean;
   objects: { name: string; visible: boolean; triangles: number }[];
   camera: { position: Vec3; target: Vec3 };
+  /** C-arm parts read from the scene objects. */
+  carm: { source: Vec3; detectorCentre: Vec3; detectorCorners: Vec3[] };
   /** Hub and tip of the needle object in the scene, or null when no needle is shown. */
   needle: { hub: Vec3; tip: Vec3 } | null;
 }
