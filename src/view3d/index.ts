@@ -8,6 +8,7 @@
 // made the first time the view is turned on.
 
 import { Mesh, WebGLRenderer } from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { registerDebugGetter } from '../core/debugRegistry';
 import { store } from '../core/store';
 import type { CArmPose, NeedleState, Vec3, Volume } from '../core/types';
@@ -100,10 +101,22 @@ export function mount(element: HTMLElement): void {
     requestDraw();
   };
 
+  // Orbit and zoom (F8.3): drag to orbit around the target, wheel to zoom.
+  // OrbitControls stops the wheel from scrolling the page and sets
+  // touch-action: none on the canvas. It turns the camera around view.target.
+  const controls = new OrbitControls(view.camera, canvas);
+  controls.target = view.target;
+  controls.enableDamping = false;
+  controls.enablePan = false;
+  controls.minDistance = 10;
+  controls.maxDistance = 20000;
+  controls.addEventListener('change', requestDraw);
+
   const syncVolume = (volume: Volume | null): void => {
     if (volume === builtVolume) return;
     builtVolume = volume;
     view.setVolume(volume);
+    controls.update();
     requestDraw();
   };
 

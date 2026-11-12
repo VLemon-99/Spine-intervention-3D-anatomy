@@ -121,9 +121,9 @@
         "F8-S3",
         "F8-S4"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "OrbitControls on the 3D canvas in src/view3d/index.ts, sharing view.target; damping and pan off; min/max distance 10 / 20000 mm; 'change' → requestDraw; controls.update() after each volume change. OrbitControls itself prevents wheel scrolling and sets touch-action: none on the canvas. Helpers cameraDistance, makePageScrollable, pageScrollAndZoom added to tests/e2e/view3d/view3dPage.ts."
     },
     {
       "id": "F8-S6",

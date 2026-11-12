@@ -9,6 +9,8 @@
 - To add a scene object to window.__sim.view3d().objects, add it to the list in the registerDebugGetter call in src/view3d/index.ts; call requestDraw() after any scene change (draw on demand).
 - Don't add test checks beyond the story's acceptance criteria when a later story is planned to change that behaviour: loops can't edit an existing test later (this blocked F8-S3).
 - The layer buttons are hidden with style.display = 'none' in setShown (src/view3d/index.ts); F8-S9 (exam mode) must hide them the same way.
+- To test that the page does not scroll, first call makePageScrollable(page) (adds a 3000 px spacer) — the app's layout is exactly 100vh, so without it the page could never scroll and the test would check nothing.
+- OrbitControls wheel: deltaY < 0 (page.mouse.wheel(0, -100)) zooms in.
 - `npm install` is needed first in a fresh cloud session (node_modules is not committed).
 
 ## Rounds
@@ -61,3 +63,9 @@
 - Files touched: src/view3d/carmModel.ts, src/view3d/scene.ts, src/view3d/index.ts, tests/view3d/carmModel.test.ts, tests/e2e/view3d/carm.spec.ts, tests/e2e/view3d/toggle.spec.ts (owner-approved), tests/e2e/view3d/view3dPage.ts, ralph/tasks/F8-view3d.json, ralph/progress/F8-view3d.md
 - Test result: baseline check passed first; verify passed (unit 1/1, screen 4/4); all view3d screen tests 30/30; npm run check passed (185 unit, 216 screen passed, 6 skipped).
 - Next round should know: F8-S5 (mouse orbit) is next. Hand view.camera and view.target (the same Vector3 object) to OrbitControls; the camera is ~2 m from the target at start, so zoom limits must allow that distance.
+
+## Round — 2026-11-12 — F8-S5 — done
+- What I did: Added Three.js OrbitControls (from the existing three package, no new dependency) to the 3D canvas: mouse drag orbits around the target, wheel zooms; redraws on every camera change. Desktop-only screen tests for drag (distance kept within 1%), wheel in/out, and no page scroll while wheeling (with the page made scrollable on purpose).
+- Files touched: src/view3d/index.ts, tests/e2e/view3d/orbitMouse.spec.ts, tests/e2e/view3d/view3dPage.ts, ralph/tasks/F8-view3d.json, ralph/progress/F8-view3d.md
+- Test result: verify passed (orbitMouse 3/3 desktop; all view3d 33 passed, 3 skipped = desktop-only tests in the tablet set-up); npm run check passed (185 unit, 219 screen passed, 9 skipped).
+- Next round should know: F8-S6 (touch). OrbitControls already handles one-finger rotate and two-finger dolly and sets touch-action: none; the work is mainly the CDP touch helper tests/e2e/view3d/touch.ts and the tablet tests.

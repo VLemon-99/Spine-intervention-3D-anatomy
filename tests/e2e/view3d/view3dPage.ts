@@ -140,3 +140,29 @@ export async function putNeedle(page: Page, needle: NeedleState | null): Promise
     store.set({ needle: n });
   }, needle);
 }
+
+/** Distance from the camera to its target, mm. */
+export function cameraDistance(info: View3dInfo): number {
+  const { position: p, target: t } = info.camera;
+  return Math.hypot(p.x - t.x, p.y - t.y, p.z - t.z);
+}
+
+/**
+ * Make the page taller than the window, so it COULD scroll: a test that the
+ * page does not scroll during a gesture then really checks something.
+ */
+export async function makePageScrollable(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const spacer = document.createElement('div');
+    spacer.dataset.testid = 'scroll-spacer';
+    spacer.style.height = '3000px';
+    document.body.append(spacer);
+    document.body.style.height = 'auto';
+    document.documentElement.style.height = 'auto';
+  });
+}
+
+/** The page's scroll position and zoom (visual viewport scale). */
+export async function pageScrollAndZoom(page: Page): Promise<{ x: number; y: number; scale: number }> {
+  return page.evaluate(() => ({ x: window.scrollX, y: window.scrollY, scale: window.visualViewport?.scale ?? 1 }));
+}
