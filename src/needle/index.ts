@@ -1,9 +1,9 @@
 // Needle catalogue, physics and handling controls — F4, F5.
 // mount() builds this zone's panel (needle-panel): the set-up row with the
 // needle and pre-bend pickers (F5.1), the steering row (Withdraw, control
-// pad, Advance: F5.4, F5.5), the readouts (F5.6) and the desktop needle keys
-// (F5.4). The app's needle session is linked to the store (store.needle) and
-// registered as the 'needle' debug getter.
+// pad, Advance: F5.4, F5.5), the readouts and Withdraw fully (F5.6) and the
+// desktop needle keys (F5.4). The app's needle session is linked to the store
+// (store.needle) and registered as the 'needle' debug getter.
 
 import { registerDebugGetter } from '../core/debugRegistry';
 import { shortcuts } from '../core/shortcuts';
@@ -15,6 +15,7 @@ import { buildPickers } from './pickers';
 import { buildReadouts } from './readoutRow';
 import { needleSession } from './session';
 import { linkNeedleToStore } from './storeLink';
+import { buildWithdrawAll } from './withdrawAll';
 
 let linked = false;
 
@@ -92,6 +93,9 @@ export function mount(element: HTMLElement): void {
   const { advance, withdraw } = buildAdvanceButtons(needleSession);
   steerRow.append(withdraw, buildPad(needleSession), advance);
 
-  panel.append(marker, heading, buildPickers(needleSession), steerRow, buildReadouts(store));
+  const readouts = buildReadouts(store);
+  readouts.append(buildWithdrawAll(needleSession));
+
+  panel.append(marker, heading, buildPickers(needleSession), steerRow, readouts);
   element.append(panel);
 }

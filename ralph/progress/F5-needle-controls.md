@@ -72,3 +72,9 @@
 - Files touched: src/needle/{readouts,readoutRow,index}.ts, tests/needle/readouts.test.ts, tests/e2e/needle/{needlePage.ts,readouts.spec.ts}
 - Test result: verify: unit 5/5, screen 6/6; npm run check: 512 unit, 448 screen tests passed.
 - Next round should know: next by priority is F5-S13 (Withdraw fully + lock checks).
+
+## Round — 2026-11-13 06:25 — F5-S13 — done
+- What I did: src/needle/withdrawAll.ts: needle-withdraw-all button (44×44 min) calling needleSession.withdrawFully(); disabled while there is no needle. Appended to the readouts row. Screen tests: Withdraw fully → needle() null and pickers enabled; while inserted both pickers are disabled, and a forced pick (set value + dispatch change, bypassing the disabled state) leaves the needle unchanged and the picker snaps back.
+- Files touched: src/needle/withdrawAll.ts, src/needle/index.ts, tests/e2e/needle/withdrawAll.spec.ts
+- Test result: verify 5 passed (1 desktop skip for the tablet-size test); npm run check: 512 unit, 453 screen tests passed.
+- Next round should know: next by priority is F5-S10 (boneContact in NeedleState), then F5-S4 (Mark entry tool, the last loop story).
