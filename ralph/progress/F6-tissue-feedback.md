@@ -33,3 +33,9 @@
 - Files touched: src/sim/tracker.ts, tests/sim/tracker.test.ts, this log (plus Lessons), the task file.
 - Test result: verify passed (8/8); `npm run check` passed (lint, types, all unit tests, 409 screen tests passed, 25 skipped by set-up).
 - Next round should know: the tracker keeps the last sample { point, label }; S4/S5 can add more checks inside the same sample loop (compare `last.label` with `sample.label`). S5 needs landmarks: extend update with an optional 4th argument `landmarks?` so existing calls keep working.
+
+## Round — 2026-11-13 04:59 — F6-S4 — done
+- What I did: extended `src/sim/tracker.ts` with an `ENTRY_EVENTS` table: a sample whose label differs from the previous sample's and is thecal sac / spinal cord / artery / vein emits 'duralPuncture' ('Dural puncture') / 'cordContact' ('Spinal cord contact') / 'intravascular' ('Intravascular', same text for both vessels). Tests first in `tests/sim/safetyEvents.test.ts` (6 tests).
+- Files touched: src/sim/tracker.ts, tests/sim/safetyEvents.test.ts, this log, the task file.
+- Test result: verify passed (6/6), tracker tests still pass; `npm run check` passed (lint, types, all unit tests, 409 screen tests passed, 25 skipped by set-up).
+- Next round should know: like loss of resistance, entry events need a previous sample: the very first update after creation/reset emits nothing, even if the tip is already in the sac. Going straight from artery into vein would emit a second 'intravascular' (label changed); the phantom's vessels do not touch, so no test covers it.

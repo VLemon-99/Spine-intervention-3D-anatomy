@@ -1,8 +1,8 @@
-// Tissue tracker (F6.2): follows the needle tip between updates and turns
+// Tissue tracker (F6.2, F6.3): follows the needle tip between updates and turns
 // tissue crossings into TissueEvents. Plain TypeScript, no browser code.
 
 import { TISSUE } from '../core/labels';
-import type { NeedleState, TissueEvent, Vec3, Volume } from '../core/types';
+import type { NeedleState, TissueEvent, TissueEventType, Vec3, Volume } from '../core/types';
 import { labelAt } from './tissue';
 
 /** Distance (mm) between samples along the tip's path, so thin layers are not jumped over. */
@@ -14,6 +14,19 @@ export interface TissueTracker {
   /** Forgets the previous tip (the next update starts afresh). */
   reset(): void;
 }
+
+/**
+ * Events for entering a tissue (F6.3): emitted once each time a sample enters
+ * one of these tissues from a different one. Artery and vein share the message
+ * 'Intravascular' so the learner is not told which kind of vessel it is
+ * (owner decision 2026-11-13).
+ */
+const ENTRY_EVENTS: ReadonlyMap<number, { type: TissueEventType; message: string }> = new Map([
+  [TISSUE.thecalSac, { type: 'duralPuncture', message: 'Dural puncture' }],
+  [TISSUE.spinalCord, { type: 'cordContact', message: 'Spinal cord contact' }],
+  [TISSUE.artery, { type: 'intravascular', message: 'Intravascular' }],
+  [TISSUE.vein, { type: 'intravascular', message: 'Intravascular' }],
+]);
 
 interface Sample {
   point: Vec3;
@@ -51,6 +64,10 @@ export function createTissueTracker(): TissueTracker {
           sample.label === TISSUE.epiduralSpace
         ) {
           events.push({ type: 'lossOfResistance', time, tip: { ...point }, message: 'Loss of resistance' });
+        }
+        const entry = ENTRY_EVENTS.get(sample.label);
+        if (last && entry && last.label !== sample.label) {
+          events.push({ type: entry.type, time, tip: { ...point }, message: entry.message });
         }
         last = sample;
       }
