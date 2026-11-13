@@ -9,6 +9,7 @@
 - ESLint here flags `_`-prefixed unused destructured names (`{ a: _drop, ...rest }`); copy the object and `delete` the field instead.
 - Screen tests put a needle in the app's store with `putNeedle(page, needleWithTip(tip))` from `tests/e2e/sim/simZone.ts` (dev-server store module import); read the sim with `getSim(page)` (waits for `window.__sim.sim`).
 - Playwright specs cannot `import` a JSON file ("needs an import attribute of type: json"); read it with `readFileSync('src/sim/tissues.json', 'utf8')` instead.
+- Render CPU-reference unit tests (tests/render/noise.test.ts, collimation.test.ts) run 4–6 s each on the 4-core cloud machine, right at Vitest's 5 s default timeout, so `npm test` can fail at random. Not fixable from the sim zone.
 - To print phantom labels, a throwaway `tests/sim/zz*.test.ts` with `console.log` needs `--reporter=verbose` to show stdout; delete it afterwards.
 
 ## Rounds
@@ -73,3 +74,9 @@
 - Files touched: src/sim/feedback.ts, src/sim/index.ts, tests/e2e/sim/feedback.spec.ts, tests/e2e/sim/simZone.ts, this log (plus Lessons), the task file (status + note).
 - Test result: verify passed (10/10); `npm run check` passed (lint, types, all unit tests, 425 screen tests passed, 25 skipped by set-up).
 - Next round should know: the slot (`.app-slot`) is a flex row with `.app-slot > .panel { flex: 1 }`, so the section must go inside the needle-panel element to be "in" the panel; the panel has overflow: hidden, so keep new rows compact (S10 Aspirate button 44 px tall on the tablet, S11 event log should scroll inside itself). Put the Aspirate button and event log into the same section (`sim-feedback`).
+
+## Round — 2026-11-13 05:45 — F6-S10 — failed
+- What I did: built the Aspirate button (data-testid aspirate, 44 px tall on touch) and result (aspirate-result: CSF / Blood / Nothing) in the sim section, with createRandom(seed) made at mount and at each caseStart (seed 20261113 in DEV, Date.now() in production) and 'seed' in the sim debug getter. Screen tests in tests/e2e/sim/aspirate.spec.ts. Verify passed: all 25 sim screen tests in both set-ups.
+- Files touched (discarded): src/sim/feedback.ts, src/sim/index.ts, tests/e2e/sim/simZone.ts, tests/e2e/sim/aspirate.spec.ts. Committed: this log and the task file only.
+- Test result: `npm run check` failed 3 runs out of 3 in the unit tests, on an unrelated render-zone test timing out (tests/render/noise.test.ts "spread is 0 at level 0…", once also tests/render/collimation.test.ts "covered area is the same at magnification 1 and 2"). They take 4.2–5.9 s against the 5 s default limit and fail with this round's code set aside too. Lint, types and every other test passed.
+- Next round should know: the working code is kept in a local `git stash` ("F6-S10 working code …") and as a patch in the session scratchpad (both vanish with the container, so rebuilding from the task notes is fine). First re-run `npm test`; if the render timeouts pass, `git stash pop` (or rebuild) and verify again. If they keep failing, the story needs a human (see its notes).
