@@ -60,3 +60,9 @@
 - Files touched: tests/e2e/render/renderPage.ts, tests/e2e/render/needleTip.spec.ts (new), this task file and log.
 - Test result: verify 12/12 passed (both set-ups); `npm run check` green (unit 514 passed; screen 445 passed, 25 skipped by set-up).
 - Next round should know: F7-S6 is the last loop story; reuse needlePixels for the spot/line extent (longest extent = largest distance between two needle pixel centres, plus 1 px).
+
+## Round — 2026-11-13 06:40 — F7-S6 — done
+- What I did: New spec at pose 0°/0° with default settings: entry on the skin of the back (25, 33.7, −20); a 40 mm needle exactly along the ray from the entry toward the source projects to a spot ≤ 4 px (longest extent = largest distance between needle pixel centres + 1); the same needle tipped 30° toward the feet is a line > 20 px. A set-up test checks the entry is on the skin, both tips are inside, the down-the-beam ends project to one point and the angle is 30°. Helper `longestExtent` added to renderPage.ts.
+- Files touched: tests/e2e/render/renderPage.ts, tests/e2e/render/needleBeam.spec.ts (new), this task file and log.
+- Test result: verify passed (6/6 both set-ups, then `npm run check` green: unit 514 passed; screen 451 passed, 25 skipped by set-up). My set-up test first caught a mistake in my own 30° direction (it was 26.6°); fixed in the new test file before commit.
+- Next round should know: all F7 stories are done. Proposals for the owner (not applied): NEEDLE_ABSORPTION_PER_MM = 3 and NEEDLE_RADIUS_MM = 0.35 are drafts to tune by eye on the real CT; F5-S11 and F5-S15 can be unblocked once F7 is merged.

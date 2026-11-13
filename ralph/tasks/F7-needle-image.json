@@ -181,7 +181,7 @@
       "dependsOn": [
         "F7-S5"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": "Review fix 2026-11-13 (owner approved all review fixes): now the last loop story (F7-S7 moved earlier)."
     }

@@ -231,3 +231,18 @@ export function findTipPixel(
   }
   return best;
 }
+
+/**
+ * Longest extent (px) of a set of needle pixels: the largest distance between
+ * two pixel centres, plus 1 for the pixels' own size (one pixel → 1). 0 for none.
+ */
+export function longestExtent(pixels: readonly { x: number; y: number }[]): number {
+  if (pixels.length === 0) return 0;
+  let longest = 0;
+  for (let a = 0; a < pixels.length; a++) {
+    for (let b = a + 1; b < pixels.length; b++) {
+      longest = Math.max(longest, Math.hypot(pixels[a]!.x - pixels[b]!.x, pixels[a]!.y - pixels[b]!.y));
+    }
+  }
+  return longest + 1;
+}
