@@ -5,7 +5,7 @@
 // compare the GPU image with it. It follows the ORDER OF STEPS at the top of
 // pipeline.ts: step 1 (magnification), step 2 (absorption, with the optional
 // extra volume), step 3 (noise), step 4 (collimation), step 5 (invert) and
-// step 6 (flips and rotation).
+// step 6 (flips and rotation), plus step 2b (the needle, F7).
 //
 // Sampling is the same as in the GPU shader: the ray is clipped to the
 // volume's box, samples are taken at entry + (i + 0.5) × step, and each sample
@@ -20,9 +20,12 @@ import {
   MAGNIFICATIONS,
   MARCH_STEP_MM,
   MAX_MARCH_STEPS,
+  NEEDLE_ABSORPTION_PER_MM,
   NO_SIGNAL,
   detectorPosition,
   isCollimated,
+  needlePathLength,
+  resampleShaft,
   type Collimation,
   type Magnification,
 } from './pipeline';
@@ -36,6 +39,12 @@ export interface DrrCpuOptions {
    * volume (same size and index order). Default: none.
    */
   extraAbsorption?: Uint8Array;
+  /**
+   * Step 2b: the needle's shaft points, hub → tip (NeedleState.shaft). Its
+   * metal absorbs along the whole ray, also outside the volume's box.
+   * Default (or no points): no needle.
+   */
+  needle?: readonly Vec3[];
   /** Step 3: seeded grain (default: none). Collimated pixels get none. */
   noise?: NoiseOptions;
   /** Step 4: the four shutters, each 0–50 % of the image from its edge (default: all open). */
@@ -81,7 +90,13 @@ function assertStandardLayout(volume: Volume): void {
 const safe = (d: number): number => (Math.abs(d) < 1e-8 ? 1e-8 : d);
 
 /** The march along one ray, after the layout check. */
-function march(volume: Volume, projection: Projection, pixel: Pixel, extra: Uint8Array | null): number {
+function march(
+  volume: Volume,
+  projection: Projection,
+  pixel: Pixel,
+  extra: Uint8Array | null,
+  needle: readonly Vec3[],
+): number {
   const { origin, spacing, size, intensity } = volume;
   const { origin: source, direction: dir } = projection.unproject(pixel);
 
@@ -116,6 +131,8 @@ function march(volume: Volume, projection: Projection, pixel: Pixel, extra: Uint
     if (extra) perMm += ((extra[index] ?? 0) / 255) * EXTRA_ABSORPTION_PER_MM;
     total += perMm * MARCH_STEP_MM;
   }
+  // Step 2b: the needle, along the whole ray from the source (t ≥ 0).
+  if (needle.length > 1) total += needlePathLength(source, dir, needle) * NEEDLE_ABSORPTION_PER_MM;
   return Math.exp(-total);
 }
 
@@ -154,6 +171,9 @@ function extraOf(volume: Volume, options: DrrCpuOptions): Uint8Array | null {
   }
   return extra;
 }
+
+/** Step 2b: the needle's shaft resampled as the renderers use it ([] for no needle). */
+const needleOf = (options: DrrCpuOptions): Vec3[] => resampleShaft(options.needle ?? []);
 
 const NO_NOISE: NoiseOptions = { seed: 0, level: 0 };
 
@@ -203,12 +223,13 @@ export function transmissionAt(
   const collimation = collimationOf(options);
   const noise = noiseOf(options);
   const extra = extraOf(volume, options);
+  const needle = needleOf(options);
   // Step 6 backwards: which position of the image as taken is shown at this pixel.
   pixel = unorientPixel(pixel, orientationOf(options), IMAGE_SIZE_PX);
   const x = Math.floor(pixel.x);
   const y = Math.floor(pixel.y);
   if (isCollimated(x, y, collimation)) return display(NO_SIGNAL, options);
-  const value = march(volume, projection, detectorPosition(pixel, magnification), extra);
+  const value = march(volume, projection, detectorPosition(pixel, magnification), extra, needle);
   return display(addNoise(value, noise, x, y), options);
 }
 
@@ -220,6 +241,7 @@ export function renderDrrCpu(volume: Volume, pose: CArmPose, options: DrrCpuOpti
   const noise = noiseOf(options);
   const extra = extraOf(volume, options);
   const orientation = orientationOf(options);
+  const needle = needleOf(options);
   const projection = createProjection(pose);
   const width = IMAGE_SIZE_PX;
   const height = IMAGE_SIZE_PX;
@@ -231,7 +253,7 @@ export function renderDrrCpu(volume: Volume, pose: CArmPose, options: DrrCpuOpti
         continue;
       }
       const onDetector = detectorPosition({ x: x + 0.5, y: y + 0.5 }, magnification);
-      data[x + width * y] = display(addNoise(march(volume, projection, onDetector, extra), noise, x, y), options);
+      data[x + width * y] = display(addNoise(march(volume, projection, onDetector, extra, needle), noise, x, y), options);
     }
   }
   if (isUnchanged(orientation)) return { width, height, data };

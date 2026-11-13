@@ -50,7 +50,7 @@
       "dependsOn": [
         "F7-S1"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": "Review fix 2026-11-13 (owner approved all review fixes): darker-than-bone test added; the 'outside the box' needle is placed at y = 55, clearly outside the phantom's grid."
     },

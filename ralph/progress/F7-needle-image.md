@@ -21,3 +21,9 @@
 - Files touched: src/render/pipeline.ts, tests/render/needleMaths.test.ts (new), this task file and log.
 - Test result: verify 11/11 passed; `npm run check` green (unit 501 passed; screen 409 passed, 25 skipped by set-up).
 - Next round should know: NEEDLE_ABSORPTION_PER_MM = 3 was picked from a rough phantom estimate (vertebra body ray ≈ 0.3 more absorption than muscle; needle diameter gives 2.1). F7-S2's darker-than-bone test checks it; tune there if needed.
+
+## Round — 2026-11-13 04:55 — F7-S2 — done
+- What I did: `renderDrrCpu` and `transmissionAt` take an optional `needle` (shaft points). After the volume march, `total += needlePathLength(source, ray direction, resampleShaft(needle)) × NEEDLE_ABSORPTION_PER_MM` over the whole ray (t ≥ 0 from the source; the needle can never lie beyond the detector, so no end cut is needed). No needle / [] → image unchanged.
+- Files touched: src/render/drrCpu.ts, tests/render/needleCpu.test.ts (new), this task file and log.
+- Test result: verify 5/5 passed; `npm run check` green (unit 506 passed; screen 409 passed, 25 skipped by set-up).
+- Next round should know: at pose 0°/0°, a needle at (30, 0, z) lets 0.08 through vs 0.61 for the muscle beside it, so NEEDLE_ABSORPTION_PER_MM = 3 easily beats bone. F7-S3's shader must resample the same way (65 points) and use the ray from the source, as `march` does.
