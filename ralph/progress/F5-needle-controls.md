@@ -6,6 +6,7 @@
 <!-- Reusable learnings for future rounds: gotchas, patterns, commands that work. After the feature is merged, an interactive session promotes the useful ones into CLAUDE.md. -->
 - `window.__sim.needle()` is null whenever no needle is placed (F5-S13 expects null after Withdraw fully). Screen tests that need needleId/preBend first place an uninserted needle (markEntry at depth 0) through the dev server's `/src/needle/session.ts` module; picking a needle/pre-bend at depth 0 rebuilds it at the same entry.
 - Zone screen-test helpers live in tests/e2e/needle/needlePage.ts: `readNeedle`, `waitForVolume`, `markEntryAtPixel`, `advanceNeedle` (wait for the volume after acceptDisclaimer; take an image before marking).
+- Chromium turns Shift + wheel into a sideways scroll (deltaX), so wheel handlers read deltaY, falling back to deltaX.
 - The app's session (`needleSession`) notifies through `needleSession.subscribe(listener)`; UI parts subscribe to stay in step (disabled while locked).
 
 ## Rounds
@@ -46,3 +47,9 @@
 - Files touched: src/needle/keys.ts, src/needle/index.ts, tests/e2e/needle/keys.spec.ts
 - Test result: verify 6 passed (6 tablet skips, by design); npm run check: 507 unit, 430 screen tests passed.
 - Next round should know: in keys.spec the beforeEach blurs the focused element after marking so keys reach window. Helper text uses '↑ / ↓' and '← / →' for the arrow keys.
+
+## Round — 2026-11-13 05:25 — F5-S6 — done
+- What I did: src/needle/pad.ts builds needle-pad (pointer events, touch-action none, pointer capture). Drag sets hub angles from the drag's start (start − dy·0.2°, start + dx·0.2°), clamped by the session. Wheel (non-passive, always preventDefault): deltaY<0 advances, >0 withdraws, 1 mm or 0.2 mm with Shift, one step per wheel event. Mounted after the pickers in index.ts.
+- Files touched: src/needle/pad.ts, src/needle/index.ts, tests/e2e/needle/padMouse.spec.ts
+- Test result: verify 4/4 (desktop only, by design); npm run check: 507 unit, 434 screen tests passed (layout tests still pass with the pad).
+- Next round should know: the pad tracks a single pointer (`drag`); F5-S7 must extend it for a second finger (twist) without breaking the one-finger drag.

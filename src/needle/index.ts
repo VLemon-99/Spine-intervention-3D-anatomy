@@ -1,12 +1,14 @@
 // Needle catalogue, physics and handling controls — F4, F5.
 // mount() builds this zone's panel (needle-panel): the set-up row with the
-// needle and pre-bend pickers (F5.1), and the desktop needle keys (F5.4). The app's needle session is linked to
+// needle and pre-bend pickers (F5.1), the control pad and the desktop needle
+// keys (F5.4). The app's needle session is linked to
 // the store (store.needle) and registered as the 'needle' debug getter.
 
 import { registerDebugGetter } from '../core/debugRegistry';
 import { shortcuts } from '../core/shortcuts';
 import { bus, store } from '../core/store';
 import { needleKeyAction, needleShortcutEntries } from './keys';
+import { buildPad } from './pad';
 import { buildPickers } from './pickers';
 import { needleSession } from './session';
 import { linkNeedleToStore } from './storeLink';
@@ -80,6 +82,6 @@ export function mount(element: HTMLElement): void {
     });
   }
 
-  panel.append(marker, heading, buildPickers(needleSession));
+  panel.append(marker, heading, buildPickers(needleSession), buildPad(needleSession));
   element.append(panel);
 }
