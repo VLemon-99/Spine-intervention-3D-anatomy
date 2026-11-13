@@ -60,3 +60,9 @@
 - Files touched: src/needle/pad.ts, tests/e2e/needle/touch.ts, tests/e2e/needle/padTouch.spec.ts
 - Test result: verify 3/3 (tablet only, by design); padMouse still 4/4; npm run check: 507 unit, 437 screen tests passed.
 - Next round should know: F5-S8 (Advance/Withdraw buttons) is next by priority.
+
+## Round — 2026-11-13 05:55 — F5-S8 — done
+- What I did: src/needle/holdButtons.ts: needle-advance / needle-withdraw. pointerdown moves 1 mm at once; after 300 ms a 40 ms interval moves by real elapsed time at 5 mm/s until pointerup/cancel/lost capture/window blur (a 1 s hold ≈ 4.5 mm). Keyboard activation (click with detail 0) steps 1 mm. touch-action none and no context menu on long press. index.ts puts them in a steering row: Withdraw | pad | Advance.
+- Files touched: src/needle/holdButtons.ts, src/needle/index.ts, tests/e2e/needle/advanceButtons.spec.ts
+- Test result: verify 5 passed (1 desktop skip, tablet-size test); npm run check: 507 unit, 442 screen tests passed.
+- Next round should know: holding on the tablet in tests = CDP touchStart, wait, touchEnd (see hold() in advanceButtons.spec.ts). Next by priority: F5-S9 (readouts).

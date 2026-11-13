@@ -219,7 +219,7 @@
       "dependsOn": [
         "F5-S5"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): hold delay 300 ms and 5 mm/s (accepted as drafts)."
     },
