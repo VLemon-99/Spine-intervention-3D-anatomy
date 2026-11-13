@@ -4,7 +4,8 @@
 
 ## Lessons
 <!-- Reusable learnings for future rounds: gotchas, patterns, commands that work. After the feature is merged, an interactive session promotes the useful ones into CLAUDE.md. -->
-- [none yet]
+- Phantom labels on the midline (x = 0, z = 0), from the back: air y ≥ 43, skin/fat 42–39, muscle 38–23, ligamentum flavum 22–16, epidural space 15–13, thecal sac 12–10, spinal cord 9–3, thecal sac 2–0, epidural space −1, disc −2 to −22. At y = −28, z = 0: artery x 11 to 5, vein x −5 to −13, muscle between. At x = 13, z = 0: joint space y 22–14, nerve root y 7–3. The line x = 30 leaves the body (air), so it is not a muscle-only path.
+- To print phantom labels, a throwaway `tests/sim/zz*.test.ts` with `console.log` needs `--reporter=verbose` to show stdout; delete it afterwards.
 
 ## Rounds
 <!--
@@ -26,3 +27,9 @@
 - Files touched: src/sim/tissue.ts, tests/sim/tissue.test.ts, tests/sim/needleStates.ts, this log, the task file.
 - Test result: verify passed (9/9); `npm run check` passed (lint, types, all unit tests, 409 screen tests passed, 25 skipped by set-up).
 - Next round should know: `tissueAt(volume, point)` is the per-sample helper for the tracker (F6-S3+). Use `needleAt(tip, { boneContact })` from `tests/sim/needleStates.ts` for hand-made needle states.
+
+## Round — 2026-11-13 04:52 — F6-S3 — done
+- What I did: added `src/sim/tracker.ts`: `createTissueTracker()` with `update(needle, volume, time)` and `reset()`. It samples the straight segment from the previous tip to the new one every 0.25 mm (`SAMPLE_STEP_MM`; previous tip excluded, new tip included; the very first update samples only the tip) and emits 'lossOfResistance' when one sample is ligamentum flavum and the next is epidural space; the event's tip is that sample point. Tests first in `tests/sim/tracker.test.ts` (8 tests).
+- Files touched: src/sim/tracker.ts, tests/sim/tracker.test.ts, this log (plus Lessons), the task file.
+- Test result: verify passed (8/8); `npm run check` passed (lint, types, all unit tests, 409 screen tests passed, 25 skipped by set-up).
+- Next round should know: the tracker keeps the last sample { point, label }; S4/S5 can add more checks inside the same sample loop (compare `last.label` with `sample.label`). S5 needs landmarks: extend update with an optional 4th argument `landmarks?` so existing calls keep working.
