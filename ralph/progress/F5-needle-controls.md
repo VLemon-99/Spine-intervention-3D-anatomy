@@ -78,3 +78,9 @@
 - Files touched: src/needle/withdrawAll.ts, src/needle/index.ts, tests/e2e/needle/withdrawAll.spec.ts
 - Test result: verify 5 passed (1 desktop skip for the tablet-size test); npm run check: 512 unit, 453 screen tests passed.
 - Next round should know: next by priority is F5-S10 (boneContact in NeedleState), then F5-S4 (Mark entry tool, the last loop story).
+
+## Round — 2026-11-13 06:40 — F5-S10 — done
+- What I did: toNeedleState (src/needle/model.ts) now sets boneContact from the model's own flag (always a boolean). No other model change. New unit test over the phantom's upper lamina: false at entry and in soft tissue, true against bone (tip stays above y = 24), false after withdrawing 1 mm (red before the change, green after).
+- Files touched: src/needle/model.ts, tests/needle/boneState.test.ts
+- Test result: verify: boneState 1/1; npm run check: 513 unit, 453 screen tests passed; existing F4 tests unchanged and passing.
+- Next round should know: the last loop story is F5-S4 (Mark entry tool, imageTap); its verify runs npm run check. After it, only the by-design blocked stories (F5-S11, S14, S15) remain.

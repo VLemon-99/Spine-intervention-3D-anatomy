@@ -315,5 +315,7 @@ export function toNeedleState(model: NeedleModel): NeedleState {
     insertedDepth: model.depth,
     shaft,
     tip: copy(shaft[shaft.length - 1]),
+    // For the sim zone's 'boneContact' event (F6.3).
+    boneContact: model.boneContact,
   };
 }
