@@ -76,6 +76,9 @@ If my request conflicts with these documents, point it out and ask before procee
 - A test for one set-up only: `test.skip(({ hasTouch }) => hasTouch, 'desktop set-up only')` (or `!hasTouch` for tablet) inside a `describe`. Every behaviour still needs a test in both set-ups.
 - To see browser console errors (e.g. shader compile logs), use a throwaway spec with `page.on('console', …)` and delete it afterwards.
 
+### Unit tests (from F6)
+- Vitest's default limit is 5 s per test. A test that renders whole images with the CPU reference (`renderDrrCpu`) can take 4–6 s on a 4-core cloud machine, so give it its own limit as the last argument of `it(…)` (e.g. `}, 20_000); // why`) when you write it. Don't raise `testTimeout` in `vitest.config.ts` (owner decision, see `docs/DECISIONS.md`). Loops may set a limit on tests they add in the same round, never on existing tests.
+
 ### 3D graphics (from F0)
 - A Three.js `ShaderMaterial` with `glslVersion: GLSL3` has no `gl_FragColor`: declare `layout(location = 0) out highp vec4 outColor;` and write to that.
 - An 8-bit `Data3DTexture` whose width is not a multiple of 4 needs `texture.unpackAlignment = 1`, or the image is skewed.

@@ -88,7 +88,7 @@ describe('collimation in the CPU reference', () => {
       }
     }
     expect(wrong).toBe(0);
-  });
+  }, 20_000); // two whole images on the CPU: 4–6 s on a 4-core cloud machine
 
   it('a single pixel follows the same rule (transmissionAt)', () => {
     const projection = createProjection(AP_POSE);

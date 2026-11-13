@@ -106,7 +106,7 @@ describe('noise in the CPU reference', () => {
     const levels = [0, 0.05, 0.2, 0.5, 1];
     const spreads = levels.map((level) => middleStats(noisy(1, level)).sd);
     for (let n = 1; n < spreads.length; n++) expect(spreads[n]!, `level ${levels[n]}`).toBeGreaterThan(spreads[n - 1]!);
-  });
+  }, 20_000); // six whole images on the CPU: 4–6 s on a 4-core cloud machine
 
   it('level 0 gives exactly the image without noise', () => {
     expect(noisy(9, 0)).toEqual(clean.data);

@@ -186,3 +186,9 @@
 - **Why:** F8-S3 asks for the whole C-arm in the start view (the source is 650 mm from the isocentre). The F8-S2 loop had added the 50 mm limit as an extra check beyond its acceptance criteria, so the two contradicted each other and the loop blocked F8-S3.
 - **Alternatives considered:** Dropping the "whole C-arm" camera requirement from F8-S3 (the learner would have to zoom out to find the C-arm).
 - **Revisit if:** The C-arm looks too small on the tablet and learners prefer a close-up start view.
+
+## 2026-11-13 — Slow CPU render tests get their own time limit
+- **Decision:** A unit test that renders whole images with the CPU reference (`renderDrrCpu`) and takes more than ~2 s gets its own time limit (usually 20 s, written as the last argument of `it(…)` with a short comment saying why). Vitest's default 5 s limit for all other tests stays as it is. First applied to `tests/render/noise.test.ts` ("on a uniform region the spread is 0…") and `tests/render/collimation.test.ts` ("the covered area is the same at magnification 1 and 2"), which took 4.2–5.9 s on a 4-core cloud machine and made `npm test` fail at random (F6-S10 attempt 1).
+- **Why:** Only the time limit changes, not what the tests check. Keeping the 5 s default everywhere else means a test that becomes slow by accident still fails, so we notice. The repo already did this for other slow tests (e.g. a 30 s limit in `noise.test.ts`).
+- **Alternatives considered:** Raising `testTimeout` in `vitest.config.ts` for the whole suite (one place, but hides accidental slowdowns).
+- **Revisit if:** Many tests need their own limit, or the CPU reference renderer becomes fast enough that the limits are no longer needed.
