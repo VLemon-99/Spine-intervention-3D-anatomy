@@ -7,6 +7,7 @@
 - The needle is a chain of flat-ended tubes: `needlePathLength` intersects the ray with each piece's infinite tube, then cuts to the piece's length along its axis. This is exact, handles a ray along the needle (no infinity), and colinear pieces never double-count. The GPU shader (F7-S3) should copy this maths line for line.
 - GPU precision: the source is ~650 mm from the needle, so |w|² in float32 swamps r² (0.12 mm²). The shader first moves the ray start to its closest point to each piece's start (tShift) and counts the ray's own start as t = −tShift. Keep that if the shader is changed.
 - A Playwright `tap()` on the tablet set-up also fires a `click` event, so one 'click' listener covers mouse and touch (fluoroCanvas.ts imageTap).
+- Phantom spots for test needles in plain muscle: y = 30, z = 30…36, |x| ≤ 10 (bone ends at z = 26, skin starts at z = 38). Near z = 24–26 the block edge makes 20+ grey-level steps 5 px away.
 - `needlePathLength` counts only t ≥ 0 (in front of the ray's start), so pass the X-ray source as the ray origin.
 
 ## Rounds
@@ -47,3 +48,9 @@
 - Files touched: src/render/imageTap.ts (new), src/render/fluoroCanvas.ts, tests/render/imageTap.test.ts (new), tests/e2e/render/imageTap.spec.ts (new), this task file and log.
 - Test result: verify passed (unit 8/8, screen 6/6 in both set-ups); `npm run check` green (unit 514 passed; screen 425 passed, 25 skipped by set-up).
 - Next round should know: the emitted pixel is a whole-pixel position (e.g. 256, not 256.5), scaled by magnification (so 306 at m = 2 can be fractional for odd offsets). F5-S11 can now be unblocked by the owner once F7 is merged.
+
+## Round — 2026-11-13 06:05 — F7-S4 — done
+- What I did: fluoroCanvas.ts copies the store needle's shaft and tip into `lastImage` at each exposure and takes the image with that copy. The 'render' debug getter's lastImage gains `needleTip` (copy, or null); the shaft copy stays internal. Display changes only re-show the held texture, so they keep the old needle. RenderInfo type in tests/e2e/render/renderPage.ts gained needleTip.
+- Files touched: src/render/fluoroCanvas.ts, tests/e2e/render/renderPage.ts, tests/e2e/render/needleHold.spec.ts (new), this task file and log.
+- Test result: verify 8/8 passed (both set-ups); `npm run check` green (unit 514 passed; screen 433 passed, 25 skipped by set-up). One of my own new checks first failed because I had put the "new" needle at the vertebra's edge (z = 24); moved it to z = 35 in muscle.
+- Next round should know: next eligible is F7-S5 (tip lands where geometry says, 5 seeded poses). For the "needle pixel" mask, compare with an image taken with no needle at the same pose (take two images).

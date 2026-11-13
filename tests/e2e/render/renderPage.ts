@@ -15,6 +15,8 @@ export interface RenderInfo {
     kind: ImageKind | null;
     /** The noise level the image was actually taken with. */
     noiseLevel: number;
+    /** The needle tip copied at the exposure, or null if there was no needle. */
+    needleTip: Vec3 | null;
   } | null;
 }
 
