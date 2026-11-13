@@ -242,7 +242,7 @@
       "dependsOn": [
         "F5-S8"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): the beam angle is measured against the CURRENT C-arm pose's beam. Review fix 2026-11-13 (owner approved all review fixes): angle is between lines (0–90°); Withdraw fully and lock tests moved to F5-S13."
     },

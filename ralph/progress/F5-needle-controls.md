@@ -66,3 +66,9 @@
 - Files touched: src/needle/holdButtons.ts, src/needle/index.ts, tests/e2e/needle/advanceButtons.spec.ts
 - Test result: verify 5 passed (1 desktop skip, tablet-size test); npm run check: 507 unit, 442 screen tests passed.
 - Next round should know: holding on the tablet in tests = CDP touchStart, wait, touchEnd (see hold() in advanceButtons.spec.ts). Next by priority: F5-S9 (readouts).
+
+## Round — 2026-11-13 06:10 — F5-S9 — done
+- What I did: src/needle/readouts.ts (lineAngleDeg: angle between lines 0–90°; needleBeamAngleDeg: hub→entry vs current pose's source→entry). src/needle/readoutRow.ts: needle-depth (toFixed(1), '—' without a needle), needle-bevel (SVG clock face, data-angle, notch needle-bevel-notch at (sin, −cos)·9), needle-beam-angle (whole degrees), kept in step through store.subscribe. needlePage.ts gained rotateBevel and setHubAngles helpers.
+- Files touched: src/needle/{readouts,readoutRow,index}.ts, tests/needle/readouts.test.ts, tests/e2e/needle/{needlePage.ts,readouts.spec.ts}
+- Test result: verify: unit 5/5, screen 6/6; npm run check: 512 unit, 448 screen tests passed.
+- Next round should know: next by priority is F5-S13 (Withdraw fully + lock checks).

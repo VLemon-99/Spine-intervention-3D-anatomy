@@ -50,3 +50,25 @@ export function advanceNeedle(page: Page, mm: number): Promise<string> {
     { mod: SESSION_MODULE, mm },
   );
 }
+
+/** Calls needleSession.rotateBevel(deg) in the app (for tests that are not about the bevel controls). */
+export function rotateBevel(page: Page, deg: number): Promise<string> {
+  return page.evaluate(
+    async ({ mod, deg }) => {
+      const { needleSession } = (await import(/* @vite-ignore */ mod)) as typeof import('../../../src/needle/session');
+      return needleSession.rotateBevel(deg);
+    },
+    { mod: SESSION_MODULE, deg },
+  );
+}
+
+/** Calls needleSession.setHubAngles(pitch, yaw) in the app (for tests that are not about the steering controls). */
+export function setHubAngles(page: Page, pitch: number, yaw: number): Promise<string> {
+  return page.evaluate(
+    async ({ mod, pitch, yaw }) => {
+      const { needleSession } = (await import(/* @vite-ignore */ mod)) as typeof import('../../../src/needle/session');
+      return needleSession.setHubAngles(pitch, yaw);
+    },
+    { mod: SESSION_MODULE, pitch, yaw },
+  );
+}
