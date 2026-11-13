@@ -7,6 +7,7 @@
 - `window.__sim.needle()` is null whenever no needle is placed (F5-S13 expects null after Withdraw fully). Screen tests that need needleId/preBend first place an uninserted needle (markEntry at depth 0) through the dev server's `/src/needle/session.ts` module; picking a needle/pre-bend at depth 0 rebuilds it at the same entry.
 - Zone screen-test helpers live in tests/e2e/needle/needlePage.ts: `readNeedle`, `waitForVolume`, `markEntryAtPixel`, `advanceNeedle` (wait for the volume after acceptDisclaimer; take an image before marking).
 - Chromium turns Shift + wheel into a sideways scroll (deltaX), so wheel handlers read deltaY, falling back to deltaX.
+- To test "does not scroll the page" on the tablet, first make the page scrollable in the test (html overflow auto + a 3000 px spacer); a swipe off the pad then scrolls ~250 px, so the check is meaningful.
 - The app's session (`needleSession`) notifies through `needleSession.subscribe(listener)`; UI parts subscribe to stay in step (disabled while locked).
 
 ## Rounds
@@ -53,3 +54,9 @@
 - Files touched: src/needle/pad.ts, src/needle/index.ts, tests/e2e/needle/padMouse.spec.ts
 - Test result: verify 4/4 (desktop only, by design); npm run check: 507 unit, 434 screen tests passed (layout tests still pass with the pad).
 - Next round should know: the pad tracks a single pointer (`drag`); F5-S7 must extend it for a second finger (twist) without breaking the one-finger drag.
+
+## Round — 2026-11-13 05:40 — F5-S7 — done
+- What I did: pad.ts now tracks touch pointers. One finger drags the hub exactly like the mouse; when a second finger lands the drag ends and a twist starts: each move rotates the bevel by the change in the angle between the two fingers (screen atan2, so clockwise on screen = +). No new drag starts until every finger is lifted. Added tests/e2e/needle/touch.ts (CDP oneFingerDrag, twist) and padTouch.spec.ts.
+- Files touched: src/needle/pad.ts, tests/e2e/needle/touch.ts, tests/e2e/needle/padTouch.spec.ts
+- Test result: verify 3/3 (tablet only, by design); padMouse still 4/4; npm run check: 507 unit, 437 screen tests passed.
+- Next round should know: F5-S8 (Advance/Withdraw buttons) is next by priority.
