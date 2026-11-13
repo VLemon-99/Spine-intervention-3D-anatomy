@@ -12,6 +12,8 @@
 - Converter logic is in `tools/anatomy/convertCore.ts` so tests can call `runConvertCli(args, { log, error })` without spawning a process; `convert.ts` just sets `process.exitCode`.
 - Don't use `Math.min(...list)` / `Math.max(...list)` on voxel lists: real vertebrae have ~100k voxels and spreading that many arguments can overflow the stack. `landmarks.ts` has a `range(values)` loop helper.
 - typescript-eslint flags unused destructured names even with a leading `_` (e.g. `({ a: _a, ...rest })`); build the object another way.
+- To test the converter on realistic anatomy, write the phantom or the pelvis fixture out as an input folder with `writeNiftiFolder(dir, vol, source?)` from `tests/anatomy/niftiFolderFixture.ts` (one mask per vertebral level present, sacrum, hip_left/right, spinal_cord).
+- Node 22 has `Response`, `Blob` and `DecompressionStream` built in, so browser loader code can be unit-tested in Vitest's node environment with a fake fetch that returns `new Response(bytes)`.
 
 ## Rounds
 <!--
@@ -147,3 +149,39 @@
 - Files touched: task file, this log.
 - Test result: no code changed; suite was green at the start of the round (221 unit, 46 screen).
 - Next round should know: F1-S19 (loader) is eligible next — it depends only on F1-S17. F1-S20 and F1-S22 wait on F1-S18.
+
+## Round — 2026-11-12 — F1-S18 — done
+- What I did: the owner approved the test change, so I unblocked the story. The converter now computes landmarks, runs the soft-tissue modeller, writes the landmarks file and adds/replaces the region in manifest.json, with the 25 MB check (limit can be lowered for tests). Updated only the approved file-list assertion in convert.test.ts. 6 new tests in convertManifest.test.ts using the phantom and pelvis fixture written as NIfTI folders.
+- Files touched: tools/anatomy/convertCore.ts, tests/anatomy/convert.test.ts (approved assertion only), tests/anatomy/convertManifest.test.ts and tests/anatomy/niftiFolderFixture.ts (new), task file, this log.
+- Test result: verify 14/14 passed (first run failed because my new folder helper only wrote L1–L5 masks, so the thoracic test fixture had no bone; the helper now writes every vertebral level); `npm run check` green (227 unit tests, 46 screen tests passed). public/data/ untouched.
+- Next round should know: F1-S19 (loader) is next. Manifest files are named in each region entry; the loader should only fetch names from the manifest (isSafeFileName already checked by validateManifest).
+
+## Round — 2026-11-12 — F1-S19 — done
+- What I did: browser region loader (listRegions, loadRegion with phantom shortcut, gzip-signature check, full validation, injectable fetch) exported from src/anatomy/index.ts; 9 unit tests with files served from memory.
+- Files touched: src/anatomy/loadRegion.ts (new), src/anatomy/index.ts, tests/anatomy/loadRegion.test.ts (new), task file, this log.
+- Test result: verify 9/9 passed; `npm run check` green (236 unit tests, 46 screen tests passed); `npm run build` also succeeds.
+- Next round should know: F1-S24 (browser check that a loaded region can be shown) is next. Default baseUrl 'data/' is relative to the page, which matches Vite serving public/data at /data/.
+
+## Round — 2026-11-12 — F1-S24 — done
+- What I did: anatomy screen-test helper and 3 screen tests (load a routed tiny region and see it in window.__sim and on the next image; empty committed manifest → no regions; unlisted name rejected), each in both set-ups.
+- Files touched: tests/e2e/anatomy/regionPage.ts and tests/e2e/anatomy/loadRegion.spec.ts (new), task file, this log.
+- Test result: verify 6/6 passed (3 tests × desktop/tablet); `npm run check` green (236 unit tests, 52 screen tests passed).
+- Next round should know: F1-S21 can reuse serveRegion/buildTinyRegion. While serveRegion is active, every data/* request not in the tiny set gets a 404 — so a test that wants the committed manifest must not call serveRegion.
+
+## Round — 2026-11-12 — F1-S21 — done
+- What I did: region wiring (store.regions from the manifest, regionRequest → loadRegion → store, __sim.anatomy() status) mounted by the anatomy zone; 1 unit test and 5 screen tests (both set-ups) with helpers regionsInStore / requestRegion / anatomyStatus added to tests/e2e/anatomy/regionPage.ts.
+- Files touched: src/anatomy/regionWiring.ts (new), src/anatomy/index.ts, tests/anatomy/regionEntries.test.ts (new), tests/e2e/anatomy/regionRequest.spec.ts (new), tests/e2e/anatomy/regionPage.ts, task file, this log.
+- Test result: verify passed (1 unit, 10 screen); `npm run check` green (237 unit tests, 62 screen tests passed); build has no `__sim`.
+- Next round should know: to know the initial listing is done in a screen test, wait for the data/manifest.json response before goto completes (see open() in regionRequest.spec.ts). F1-S20 is the last todo story.
+
+## Round — 2026-11-12 — F1-S20 — done
+- What I did: data-folder checker and the committed-data test (public/data today + converted phantom fixture, failing on a deleted file, a body centre in soft tissue, size limits, a short data file).
+- Files touched: tools/anatomy/checkData.ts, tests/anatomy/committedData.test.ts (new), task file, this log.
+- Test result: verify passed: committedData 6/6, `npm run check` green (243 unit tests, 62 screen tests in both set-ups), `npm run build` passes.
+- Next round should know: no `todo` stories remain. F1-S27 (needs F3's picker merged) and F1-S22 (real data with the owner) stay blocked by design.
+
+## Round — 2026-11-12 — F1-S27 — done
+- What I did: the owner set the story to todo (F3 is merged). Added the end-to-end screen test: choosing a region in the C-arm panel's region picker loads it and the next image shows it.
+- Files touched: tests/e2e/anatomy/regionPicker.spec.ts (new), task file, this log.
+- Test result: verify 2/2 passed (desktop + tablet); `npm run check` green on the branch with main merged in (488 unit tests, 409 screen tests passed, 25 single-set-up tests skipped by design).
+- Next round should know: only F1-S22 remains (blocked by design: real data with the owner in an interactive session).
