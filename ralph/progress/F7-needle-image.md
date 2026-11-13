@@ -5,6 +5,7 @@
 ## Lessons
 <!-- Reusable learnings for future rounds: gotchas, patterns, commands that work. After the feature is merged, an interactive session promotes the useful ones into CLAUDE.md. -->
 - The needle is a chain of flat-ended tubes: `needlePathLength` intersects the ray with each piece's infinite tube, then cuts to the piece's length along its axis. This is exact, handles a ray along the needle (no infinity), and colinear pieces never double-count. The GPU shader (F7-S3) should copy this maths line for line.
+- GPU precision: the source is ~650 mm from the needle, so |w|² in float32 swamps r² (0.12 mm²). The shader first moves the ray start to its closest point to each piece's start (tShift) and counts the ray's own start as t = −tShift. Keep that if the shader is changed.
 - `needlePathLength` counts only t ≥ 0 (in front of the ray's start), so pass the X-ray source as the ray origin.
 
 ## Rounds
@@ -27,3 +28,9 @@
 - Files touched: src/render/drrCpu.ts, tests/render/needleCpu.test.ts (new), this task file and log.
 - Test result: verify 5/5 passed; `npm run check` green (unit 506 passed; screen 409 passed, 25 skipped by set-up).
 - Next round should know: at pose 0°/0°, a needle at (30, 0, z) lets 0.08 through vs 0.61 for the muscle beside it, so NEEDLE_ABSORPTION_PER_MM = 3 easily beats bone. F7-S3's shader must resample the same way (65 points) and use the ray from the source, as `march` does.
+
+## Round — 2026-11-13 05:10 — F7-S3 — done
+- What I did: The GPU shader adds the needle (uniform array `uNeedle[65]` + `uNeedleCount`, filled from `resampleShaft`) with the same tube maths as `needlePathLength`, on every ray, also outside the box. `TakeOptions.needle` is optional (null/absent = none). `fluoroCanvas.ts` passes `store.needle?.shaft` at each exposure (F7-S4 will freeze a copy). Zone helpers `straightTestNeedle` and `putNeedle` added to tests/e2e/render/renderPage.ts.
+- Files touched: src/render/drrGpu.ts, src/render/fluoroCanvas.ts, tests/e2e/render/renderPage.ts, tests/e2e/render/needle.spec.ts (new), this task file and log.
+- Test result: verify 4/4 passed (both set-ups); `npm run check` green (unit 506 passed; screen 413 passed, 25 skipped by set-up).
+- Next round should know: F7-S8 compares GPU vs CPU; the CPU uses doubles without the tShift trick, so small differences at the needle's edge pixels are expected, but the 21×21 box mean should be well inside 3%.

@@ -1,6 +1,6 @@
 // Screen-test helpers of the render zone (not a spec file).
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import type { CArmPose, ImageKind } from '../../../src/core/types';
+import type { CArmPose, ImageKind, NeedleState, Vec3 } from '../../../src/core/types';
 import type { RenderSettings, RenderSettingsPatch } from '../../../src/render/settings';
 
 /** What window.__sim.render() returns. */
@@ -144,4 +144,35 @@ export async function takeFluoroFrame(page: Page): Promise<void> {
     store.set({ lastImagePose: { ...store.get().pose }, lastImageKind: 'fluoro' });
     bus.emit('exposure');
   });
+}
+
+/** A hand-made straight needle for tests, hub at `hub` and tip at `tip`, as a shaft of `count` points. */
+export function straightTestNeedle(hub: Vec3, tip: Vec3, count = 11): NeedleState {
+  const shaft = Array.from({ length: count }, (_, i) => {
+    const f = i / (count - 1);
+    return { x: hub.x + (tip.x - hub.x) * f, y: hub.y + (tip.y - hub.y) * f, z: hub.z + (tip.z - hub.z) * f };
+  });
+  return {
+    needleId: 'test-needle',
+    preBend: 0,
+    entryPoint: { ...hub },
+    hubAngles: { pitch: 0, yaw: 0 },
+    bevelAngle: 0,
+    insertedDepth: 0,
+    shaft,
+    tip: { ...tip },
+  };
+}
+
+/**
+ * Put a needle (or null for none) in the store through the app's own store
+ * module as served by the dev server (the same trick as setPose). Test-only;
+ * it does not take an image.
+ */
+export async function putNeedle(page: Page, needle: NeedleState | null): Promise<void> {
+  await page.evaluate(async (n) => {
+    const storeModule = '/src/core/store.ts';
+    const { store } = (await import(/* @vite-ignore */ storeModule)) as typeof import('../../../src/core/store');
+    store.set({ needle: n });
+  }, needle);
 }

@@ -15,7 +15,8 @@
 // The image is drawn in two steps (see drrGpu.ts): each exposure takes the
 // X-ray image into a held off-screen image and then displays it. When a
 // display setting (invert, flips, rotation) changes, only the display step runs again — the
-// held image is re-shown at once, with no new exposure.
+// held image is re-shown at once, with no new exposure. The store's needle
+// (its shaft) is drawn into each new image.
 import { Color, WebGLRenderer } from 'three';
 import { IMAGE_SIZE_PX } from '../core/geometry';
 import { registerDebugGetter } from '../core/debugRegistry';
@@ -116,6 +117,8 @@ export function createFluoroCanvas(
         contrast: store.get().contrast,
         // Fresh grain for every image; a reloaded page repeats the same sequence of seeds.
         noise: { seed: lastImage.noiseSeed, level: lastImage.noiseLevel },
+        // The needle as it is at this exposure (F7.1).
+        needle: store.get().needle?.shaft ?? null,
       });
       holding = true;
       display();
