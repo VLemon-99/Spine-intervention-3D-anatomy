@@ -7,6 +7,7 @@
 - Phantom labels on the midline (x = 0, z = 0), from the back: air y ≥ 43, skin/fat 42–39, muscle 38–23, ligamentum flavum 22–16, epidural space 15–13, thecal sac 12–10, spinal cord 9–3, thecal sac 2–0, epidural space −1, disc −2 to −22. At y = −28, z = 0: artery x 11 to 5, vein x −5 to −13, muscle between. At x = 13, z = 0: joint space y 22–14, nerve root y 7–3. The line x = 30 leaves the body (air), so it is not a muscle-only path.
 - Phantom nerve roots: cylinders along x for |x| 5–26, radius 2 mm around y = 5, z = 0; nerve voxels at x = 13 are y 3–7 on z = 0.
 - ESLint here flags `_`-prefixed unused destructured names (`{ a: _drop, ...rest }`); copy the object and `delete` the field instead.
+- Screen tests put a needle in the app's store with `putNeedle(page, needleWithTip(tip))` from `tests/e2e/sim/simZone.ts` (dev-server store module import); read the sim with `getSim(page)` (waits for `window.__sim.sim`).
 - To print phantom labels, a throwaway `tests/sim/zz*.test.ts` with `console.log` needs `--reporter=verbose` to show stdout; delete it afterwards.
 
 ## Rounds
@@ -59,3 +60,9 @@
 - Files touched: src/sim/aspirate.ts, tests/sim/aspirate.test.ts, this log, the task file.
 - Test result: verify passed (6/6); `npm run check` passed (lint, types, all unit tests, 409 screen tests passed, 25 skipped by set-up).
 - Next round should know: F6-S8 (runner) is now eligible: S4–S7 are all done. The screen will show 'CSF' / 'Blood' / 'Nothing' (F6-S10), so capitalise 'blood' and 'nothing' at display time.
+
+## Round — 2026-11-13 05:25 — F6-S8 — done
+- What I did: added `src/sim/runner.ts`: `connectSim(store, bus, clock = performance.now()/1000)` subscribes to the store; when `store.needle` changes (by reference) it runs the tracker with `store.volume` and `store.landmarks`, emits each event as 'tissueEvent' and keeps them (oldest first). Time = clock() − start, where start is reset on caseStart (or set at connecting). caseStart clears events and resets the tracker; needle → null resets the tracker only; no volume → nothing. Returns { events(), tipTissue(), time(), disconnect() }. `mount()` in `src/sim/index.ts` connects it to the app store/bus and registers the 'sim' debug getter { tipTissue (key or null), resistance (or null), events }. Tests first: `tests/sim/runner.test.ts` (10 unit tests) and `tests/e2e/sim/runner.spec.ts` (3 screen tests × 2 set-ups), with helpers in `tests/e2e/sim/simZone.ts`.
+- Files touched: src/sim/runner.ts, src/sim/index.ts, tests/sim/runner.test.ts, tests/e2e/sim/runner.spec.ts, tests/e2e/sim/simZone.ts, this log (plus Lessons), the task file.
+- Test result: verify passed (10 unit + 6 screen); `npm run check` passed (lint, types, all unit tests, 415 screen tests passed, 25 skipped by set-up).
+- Next round should know: the hidden 'zone-sim' marker is still there; F6-S9 builds the visible sim section. `mount()` keeps the runner in a local `sim` variable — the UI stories can build on it (e.g. subscribe to the store / 'tissueEvent' to refresh the panel).

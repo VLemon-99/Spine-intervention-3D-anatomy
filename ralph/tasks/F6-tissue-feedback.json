@@ -189,7 +189,7 @@
         "F6-S6",
         "F6-S7"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): simulation time = seconds since the last caseStart. F9 will need the same clock (see PLAN.md gaps). Review fix 2026-11-13 (owner approved all review fixes): depends on F6-S6 and checks that bone contact reaches the bus."
     },
