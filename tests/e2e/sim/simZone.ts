@@ -65,3 +65,17 @@ export async function press(page: Page, testId: string): Promise<void> {
     await control.click();
   }
 }
+
+/** Emit caseStart on the app's bus through the dev server's store module (test-only). */
+export async function emitCaseStart(page: Page): Promise<void> {
+  await page.evaluate(async () => {
+    const storeModule = '/src/core/store.ts';
+    const { bus } = (await import(/* @vite-ignore */ storeModule)) as typeof import('../../../src/core/store');
+    bus.emit('caseStart');
+  });
+}
+
+/** Move a hand-made needle down the phantom midline (x = 0, z = 0) in 1 mm steps, from y = from to y = to. */
+export async function moveDownMidline(page: Page, from: number, to: number): Promise<void> {
+  for (let y = from; y >= to; y -= 1) await putNeedle(page, needleWithTip({ x: 0, y, z: 0 }));
+}

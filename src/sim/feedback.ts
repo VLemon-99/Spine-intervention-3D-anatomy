@@ -1,9 +1,10 @@
 // The sim zone's section in the needle panel (F6.1): a resistance bar and the
 // name of the tissue at the tip. The name is hidden in Exam mode
 // (owner decision 2026-11-13: shown in Practice and Free play). An Aspirate
-// button shows what comes back (F6.4).
+// button shows what comes back (F6.4). An event log lists this attempt's
+// events, newest first (F6.5).
 
-import type { Mode } from '../core/types';
+import type { Mode, TissueEvent } from '../core/types';
 import type { AspirateResult } from './aspirate';
 import type { TipTissue } from './tissue';
 
@@ -25,11 +26,17 @@ const CSS = `
   .sim-aspirate:disabled { opacity: 0.5; cursor: default; }
   @media (pointer: coarse) { .sim-aspirate { min-height: 44px; min-width: 88px; } }
   .sim-aspirate-result { font-weight: 600; }
+  .sim-event-log { list-style: none; margin: 0; padding: 0; max-height: 96px; overflow-y: auto;
+    border-top: 1px solid #2c3542; font-size: 13px; }
+  .sim-event-log li { display: flex; gap: 8px; padding: 2px 0; }
+  .sim-event-time { flex: none; min-width: 52px; color: #9aa7b5; font-variant-numeric: tabular-nums; }
 `;
 
 export interface FeedbackView {
   /** Shows the tissue at the tip (null = no needle) for the current mode. */
   show(tissue: TipTissue | null, mode: Mode): void;
+  /** Shows this attempt's events (given oldest first) in the log, newest at the top. */
+  showEvents(events: readonly TissueEvent[]): void;
 }
 
 /**
@@ -89,7 +96,12 @@ export function createFeedbackView(parent: HTMLElement, onAspirate: () => Aspira
   });
   aspirateRow.append(aspirateButton, result);
 
-  section.append(barRow, name, aspirateRow);
+  const log = document.createElement('ol');
+  log.className = 'sim-event-log';
+  log.dataset.testid = 'event-log';
+  log.setAttribute('aria-label', 'Events');
+
+  section.append(barRow, name, aspirateRow, log);
   parent.append(section);
 
   return {
@@ -112,6 +124,21 @@ export function createFeedbackView(parent: HTMLElement, onAspirate: () => Aspira
         result.textContent = '';
         result.hidden = true;
       }
+    },
+    showEvents(events) {
+      const rows = [...events].reverse().map((event) => {
+        const row = document.createElement('li');
+        row.dataset.testid = 'event-log-row';
+        const time = document.createElement('span');
+        time.className = 'sim-event-time';
+        time.textContent = `${event.time.toFixed(1)} s`;
+        const message = document.createElement('span');
+        message.textContent = event.message;
+        row.append(time, message);
+        return row;
+      });
+      log.replaceChildren(...rows);
+      log.scrollTop = 0;
     },
   };
 }

@@ -1,7 +1,7 @@
 // Sim (tissue feel, events, aspiration) — F6.
 // mount() connects the sim runner to the app's store and bus, builds the sim
-// section (resistance bar, tissue name, Aspirate) and registers the 'sim'
-// debug getter.
+// section (resistance bar, tissue name, Aspirate, event log) and registers the
+// 'sim' debug getter.
 // main.ts mounts this zone in the needle panel's slot, after the needle zone
 // (decision 2026-11-13); the section goes inside the needle panel when the
 // slot has one, so it shows as part of that panel.
@@ -47,6 +47,11 @@ export function mount(element: HTMLElement): void {
   const refresh = (): void => view.show(sim.tipTissue(), store.get().mode);
   store.subscribe(refresh);
   refresh();
+  // The runner handles these first (it connected first), so its list is already up to date.
+  const refreshLog = (): void => view.showEvents(sim.events());
+  bus.on('tissueEvent', refreshLog);
+  bus.on('caseStart', refreshLog);
+  refreshLog();
 
   registerDebugGetter('sim', () => {
     const tissue = sim.tipTissue();

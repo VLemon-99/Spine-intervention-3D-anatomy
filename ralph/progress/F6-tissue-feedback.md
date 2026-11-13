@@ -86,3 +86,9 @@
 - Files touched: src/sim/feedback.ts, src/sim/index.ts, tests/e2e/sim/aspirate.spec.ts, tests/e2e/sim/simZone.ts, this log, the task file.
 - Test result: verify passed (9 passed, 1 skipped = the tablet-only size test on desktop); `npm run check` passed (exit 0: lint, types, 552 unit tests, 434 screen tests passed, 26 skipped by set-up).
 - Next round should know: F6-S11 (event log) is the last story and its verify includes `npm run check`; the render CPU tests may time out again — re-run before concluding it is a real failure. The panel has overflow: hidden, so give the event log a fixed max-height with its own scrolling.
+
+## Round — 2026-11-13 06:04 — F6-S11 — done
+- What I did: added the event log (data-testid event-log, an `ol` with rows data-testid event-log-row: time "12.3 s" with one decimal, then the message), newest first, max-height 96 px with its own scrolling, at the bottom of the sim section. It re-renders from the runner's list on 'tissueEvent' and 'caseStart' (the runner is connected first, so its list is already updated). Screen tests first in `tests/e2e/sim/eventLog.spec.ts` (4 × 2 set-ups); `emitCaseStart` and `moveDownMidline` added to `tests/e2e/sim/simZone.ts`.
+- Files touched: src/sim/feedback.ts, src/sim/index.ts, tests/e2e/sim/eventLog.spec.ts, tests/e2e/sim/simZone.ts, this log, the task file.
+- Test result: eventLog spec 8/8. `npm run check` failed twice on the known render CPU timeouts (collimation once, noise once; no sim test failed), then passed on the third run (exit 0: lint, types, 552 unit tests, 442 screen tests passed, 26 skipped by set-up).
+- Next round should know: all 11 F6 stories are done. The render timeout flake is still open (needs an interactive fix: longer timeouts for the render CPU tests).
