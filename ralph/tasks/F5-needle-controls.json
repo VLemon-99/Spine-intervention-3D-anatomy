@@ -80,12 +80,12 @@
       ],
       "status": "todo",
       "attempts": 0,
-      "notes": "Default chosen at planning (owner may change): the needle is removed on caseStart and when a different volume is loaded, because its entry point belongs to the old anatomy."
+      "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): the needle is removed on caseStart and when a different volume is loaded."
     },
     {
       "id": "F5-S4",
       "title": "Mark the skin entry point from a tap on the fluoro image",
-      "description": "Add a Mark entry tool button (data-testid mark-entry) to the needle panel. While it is active and no needle is inserted, an 'imageTap' bus event (payload: the pixel of the held image as taken, see the shared contract) makes the session mark the entry point where the ray through that pixel, at store.lastImagePose, meets the skin (F5-S1), with the needle pointing along that ray (F5.3). The tool then switches off. The tool is disabled before the first image and while the needle is inserted. The render zone emits 'imageTap' from the canvas (F7-S7); this story's screen tests emit the bus event themselves through the dev server's store module (the setPose trick). Every new control is at least 44×44 px in the tablet set-up.",
+      "description": "Add a Mark entry tool button (data-testid mark-entry) to the needle panel. While it is active and no needle is inserted, an 'imageTap' bus event (payload ImageTap: the pixel of the held image as taken, src/core/store.ts) calls markEntryAtPixel (F5-S3) with that pixel. The tool then switches off. The tool is disabled before the first image and while the needle is inserted. The render zone emits 'imageTap' from the canvas (F7-S7); this story's screen tests emit the bus event themselves through the dev server's store module (the setPose trick). Every new control is at least 44×44 px in the tablet set-up.",
       "specRefs": [
         "F5.2",
         "F5.3"
@@ -102,9 +102,9 @@
       "dependsOn": [
         "F5-S3"
       ],
-      "status": "blocked",
+      "status": "todo",
       "attempts": 0,
-      "notes": "Blocked until the owner approves the shared-contract change proposed at F5–F7 planning (2026-11-12): a bus event `imageTap` in src/core/store.ts whose payload is the pixel of the image as taken (magnification and display flips/rotation already undone by the render zone), to be used with createProjection(store.lastImagePose).unproject. Once it is on main, set this story to 'todo'."
+      "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): the bus event `imageTap` (payload ImageTap { x, y } from src/core/store.ts) is on the shared contract. Unblocked."
     },
     {
       "id": "F5-S5",
@@ -152,7 +152,7 @@
       ],
       "status": "todo",
       "attempts": 0,
-      "notes": "Waits for F5-S4 (entry marking) like F5-S5. Drag sensitivity 0.2°/px is a draft for the owner to tune."
+      "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): drag 0.2° per pixel; the wheel steers only over the needle pad (accepted as drafts the owner may tune later)."
     },
     {
       "id": "F5-S7",
@@ -196,7 +196,7 @@
       ],
       "status": "todo",
       "attempts": 0,
-      "notes": "Hold delay 300 ms and speed 5 mm/s are drafts."
+      "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): hold delay 300 ms and 5 mm/s (accepted as drafts)."
     },
     {
       "id": "F5-S9",
@@ -222,7 +222,7 @@
       ],
       "status": "todo",
       "attempts": 0,
-      "notes": "Planning default (owner may change): the angle is measured against the CURRENT C-arm pose's beam, not the pose of the image on screen."
+      "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): the beam angle is measured against the CURRENT C-arm pose's beam."
     },
     {
       "id": "F5-S10",
@@ -243,9 +243,9 @@
       "dependsOn": [
         "F5-S2"
       ],
-      "status": "blocked",
+      "status": "todo",
       "attempts": 0,
-      "notes": "Blocked until the owner approves the shared-contract change proposed at F5–F7 planning (2026-11-12): an optional `boneContact?: boolean` field on NeedleState in src/core/types.ts (with a core test). Once that change is on main, set this story to 'todo'."
+      "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): NeedleState has the optional `boneContact` field (src/core/types.ts). Unblocked."
     },
     {
       "id": "F5-S11",

@@ -123,6 +123,22 @@ export interface BusEvents {
    * The app shell saves the record in the learner's history (F12.4).
    */
   attemptFinished: AttemptRecord;
+  /**
+   * The learner clicked or tapped the fluoro image (owner decision 2026-11-13).
+   * Emitted by the render zone; the needle zone's Mark entry tool uses it (F5.2).
+   */
+  imageTap: ImageTap;
+}
+
+/**
+ * A tapped point of the image on screen, as the pixel of the image AS TAKEN:
+ * the render zone has already undone the display flips/rotation and the
+ * magnification, so createProjection(store.lastImagePose).unproject(tap) is
+ * the ray that made that pixel (src/core/geometry.ts pixel convention).
+ */
+export interface ImageTap {
+  x: number;
+  y: number;
 }
 
 export type BusEventName = keyof BusEvents;

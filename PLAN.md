@@ -11,9 +11,9 @@
 | F2 — Fluoro renderer | `ralph/tasks/F2-renderer.json` | render | F0 | merged | `claude/ralph-f2-renderer-fa4hl7` | 21/21 stories done; merged ([PR #8](https://github.com/VLemon-99/Spine-intervention-3D-anatomy/pull/8)) |
 | F3 — C-arm, table & exposure | `ralph/tasks/F3-carm.json` | carm | F0 | merged | `claude/ralph-loop-f3-carm-plwi0m` | 11/11 stories done; merged ([PR #14](https://github.com/VLemon-99/Spine-intervention-3D-anatomy/pull/14)) |
 | F4 — Needle mechanics | `ralph/tasks/F4-needle-mechanics.json` | needle | F0 | merged | `claude/inspiring-shannon-l7tzoc` | 9/9 stories done; merged ([PR #10](https://github.com/VLemon-99/Spine-intervention-3D-anatomy/pull/10)). Tuning numbers (`params.json`, catalogue stiffness) need owner review |
-| F5 — Needle handling controls | `ralph/tasks/F5-needle-controls.json` | needle | F3, F4 | planned | `ralph/F5-needle-controls` | 11 stories; 8 for the loop now. Blocked: S10 (bone-contact field) and S4 (image-tap event) wait on shared-contract approval; S11 (end-to-end tap test) blocked by design until F5 and F7 are merged |
-| F6 — Tissue feedback & events | `ralph/tasks/F6-tissue-feedback.json` | sim | F4 | planned | `ralph/F6-tissue-feedback` | 11 stories; 7 for the loop now. Blocked: S6 (bone-contact field) and S9–S11 (where the sim's feedback sits in the needle panel) wait on owner decisions |
-| F7 — Needle in the image | `ralph/tasks/F7-needle-image.json` | render | F2, F4 | planned | `ralph/F7-needle-image` | 7 stories; 6 for the loop now. Blocked: S7 (canvas tap → image-tap event, for F5's Mark entry) waits on shared-contract approval |
+| F5 — Needle handling controls | `ralph/tasks/F5-needle-controls.json` | needle | F3, F4 | planned | `ralph/F5-needle-controls` | 11 stories; 10 for the loop. S11 (end-to-end tap test) is blocked by design until F5 and F7 are merged |
+| F6 — Tissue feedback & events | `ralph/tasks/F6-tissue-feedback.json` | sim | F4 | planned | `ralph/F6-tissue-feedback` | 11 stories, all for the loop. Tissue resistances (`tissues.json`) need owner review |
+| F7 — Needle in the image | `ralph/tasks/F7-needle-image.json` | render | F2, F4 | planned | `ralph/F7-needle-image` | 7 stories, all for the loop |
 | F8 — 3D see-through view | `ralph/tasks/F8-view3d.json` | view3d | F0 | merged | `claude/confident-mccarthy-e314nq` | 9/9 stories done; merged ([PR #12](https://github.com/VLemon-99/Spine-intervention-3D-anatomy/pull/12)) |
 | F9 — Contrast injection | `ralph/tasks/F9-contrast.json` | contrast | F2, F6 | not planned | `ralph/F9-contrast` | |
 | F10 — Procedures & scoring | `ralph/tasks/F10-procedures.json` | procedures | F1, F3, F5, F6, F9 | not planned | `ralph/F10-procedures` | Rules need owner review; completes v1 |
@@ -26,23 +26,14 @@
 <!-- Features whose zones don't overlap and whose dependencies are merged. See docs/ARCHITECTURE.md → Work zones. -->
 - **F5, F6 and F7 are planned and can loop in parallel now** (alongside the F1 loop that is finishing): three different zones (needle, sim, render), and everything they depend on (F2, F3, F4) is merged. None of their loop stories changes a shared file; each writes its own screen-test helpers in its own `tests/e2e/<zone>/` folder.
 - They meet in two places, built against the shared contract on each side (like F1 and F3 at the region picker): F7 reports taps on the fluoro image and F5 marks the entry from them (one end-to-end test, F5-S11, after both merge); F5 publishes bone contact and F6 turns it into an event (F6-S6 tests with hand-made needle states, so F5 need not be merged).
-- **Before starting the loops**, the owner decisions under "Waiting on me → F5–F7 planning" unblock 8 stories. The loops can start without them: each skips its blocked stories.
+- The shared-contract changes they rely on (`NeedleState.boneContact`, the `imageTap` event, the sim mounted in the needle panel) were made interactively on 2026-11-13, so the loops change no shared file. F5-S11 is the only blocked story (by design).
 - Afterwards: F11 needs F1 (+ F2); F9 needs F6; F10 needs nearly everything.
 
 ## Waiting on me
 <!-- Blocked stories, open questions, pull requests to review. -->
-- **F5–F7 planning (2026-11-12) — decisions needed** (the stories use the stated default until you say otherwise; the first three are shared-file changes made in an interactive session):
-  1. **Bone contact in the shared needle state:** add an optional `boneContact` field to `NeedleState` (`src/core/types.ts`). Unblocks F5-S10 and F6-S6.
-  2. **Taps on the fluoro image:** add a bus event `imageTap` (the pixel of the image as taken) so the render zone can tell the needle zone where the learner tapped. Unblocks F7-S7 and F5-S4.
-  3. **Where the sim's feedback goes:** the spec puts the resistance bar, Aspirate and the event log "in the needle panel", but the sim zone is mounted in a hidden slot. Default: `src/app/main.ts` mounts the sim zone into the needle panel's slot (one line). Unblocks F6-S9 to S11.
-  4. **Tissue name in Free play:** the spec says names show "in Practice mode only". Default: shown in Practice and Free play, hidden in Exam.
-  5. **Angle to the beam (F5.6):** default measured against the current C-arm pose, not the pose of the image on screen.
-  6. **Needle width in the image:** default one width for every needle (0.35 mm radius), because the renderer cannot see the needle's gauge.
-  7. **Needle removed** on a new case and when another region is loaded (default).
-  8. **Draft handling numbers:** control-pad drag 0.2° per pixel; hold Advance/Withdraw > 300 ms to move at 5 mm/s; W/S 1 mm (Shift 0.2 mm); the wheel steers only over the needle pad (the 3D view uses the wheel to zoom).
-  9. **Simulation time** for events: seconds since the case started (default). F9's contrast washout will need the same clock — worth a shared clock in `src/core/` before planning F9.
-  10. **Which events the learner sees:** F6.5 lists every event, including "Intravascular", which a real doctor cannot feel. Default: show all (as the spec says); say if some should be hidden (e.g. in Exam).
-- Open questions in `docs/SPEC.md` → "Open questions": app name, choosing the CT scan(s) (before F1.7).
+- **F5–F7 planning:** you accepted every default on 2026-11-13 (recorded in `docs/DECISIONS.md`). The shared contract now has `NeedleState.boneContact` and the `imageTap` bus event, and the sim zone is mounted in the needle panel. All F5–F7 stories are `todo` except F5-S11 (end-to-end tap test, blocked by design until F5 and F7 are merged — no decision needed).
+- Next step: merge this planning branch, then start the F5, F6 and F7 loops (they can run together, and alongside the F1 loop).
+- Before planning F9: add a shared simulation clock to `src/core/` (F6 uses "seconds since the case started"; contrast washout needs the same clock).
 - F4, F8 and F12 planning questions: all answered 2026-11-11 (you accepted every default; recorded in `docs/DECISIONS.md`). The shared contract now has `store.procedures`, `procedureRequest` and `attemptFinished`.
 - Gaps found while planning F4, F8 and F12 (docs not changed):
   - Shortcuts off the simulator screen: the C-arm (and later needle) keys should read `data-screen` and ignore keys on other screens — a later change in those zones.
@@ -87,3 +78,5 @@
 2026-11-11 (same session) owner accepted every F4/F8/F12 planning default. Recorded in `docs/DECISIONS.md` and `docs/ARCHITECTURE.md`; shared contract extended in `src/core/` with tests (`store.procedures`, bus events `procedureRequest` and `attemptFinished`); F12-S10 and F12-S11 unblocked. F2 marked merged in the roadmap.
 
 2026-11-12 F5, F6 and F7 planned (task files + empty progress logs): F5 11 stories, F6 11, F7 7; 8 stories blocked on owner decisions (see "Waiting on me → F5–F7 planning") and 1 by design (F5-S11). No application code was written. Roadmap brought up to date: F3, F4, F8 and F12 merged; F1 still looping.
+
+2026-11-13 (same planning branch) owner accepted every F5–F7 default. Recorded in `docs/DECISIONS.md` and `docs/ARCHITECTURE.md`; shared contract extended with a test (`tests/core/contract-2026-11-13.test.ts`): optional `NeedleState.boneContact` and the bus event `imageTap`. `src/app/main.ts` now mounts the sim zone into the needle panel slot. 7 stories unblocked; only F5-S11 stays blocked (by design).

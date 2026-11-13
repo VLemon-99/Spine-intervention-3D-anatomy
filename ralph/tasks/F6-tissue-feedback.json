@@ -139,9 +139,9 @@
       "dependsOn": [
         "F6-S3"
       ],
-      "status": "blocked",
+      "status": "todo",
       "attempts": 0,
-      "notes": "Blocked until the owner approves the shared-contract change proposed at F5–F7 planning (2026-11-12): an optional `boneContact?: boolean` field on NeedleState in src/core/types.ts. The needle zone fills it in F5-S10. Once the field is on main, set this to 'todo' (the test uses hand-made states, so F5 need not be merged)."
+      "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): NeedleState has the optional `boneContact` field (src/core/types.ts). Unblocked."
     },
     {
       "id": "F6-S7",
@@ -189,12 +189,12 @@
       ],
       "status": "todo",
       "attempts": 0,
-      "notes": "Planning default (owner may change): simulation time = seconds since the last caseStart. F9 (contrast washout, injection events) will need the same clock; see PLAN.md gaps."
+      "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): simulation time = seconds since the last caseStart. F9 will need the same clock (see PLAN.md gaps)."
     },
     {
       "id": "F6-S9",
       "title": "Show a resistance bar and, in Practice and Free play, the tissue name",
-      "description": "The sim zone's section in the needle panel (data-testid sim-feedback) shows a resistance bar (data-testid resistance-bar, with data-value = resistance 0–1, empty with no needle) and the tissue name at the tip (data-testid tip-tissue). The name is hidden when store.mode is 'exam' (planning default: shown in practice and freeplay; see notes).",
+      "description": "The sim zone's section in the needle panel (data-testid sim-feedback) shows a resistance bar (data-testid resistance-bar, with data-value = resistance 0–1, empty with no needle) and the tissue name at the tip (data-testid tip-tissue). The name is hidden when store.mode is 'exam' (owner decision 2026-11-13: shown in practice and freeplay). The sim zone's mount() receives the needle panel's slot (src/app/main.ts), so the section goes after the needle panel inside that slot.",
       "specRefs": [
         "F6.1"
       ],
@@ -210,9 +210,9 @@
       "dependsOn": [
         "F6-S8"
       ],
-      "status": "blocked",
+      "status": "todo",
       "attempts": 0,
-      "notes": "Blocked until the owner decides where the sim zone's feedback appears (F5–F7 planning question, 2026-11-12). Planning default: src/app/main.ts mounts the sim zone into the needle panel's slot (layout.needle, after the needle zone) instead of the hidden 'other' slot — a one-line app-zone change made in an interactive session. Once that is on main, set this story to 'todo'. Also asked: the spec says names show 'in Practice mode only'; the default here also shows them in Free play."
+      "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): src/app/main.ts now mounts the sim zone into the needle panel's slot (layout.needle, after the needle zone), so the sim's section appears inside the needle panel. Tissue names show in Practice and Free play and are hidden in Exam. Unblocked."
     },
     {
       "id": "F6-S10",
@@ -232,9 +232,9 @@
       "dependsOn": [
         "F6-S9"
       ],
-      "status": "blocked",
+      "status": "todo",
       "attempts": 0,
-      "notes": "Blocked until the owner decides where the sim zone's feedback appears (F5–F7 planning question, 2026-11-12). Planning default: src/app/main.ts mounts the sim zone into the needle panel's slot (layout.needle, after the needle zone) instead of the hidden 'other' slot — a one-line app-zone change made in an interactive session. Once that is on main, set this story to 'todo'."
+      "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): the sim zone is mounted in the needle panel's slot. Unblocked."
     },
     {
       "id": "F6-S11",
@@ -254,9 +254,9 @@
       "dependsOn": [
         "F6-S9"
       ],
-      "status": "blocked",
+      "status": "todo",
       "attempts": 0,
-      "notes": "Blocked until the owner decides where the sim zone's feedback appears (F5–F7 planning question, 2026-11-12). Planning default: src/app/main.ts mounts the sim zone into the needle panel's slot (layout.needle, after the needle zone) instead of the hidden 'other' slot — a one-line app-zone change made in an interactive session. Once that is on main, set this story to 'todo'."
+      "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): the sim zone is mounted in the needle panel's slot; the log lists every event, Intravascular included. Unblocked."
     }
   ]
 }

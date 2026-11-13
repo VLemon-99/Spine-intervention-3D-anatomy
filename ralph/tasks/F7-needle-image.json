@@ -29,7 +29,7 @@
       "dependsOn": [],
       "status": "todo",
       "attempts": 0,
-      "notes": "Planning default (owner may change): one tube width for every needle, because the render zone cannot read the needle catalogue (other zone) and NeedleState has no gauge or diameter. Ask the owner if the image should show thicker needles thicker."
+      "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): one tube width (0.35 mm radius) for every needle."
     },
     {
       "id": "F7-S2",
@@ -158,9 +158,9 @@
       "dependsOn": [
         "F7-S4"
       ],
-      "status": "blocked",
+      "status": "todo",
       "attempts": 0,
-      "notes": "Blocked until the owner approves the shared-contract change proposed at F5–F7 planning (2026-11-12): a bus event `imageTap` in src/core/store.ts with payload { x, y } = the pixel of the image as taken (to be used with createProjection(store.lastImagePose).unproject). Once it is on main, set this to 'todo'. If the owner does not approve, F7-S6 is the last story and should run npm run check."
+      "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): the bus event `imageTap` (payload ImageTap { x, y } from src/core/store.ts) is on the shared contract. Unblocked."
     }
   ]
 }

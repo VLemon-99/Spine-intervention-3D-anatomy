@@ -2,6 +2,21 @@
 
 > One entry per meaningful choice, newest at the top. This stops future sessions and loop rounds from quietly undoing past decisions. Loop rounds don't edit this file — they record proposals in their progress log, and an interactive session adds them here after review.
 
+## 2026-11-13 — F5–F7 planning choices and shared-contract additions
+- **Decision (owner accepted every planning default):**
+  - **Shared contract (`src/core/`) extended:** an optional `boneContact` field on `NeedleState` (the needle zone fills it, F5-S10; the sim zone turns it into the `boneContact` event, F6-S6), and a bus event `imageTap` whose payload (`ImageTap { x, y }`) is the tapped pixel of the image **as taken** — the render zone undoes display flips/rotation and magnification (F7-S7), so `createProjection(store.lastImagePose).unproject(tap)` is the ray that made that pixel; the needle zone's Mark entry tool uses it (F5-S4).
+  - **The sim zone's feedback sits in the needle panel:** `src/app/main.ts` mounts the sim zone into the needle panel's slot (after the needle zone) instead of the hidden slot, so the resistance bar, Aspirate and the event log appear where F6 says.
+  - **Tissue name at the tip:** shown in Practice and Free play, hidden in Exam (the spec said "Practice mode only").
+  - **Angle to the beam (F5.6):** measured against the current C-arm pose's beam through the entry point, not the pose of the image on screen.
+  - **Needle in the image:** one tube width for every needle (0.35 mm radius, draft), because the renderer cannot read the needle catalogue.
+  - **The needle is removed** when a new case starts and when another region is loaded.
+  - **Draft handling numbers:** control-pad drag 0.2° per pixel; Advance/Withdraw held longer than 300 ms move at 5 mm/s; W/S 1 mm per press (0.2 mm with Shift); the mouse wheel steers only over the needle pad (the 3D view uses the wheel to zoom).
+  - **Simulation time** for tissue events: seconds since the last case start.
+  - **Event log:** lists every event, including "Intravascular", in every mode (as the spec says).
+- **Why:** Asked during F5–F7 planning (2026-11-12). The two contract additions let the needle, sim and render zones loop in parallel without importing each other; mounting the sim in the needle slot is the smallest change that puts its feedback where the spec asks.
+- **Alternatives considered:** the sim zone guessing bone contact from the tip position; the needle zone listening to the fluoro canvas itself (it would need the render zone's display settings); the needle panel offering an empty element for the sim zone to find; names in Practice only; a width per gauge (needs the gauge in `NeedleState`).
+- **Revisit if:** F9 needs the same clock as F6 (then a shared clock in `src/core/`); learners find the Intravascular message gives the answer away (hide it in Exam); thicker needles should look thicker; the needle panel gets too crowded on the tablet (F12 layout review).
+
 ## 2026-11-12 — F3 owner answers: region picker, start region, C-arm keys and labels
 - **Decision:**
   - **'Phantom' leaves the region picker once real regions exist.** The picker lists `store.regions` and adds the loaded region only when it is not among them, so 'Phantom' appears only while the synthetic phantom is the loaded volume (today's build, and screen tests). With real regions loaded, it is not offered.

@@ -37,9 +37,11 @@ if (root && !canUseWebgl2(() => document.createElement('canvas'))) {
     mountRender(layout.fluoro);
     mountCarm(layout.carm);
     mountNeedle(layout.needle);
+    // The sim zone's feedback (resistance, Aspirate, event log) sits in the needle panel's slot (decision 2026-11-13).
+    mountSim(layout.needle);
     mountView3d(layout.view3d);
     mountQuiz(layout.quiz);
-    for (const mountZone of [mountAnatomy, mountSim, mountContrast, mountProcedures]) {
+    for (const mountZone of [mountAnatomy, mountContrast, mountProcedures]) {
       mountZone(layout.other);
     }
   }
