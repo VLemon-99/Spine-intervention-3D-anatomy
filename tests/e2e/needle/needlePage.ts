@@ -72,3 +72,20 @@ export function setHubAngles(page: Page, pitch: number, yaw: number): Promise<st
     { mod: SESSION_MODULE, pitch, yaw },
   );
 }
+
+/** Emits an 'imageTap' bus event in the app (as the render zone does for a tap on the image). */
+export async function emitImageTap(page: Page, tap: { x: number; y: number }): Promise<void> {
+  await page.evaluate(async (tap) => {
+    const storeModule = '/src/core/store.ts';
+    const { bus } = (await import(/* @vite-ignore */ storeModule)) as typeof import('../../../src/core/store');
+    bus.emit('imageTap', tap);
+  }, tap);
+}
+
+/** Calls needleSession.withdrawFully() in the app. */
+export function withdrawFully(page: Page): Promise<string> {
+  return page.evaluate(async (mod) => {
+    const { needleSession } = (await import(/* @vite-ignore */ mod)) as typeof import('../../../src/needle/session');
+    return needleSession.withdrawFully();
+  }, SESSION_MODULE);
+}

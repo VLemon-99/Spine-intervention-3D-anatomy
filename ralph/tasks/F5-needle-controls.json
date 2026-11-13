@@ -127,7 +127,7 @@
         "F5-S12",
         "F5-S13"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): the bus event `imageTap` (payload ImageTap { x, y } from src/core/store.ts) is on the shared contract. Unblocked. Review fix 2026-11-13 (owner approved all review fixes): test for 'disabled while inserted' added; depends on F5-S12 and F5-S13."
     },

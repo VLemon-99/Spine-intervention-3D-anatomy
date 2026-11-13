@@ -84,3 +84,9 @@
 - Files touched: src/needle/model.ts, tests/needle/boneState.test.ts
 - Test result: verify: boneState 1/1; npm run check: 513 unit, 453 screen tests passed; existing F4 tests unchanged and passing.
 - Next round should know: the last loop story is F5-S4 (Mark entry tool, imageTap); its verify runs npm run check. After it, only the by-design blocked stories (F5-S11, S14, S15) remain.
+
+## Round — 2026-11-13 06:55 — F5-S4 — done
+- What I did: src/needle/markEntryTool.ts: mark-entry toggle button (aria-pressed shows on/off) in the set-up row. While on and usable, an 'imageTap' bus event calls needleSession.markEntryAtPixel(tap) and the tool switches off. Disabled (and switched off) before the first image (store.lastImagePose null) and while the needle is inserted. needlePage.ts gained emitImageTap and withdrawFully helpers.
+- Files touched: src/needle/markEntryTool.ts, src/needle/index.ts, tests/e2e/needle/needlePage.ts, tests/e2e/needle/markEntry.spec.ts
+- Test result: verify: markEntry 9 passed (1 desktop skip for the tablet-size test); npm run check: 513 unit, 462 screen tests passed. A throwaway check confirmed every needle control lies inside the needle panel at 1280×800 and 1024×768.
+- Next round should know: no `todo` stories remain. F5-S11, F5-S14 and F5-S15 stay blocked by design until F6/F7 are merged (see their notes).
