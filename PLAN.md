@@ -7,7 +7,7 @@
 | Feature | Task file | Zone(s) | Depends on | Status | Branch | Notes |
 |---|---|---|---|---|---|---|
 | F0 — Walking skeleton | `ralph/tasks/F0-skeleton.json` | all (sets up shared files) | — | merged | `claude/sharp-wozniak-jbi9yp` | Merged 2026-11-10 ([PR #4](https://github.com/VLemon-99/Spine-intervention-3D-anatomy/pull/4)). 15/15 stories done, plus a disclaimer keyboard fix from review |
-| F1 — Anatomy data | `ralph/tasks/F1-anatomy.json` | anatomy | F0 | looping | `claude/ralph-loop-f1-anatomy-1sgnfd` | 27 stories; part merged ([PR #13](https://github.com/VLemon-99/Spine-intervention-3D-anatomy/pull/13)); 2 loop stories left on 2026-11-12. Blocked by design: S27 (end-to-end picker test — F3 is now merged, so it can run once F1 is merged) and S22 (F1.7, real CT — interactive session with the owner) |
+| F1 — Anatomy data | `ralph/tasks/F1-anatomy.json` | anatomy | F0 | merged (except F1.7) | `claude/ralph-loop-f1-anatomy-1sgnfd` | 26/27 stories done; merged ([PR #13](https://github.com/VLemon-99/Spine-intervention-3D-anatomy/pull/13), [PR #15](https://github.com/VLemon-99/Spine-intervention-3D-anatomy/pull/15)). S22 (F1.7, converting the real CT) is left for an interactive session with the owner |
 | F2 — Fluoro renderer | `ralph/tasks/F2-renderer.json` | render | F0 | merged | `claude/ralph-f2-renderer-fa4hl7` | 21/21 stories done; merged ([PR #8](https://github.com/VLemon-99/Spine-intervention-3D-anatomy/pull/8)) |
 | F3 — C-arm, table & exposure | `ralph/tasks/F3-carm.json` | carm | F0 | merged | `claude/ralph-loop-f3-carm-plwi0m` | 11/11 stories done; merged ([PR #14](https://github.com/VLemon-99/Spine-intervention-3D-anatomy/pull/14)) |
 | F4 — Needle mechanics | `ralph/tasks/F4-needle-mechanics.json` | needle | F0 | merged | `claude/inspiring-shannon-l7tzoc` | 9/9 stories done; merged ([PR #10](https://github.com/VLemon-99/Spine-intervention-3D-anatomy/pull/10)). Tuning numbers (`params.json`, catalogue stiffness) need owner review |
@@ -24,15 +24,15 @@
 
 ## Can run in parallel right now
 <!-- Features whose zones don't overlap and whose dependencies are merged. See docs/ARCHITECTURE.md → Work zones. -->
-- **F5, F6 and F7 are planned and can loop in parallel now** (alongside the F1 loop that is finishing): three different zones (needle, sim, render), and everything they depend on (F2, F3, F4) is merged. None of their loop stories changes a shared file; each writes its own screen-test helpers in its own `tests/e2e/<zone>/` folder.
+- **F5, F6 and F7 are planned and can loop in parallel now**: three different zones (needle, sim, render), and everything they depend on (F2, F3, F4) is merged. None of their loop stories changes a shared file; each writes its own screen-test helpers in its own `tests/e2e/<zone>/` folder.
 - They meet in two places, built against the shared contract on each side (like F1 and F3 at the region picker): F7 reports taps on the fluoro image and F5 marks the entry from them (one end-to-end test, F5-S11, after both merge); F5 publishes bone contact and F6 turns it into an event (F6-S6 tests with hand-made needle states, so F5 need not be merged).
 - The shared-contract changes they rely on (`NeedleState.boneContact`, the `imageTap` event, the sim mounted in the needle panel) were made interactively on 2026-11-13, so the loops change no shared file. F5-S11 is the only blocked story (by design).
-- Afterwards: F11 needs F1 (+ F2); F9 needs F6; F10 needs nearly everything.
+- **F11 (quiz) can also be planned now:** F1 and F2 are merged. Afterwards: F9 needs F6; F10 needs nearly everything.
 
 ## Waiting on me
 <!-- Blocked stories, open questions, pull requests to review. -->
 - **F5–F7 planning:** you accepted every default on 2026-11-13 (recorded in `docs/DECISIONS.md`). The shared contract now has `NeedleState.boneContact` and the `imageTap` bus event, and the sim zone is mounted in the needle panel. All F5–F7 stories are `todo` except F5-S11 (end-to-end tap test, blocked by design until F5 and F7 are merged — no decision needed).
-- Next step: merge this planning branch, then start the F5, F6 and F7 loops (they can run together, and alongside the F1 loop).
+- Next step: merge this planning branch, then start the F5, F6 and F7 loops (they can run together).
 - Before planning F9: add a shared simulation clock to `src/core/` (F6 uses "seconds since the case started"; contrast washout needs the same clock).
 - F4, F8 and F12 planning questions: all answered 2026-11-11 (you accepted every default; recorded in `docs/DECISIONS.md`). The shared contract now has `store.procedures`, `procedureRequest` and `attemptFinished`.
 - Gaps found while planning F4, F8 and F12 (docs not changed):
@@ -80,3 +80,5 @@
 2026-11-12 F5, F6 and F7 planned (task files + empty progress logs): F5 11 stories, F6 11, F7 7; 8 stories blocked on owner decisions (see "Waiting on me → F5–F7 planning") and 1 by design (F5-S11). No application code was written. Roadmap brought up to date: F3, F4, F8 and F12 merged; F1 still looping.
 
 2026-11-13 (same planning branch) owner accepted every F5–F7 default. Recorded in `docs/DECISIONS.md` and `docs/ARCHITECTURE.md`; shared contract extended with a test (`tests/core/contract-2026-11-13.test.ts`): optional `NeedleState.boneContact` and the bus event `imageTap`. `src/app/main.ts` now mounts the sim zone into the needle panel slot. 7 stories unblocked; only F5-S11 stays blocked (by design).
+
+2026-11-13 merged main (F1 finished: [PR #15](https://github.com/VLemon-99/Spine-intervention-3D-anatomy/pull/15)) into the planning branch; F1 marked merged except S22 (real CT, with the owner).
