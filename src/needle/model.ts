@@ -29,7 +29,7 @@ export interface CreateNeedleInput {
   needleId: string;
   /** Skin entry point (the fulcrum), mm. */
   entryPoint: Vec3;
-  /** Insertion direction (F5 passes the beam direction); need not be unit length. */
+  /** Insertion direction (F5 passes the reversed beam direction, detector → source); need not be unit length. */
   direction: Vec3;
   /** Pre-bend of the tip in degrees. */
   preBend: number;

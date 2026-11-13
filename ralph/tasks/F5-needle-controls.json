@@ -53,7 +53,7 @@
       "dependsOn": [
         "F5-S1"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": "Review fix 2026-11-13 (owner approved all review fixes): the needle points against the beam direction (detector → source), matching the F4 model's tests, which insert toward the front (−y)."
     },
