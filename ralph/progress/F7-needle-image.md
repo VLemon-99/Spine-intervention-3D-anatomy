@@ -54,3 +54,9 @@
 - Files touched: src/render/fluoroCanvas.ts, tests/e2e/render/renderPage.ts, tests/e2e/render/needleHold.spec.ts (new), this task file and log.
 - Test result: verify 8/8 passed (both set-ups); `npm run check` green (unit 514 passed; screen 433 passed, 25 skipped by set-up). One of my own new checks first failed because I had put the "new" needle at the vertebra's edge (z = 24); moved it to z = 35 in muscle.
 - Next round should know: next eligible is F7-S5 (tip lands where geometry says, 5 seeded poses). For the "needle pixel" mask, compare with an image taken with no needle at the same pose (take two images).
+
+## Round — 2026-11-13 06:20 — F7-S5 — done
+- What I did: Zone helpers in tests/e2e/render/renderPage.ts: `seededPoses(seed)` (createRandom; oblique −40…40°, tilt −20…20°), `needlePixels(with, without)` (≥ NEEDLE_PIXEL_MARGIN = 30 grey levels darker than the no-needle image) and `findTipPixel(pixels, hubPixel)` (needle pixel centre farthest from the hub's projection). New spec: per seeded pose (seed 7), a no-needle image and a needle image with default settings; the found tip is within 2 px of project(tip). Needle: hub (28, 14, −8) → tip (28, 10, −30), in muscle left of the spine.
+- Files touched: tests/e2e/render/renderPage.ts, tests/e2e/render/needleTip.spec.ts (new), this task file and log.
+- Test result: verify 12/12 passed (both set-ups); `npm run check` green (unit 514 passed; screen 445 passed, 25 skipped by set-up).
+- Next round should know: F7-S6 is the last loop story; reuse needlePixels for the spot/line extent (longest extent = largest distance between two needle pixel centres, plus 1 px).
