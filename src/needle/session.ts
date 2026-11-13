@@ -4,8 +4,10 @@
 // is inserted, and the hub stays within ±45° of the start. Plain TypeScript,
 // no browser code.
 
-import type { NeedleState, Vec3, Volume } from '../core/types';
+import { createProjection, type Pixel } from '../core/geometry';
+import type { CArmPose, NeedleState, Vec3, Volume } from '../core/types';
 import { catalogue } from './data';
+import { skinEntry } from './entry';
 import {
   advance as advanceModel,
   createNeedle,
@@ -35,10 +37,19 @@ export interface NeedleSession {
   readonly model: NeedleModel | null;
   /** The volume the needle moves through (null: advancing does nothing). */
   volume: Volume | null;
+  /** Pose of the image on screen (store.lastImagePose), or null before the first image. */
+  lastImagePose: CArmPose | null;
   chooseNeedle(id: string): SessionResult;
   choosePreBend(deg: number): SessionResult;
   /** Places the needle's tip at `point`, pointing against `beamDirection` (source → detector). */
   markEntry(point: Vec3, beamDirection: Vec3): SessionResult;
+  /**
+   * Marks the entry where the ray through an image pixel (at lastImagePose)
+   * meets the skin on the detector side, pointing against that ray (F5.2,
+   * F5.3). Does nothing before the first image, without a volume, when the ray
+   * misses the body, or while locked.
+   */
+  markEntryAtPixel(pixel: Pixel): SessionResult;
   setHubAngles(pitch: number, yaw: number): SessionResult;
   nudgeHub(dPitch: number, dYaw: number): SessionResult;
   advance(mm: number): SessionResult;
@@ -96,6 +107,7 @@ export function createNeedleSession(volume: Volume | null = null): NeedleSession
       return model;
     },
     volume,
+    lastImagePose: null,
     chooseNeedle(id) {
       if (isLocked()) return 'locked';
       if (!catalogue.needles.some((n) => n.id === id)) return 'rejected';
@@ -125,6 +137,16 @@ export function createNeedleSession(volume: Volume | null = null): NeedleSession
       entry = { point: { ...point }, direction: { ...beamDirection } };
       rebuild();
       return changed('ok');
+    },
+    markEntryAtPixel(pixel) {
+      if (isLocked()) return 'locked';
+      const pose = session.lastImagePose;
+      if (!pose || !session.volume) return 'rejected';
+      if (!Number.isFinite(pixel.x) || !Number.isFinite(pixel.y)) return 'rejected';
+      const ray = createProjection(pose).unproject(pixel);
+      const point = skinEntry(session.volume, ray);
+      if (!point) return 'rejected';
+      return session.markEntry(point, ray.direction);
     },
     setHubAngles(pitch, yaw) {
       if (!model) return 'noNeedle';

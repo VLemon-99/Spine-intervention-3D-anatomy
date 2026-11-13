@@ -125,3 +125,20 @@ describe('needle session: determinism', () => {
     expect(run()).toEqual(run());
   });
 });
+
+describe('needle session: marking from an image pixel (F5.2)', () => {
+  it('does nothing before the first image', () => {
+    const s = fresh();
+    expect(s.markEntryAtPixel({ x: 256, y: 256 })).toBe('rejected');
+    expect(s.toNeedleState()).toBeNull();
+  });
+
+  it('marks the skin entry under the pixel, pointing against the ray', () => {
+    const s = fresh();
+    s.lastImagePose = AP;
+    expect(s.markEntryAtPixel({ x: 256, y: 256 })).toBe('ok');
+    expect(s.toNeedleState()!.entryPoint).toEqual(entry);
+    s.advance(1);
+    expect(s.markEntryAtPixel({ x: 250, y: 250 })).toBe('locked');
+  });
+});

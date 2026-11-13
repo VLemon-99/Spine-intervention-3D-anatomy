@@ -5,6 +5,7 @@
 ## Lessons
 <!-- Reusable learnings for future rounds: gotchas, patterns, commands that work. After the feature is merged, an interactive session promotes the useful ones into CLAUDE.md. -->
 - `window.__sim.needle()` is null whenever no needle is placed (F5-S13 expects null after Withdraw fully). Screen tests that need needleId/preBend first place an uninserted needle (markEntry at depth 0) through the dev server's `/src/needle/session.ts` module; picking a needle/pre-bend at depth 0 rebuilds it at the same entry.
+- Zone screen-test helpers live in tests/e2e/needle/needlePage.ts: `readNeedle`, `waitForVolume`, `markEntryAtPixel`, `advanceNeedle` (wait for the volume after acceptDisclaimer; take an image before marking).
 - The app's session (`needleSession`) notifies through `needleSession.subscribe(listener)`; UI parts subscribe to stay in step (disabled while locked).
 
 ## Rounds
@@ -33,3 +34,9 @@
 - Files touched: src/needle/{session,storeLink,pickers,index}.ts, tests/needle/storeLink.test.ts, tests/e2e/needle/pickers.spec.ts
 - Test result: verify passed (pickers 7 passed + 1 skipped; storeLink 3/3); npm run check: 505 unit, 416 screen tests passed.
 - Next round should know: pickers.spec.ts has an inline `placeNeedle` helper; F5-S12 writes the shared zone helper tests/e2e/needle/needlePage.ts (later specs can use that instead).
+
+## Round — 2026-11-13 05:05 — F5-S12 — done
+- What I did: added `lastImagePose` (kept in step with the store by storeLink) and `markEntryAtPixel(pixel)` to the needle session: unproject at lastImagePose → skinEntry → markEntry against the ray. Returns 'rejected' before the first image / without a volume / on a miss, 'locked' while inserted. Wrote tests/e2e/needle/needlePage.ts and markPixel.spec.ts (0°/0° at (256,256) and oblique 20° at (240,270); tip = entry; advancing 5 mm moves the tip ≥ 4.9 mm closer to the source; nothing before the first image). Two unit tests added to session.test.ts.
+- Files touched: src/needle/session.ts, src/needle/storeLink.ts, tests/needle/session.test.ts, tests/e2e/needle/needlePage.ts, tests/e2e/needle/markPixel.spec.ts
+- Test result: verify 8/8; npm run check: 507 unit, 424 screen tests passed.
+- Next round should know: F5-S5 (keys) is next by priority.
