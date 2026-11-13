@@ -40,3 +40,9 @@
 - Files touched: src/needle/session.ts, src/needle/storeLink.ts, tests/needle/session.test.ts, tests/e2e/needle/needlePage.ts, tests/e2e/needle/markPixel.spec.ts
 - Test result: verify 8/8; npm run check: 507 unit, 424 screen tests passed.
 - Next round should know: F5-S5 (keys) is next by priority.
+
+## Round — 2026-11-13 05:15 — F5-S5 — done
+- What I did: src/needle/keys.ts (needleKeyAction(code, shift) and the 'Needle' help entries); index.ts registers the group in the shared shortcut list and adds one window keydown listener: acts only with a needle, no Ctrl/Alt/Meta, disclaimer not shown, data-screen absent or 'sim', and focus not in a text field / slider (range) / select. Up/Down = pitch ±1°, Right/Left = yaw ±1°.
+- Files touched: src/needle/keys.ts, src/needle/index.ts, tests/e2e/needle/keys.spec.ts
+- Test result: verify 6 passed (6 tablet skips, by design); npm run check: 507 unit, 430 screen tests passed.
+- Next round should know: in keys.spec the beforeEach blurs the focused element after marking so keys reach window. Helper text uses '↑ / ↓' and '← / →' for the arrow keys.
