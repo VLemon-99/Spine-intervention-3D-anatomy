@@ -126,11 +126,14 @@ describe('anatomy converter', () => {
           const level = inBox(si, sj, k, [4, 3, 4], [7, 6, 6]) ? LEVEL_IDS.L4 : inBox(si, sj, k, [4, 3, 1], [7, 6, 3]) ? LEVEL_IDS.L5 : 0;
           expect(levels[v]).toBe(level);
         }
+    // Owner-approved update (2026-11-12, F1-S18): the converter also writes the landmarks file and the manifest.
     expect(readdirSync(out).sort()).toEqual([
       'lumbosacral.intensity.bin.gz',
       'lumbosacral.json',
       'lumbosacral.labels.bin.gz',
+      'lumbosacral.landmarks.json',
       'lumbosacral.levels.bin.gz',
+      'manifest.json',
     ]);
   });
 

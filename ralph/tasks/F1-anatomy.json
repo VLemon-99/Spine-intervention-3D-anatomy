@@ -508,9 +508,9 @@
         "F1-S16",
         "F1-S17"
       ],
-      "status": "blocked",
+      "status": "done",
       "attempts": 0,
-      "notes": "Blocked before any code (no attempt used): the story conflicts with an existing test. F1-S18 must write <region>.landmarks.json and manifest.json into the output folder, but tests/anatomy/convert.test.ts (line 129, written in F1-S9 and part of this story's verify command) checks that the output folder holds exactly the four region files (header + three .bin.gz). The rules forbid changing an existing test to make it pass. Decision needed from the owner: allow that one assertion to be updated to list the two new files as well (landmarks.json and manifest.json), and allow the voxel-by-voxel label check in the same test to accept modelled soft tissue if the modeller ever adds any to that tiny fixture (it is not expected to, as the fixture has no closed canal or findable landmarks). Planned approach once unblocked: convertFolder runs computeRegionLandmarks + modelSoftTissue after resampling, writes landmarks + manifest through the existing scratch folder, checks checkRegionSize (limit overridable for tests) before moving files into place; tests convert the phantom and the pelvis fixture written out as NIfTI folders."
+      "notes": "Done 2026-11-12 (unblocked by the owner the same day). convertFolder(in, out, {maxRegionBytes?}) now: ... resample → computeRegionLandmarks → modelSoftTissue → writes region files + <region>.landmarks.json (reviewedByOwner false) + manifest.json via the scratch folder; size checked (header + 3 data + landmarks) before anything moves; manifest entries kept for other regions, replaced for this one, sorted cervical/thoracic/lumbosacral; entry levels = region levels present in the scan; title from REGIONS. Approved test change: only the file-list check in tests/anatomy/convert.test.ts (now also expects lumbosacral.landmarks.json and manifest.json); its voxel-by-voxel label check did not need relaxing. New helper tests/anatomy/niftiFolderFixture.ts writes the phantom or pelvis fixture as an input folder."
     },
     {
       "id": "F1-S19",
@@ -531,9 +531,9 @@
       "dependsOn": [
         "F1-S17"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. src/anatomy/loadRegion.ts (exported from src/anatomy/index.ts): listRegions(options) -> RegionEntry[] ({name, title}); loadRegion(name, options) -> {volume, landmarks}; options {fetch?, baseUrl? = \"data/\"}; PHANTOM_REGION = \"phantom\" returns createPhantom()/createPhantomLandmarks() without downloads. Names must be listed in the manifest; file names come only from the manifest entry. gunzipIfNeeded checks the 1f 8b signature before using DecompressionStream. Checks header (parseRegionHeader, region name, size vs manifest), data lengths, landmarks (parseLandmarksFile); reviewedByOwner is dropped from the returned landmarks. A missing manifest gives []; an invalid one throws."
     },
     {
       "id": "F1-S24",
@@ -553,9 +553,9 @@
       "dependsOn": [
         "F1-S19"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. tests/e2e/anatomy/regionPage.ts: buildTinyRegion(name?) (24³ grid of 2 mm voxels, bone block labelled L4, written with writeRegion in the test process, plus a landmarks file and manifest), serveRegion(page, region) (page.route on **/data/*, 404 for anything else), listRegionsInPage(page), loadRegionInPage(page, name, {putInStore?}) -> {size, region} or {error}. No loader changes were needed."
     },
     {
       "id": "F1-S21",
@@ -578,9 +578,9 @@
       "dependsOn": [
         "F1-S24"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": "Unblocked at the 2026-11-10 story review: the shared contract now has store.regions and the bus event 'regionRequest' (src/core/store.ts). The end-to-end check through F3's picker is F1-S27."
+      "notes": "Done. src/anatomy/regionWiring.ts: regionEntries(names) -> [{name, title}] with titles Cervical/Thoracic/Lumbosacral (unknown names dropped); wireRegions(store, bus, options) fills store.regions from listRegions and loads on regionRequest (unlisted names ignored, newest request wins, failure keeps the current volume and sets lastError); registerAnatomyDebug -> window.__sim.anatomy() = {loading, lastError}. mount() in src/anatomy/index.ts wires the app store/bus. store titles come from regionEntries as the story says, not from the manifest's title field (that one is kept for the owner/About page)."
     },
     {
       "id": "F1-S20",
@@ -603,9 +603,9 @@
         "F1-S18",
         "F1-S21"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": ""
+      "notes": "Done. tools/anatomy/checkData.ts: checkDataFolder(folder, {maxRegionBytes?, maxTotalBytes?}) -> problems[] (manifest valid; named files exist; per region <= 25 MB, all <= MAX_TOTAL_BYTES 100 MB; header + landmarks valid; data unpacks to size; every body centre is bone of its own level). tests/anatomy/committedData.test.ts runs it on public/data (passes with the empty manifest) and on a phantom converted in a temp folder, plus four ways to break it. The F1.7 session adds the \"all three regions listed\" assertion."
     },
     {
       "id": "F1-S27",
@@ -624,9 +624,9 @@
       "dependsOn": [
         "F1-S21"
       ],
-      "status": "blocked",
+      "status": "done",
       "attempts": 0,
-      "notes": "Blocked by design (2026-11-10), not by a failed attempt: needs F3's region picker merged into main. No owner decision is needed — once F1 and F3 are both merged, set this to 'todo' or do it in a short interactive session."
+      "notes": "Done 2026-11-12 (set to todo by the owner once F3 was merged). tests/e2e/anatomy/regionPicker.spec.ts: serves the tiny region, checks the C-arm panel picker offers \"Lumbosacral\" next to the loaded phantom, picks it (tap first on the tablet, then selectOption), and checks window.__sim volume name and size and that the next image differs from the phantom's. No app code changed."
     },
     {
       "id": "F1-S22",
