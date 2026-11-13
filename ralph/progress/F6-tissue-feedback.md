@@ -8,6 +8,7 @@
 - Phantom nerve roots: cylinders along x for |x| 5–26, radius 2 mm around y = 5, z = 0; nerve voxels at x = 13 are y 3–7 on z = 0.
 - ESLint here flags `_`-prefixed unused destructured names (`{ a: _drop, ...rest }`); copy the object and `delete` the field instead.
 - Screen tests put a needle in the app's store with `putNeedle(page, needleWithTip(tip))` from `tests/e2e/sim/simZone.ts` (dev-server store module import); read the sim with `getSim(page)` (waits for `window.__sim.sim`).
+- Playwright specs cannot `import` a JSON file ("needs an import attribute of type: json"); read it with `readFileSync('src/sim/tissues.json', 'utf8')` instead.
 - To print phantom labels, a throwaway `tests/sim/zz*.test.ts` with `console.log` needs `--reporter=verbose` to show stdout; delete it afterwards.
 
 ## Rounds
@@ -66,3 +67,9 @@
 - Files touched: src/sim/runner.ts, src/sim/index.ts, tests/sim/runner.test.ts, tests/e2e/sim/runner.spec.ts, tests/e2e/sim/simZone.ts, this log (plus Lessons), the task file.
 - Test result: verify passed (10 unit + 6 screen); `npm run check` passed (lint, types, all unit tests, 415 screen tests passed, 25 skipped by set-up).
 - Next round should know: the hidden 'zone-sim' marker is still there; F6-S9 builds the visible sim section. `mount()` keeps the runner in a local `sim` variable — the UI stories can build on it (e.g. subscribe to the store / 'tissueEvent' to refresh the panel).
+
+## Round — 2026-11-13 05:33 — F6-S9 — done
+- What I did: added `src/sim/feedback.ts` (`createFeedbackView(parent)`: section data-testid sim-feedback with a 'Resistance' meter bar data-testid resistance-bar, data-value = resistance or '' with no needle, fill data-testid resistance-bar-fill; tissue name data-testid tip-tissue, hidden and emptied with no needle or in Exam mode). `mount()` builds it inside the slot's needle-panel element (falls back to the slot) and refreshes on every store change. Tests first: `tests/e2e/sim/feedback.spec.ts` (5 screen tests × 2 set-ups); `setMode` added to `tests/e2e/sim/simZone.ts`.
+- Files touched: src/sim/feedback.ts, src/sim/index.ts, tests/e2e/sim/feedback.spec.ts, tests/e2e/sim/simZone.ts, this log (plus Lessons), the task file (status + note).
+- Test result: verify passed (10/10); `npm run check` passed (lint, types, all unit tests, 425 screen tests passed, 25 skipped by set-up).
+- Next round should know: the slot (`.app-slot`) is a flex row with `.app-slot > .panel { flex: 1 }`, so the section must go inside the needle-panel element to be "in" the panel; the panel has overflow: hidden, so keep new rows compact (S10 Aspirate button 44 px tall on the tablet, S11 event log should scroll inside itself). Put the Aspirate button and event log into the same section (`sim-feedback`).

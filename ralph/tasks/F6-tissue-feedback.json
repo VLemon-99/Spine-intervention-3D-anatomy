@@ -212,9 +212,9 @@
       "dependsOn": [
         "F6-S8"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
-      "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): src/app/main.ts now mounts the sim zone into the needle panel's slot (layout.needle, after the needle zone), so the sim's section appears inside the needle panel. Tissue names show in Practice and Free play and are hidden in Exam. Unblocked."
+      "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): src/app/main.ts now mounts the sim zone into the needle panel's slot (layout.needle, after the needle zone), so the sim's section appears inside the needle panel. Tissue names show in Practice and Free play and are hidden in Exam. Unblocked. Loop round 2026-11-13: the slot is a flex row, so a sibling section would sit beside the needle panel; to meet 'inside the needle panel' the section is appended inside the slot's needle-panel element (falls back to the slot if there is none)."
     },
     {
       "id": "F6-S10",

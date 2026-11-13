@@ -1,6 +1,6 @@
 // Screen-test helpers of the sim zone (not a spec file).
 import type { Page } from '@playwright/test';
-import type { NeedleState, TissueEvent, Vec3 } from '../../../src/core/types';
+import type { Mode, NeedleState, TissueEvent, Vec3 } from '../../../src/core/types';
 
 /** What window.__sim.sim() returns. */
 export interface SimInfo {
@@ -43,4 +43,13 @@ export async function putNeedle(page: Page, needle: NeedleState | null): Promise
     const { store } = (await import(/* @vite-ignore */ storeModule)) as typeof import('../../../src/core/store');
     store.set({ needle: value });
   }, needle);
+}
+
+/** Set store.mode through the dev server's store module (test-only). */
+export async function setMode(page: Page, mode: Mode): Promise<void> {
+  await page.evaluate(async (m) => {
+    const storeModule = '/src/core/store.ts';
+    const { store } = (await import(/* @vite-ignore */ storeModule)) as typeof import('../../../src/core/store');
+    store.set({ mode: m });
+  }, mode);
 }
