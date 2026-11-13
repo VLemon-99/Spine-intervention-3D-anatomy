@@ -34,3 +34,9 @@
 - Files touched: src/render/drrGpu.ts, src/render/fluoroCanvas.ts, tests/e2e/render/renderPage.ts, tests/e2e/render/needle.spec.ts (new), this task file and log.
 - Test result: verify 4/4 passed (both set-ups); `npm run check` green (unit 506 passed; screen 413 passed, 25 skipped by set-up).
 - Next round should know: F7-S8 compares GPU vs CPU; the CPU uses doubles without the tShift trick, so small differences at the needle's edge pixels are expected, but the 21×21 box mean should be well inside 3%.
+
+## Round — 2026-11-13 05:25 — F7-S8 — done
+- What I did: New screen test comparing the GPU needle with renderDrrCpu (same needle and pose, noise 0) in a 21×21 px box around the needle's projected middle: a needle across the beam at 0°/0°, a slanted needle at oblique +25°/tilt −10°, and a needle in the air at y = 55 (outside the box). Each is ≤ 3% mean difference, and the needle is > 20 grey levels darker than the box corners (both images) / than the image without needle (air case). No shader fix was needed.
+- Files touched: tests/e2e/render/needleCpuMatch.spec.ts (new), this task file and log.
+- Test result: verify 6/6 passed (both set-ups); `npm run check` green (lint + types; unit 506 passed; screen 419 passed, 25 skipped by set-up).
+- Next round should know: next eligible is F7-S7 (imageTap), then F7-S4. The tShift precision trick in the shader is enough for the GPU to match the CPU.

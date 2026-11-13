@@ -92,7 +92,7 @@
       "dependsOn": [
         "F7-S3"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": "Review fix 2026-11-13 (owner approved all review fixes): split out of F7-S3."
     },
