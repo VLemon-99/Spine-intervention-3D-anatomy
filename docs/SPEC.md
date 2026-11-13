@@ -144,7 +144,7 @@ Acceptance criteria:
 What the needle tip "feels" and what can go wrong.
 
 Acceptance criteria:
-- [ ] F6.1 `tipTissue(state)` returns the tissue label at the tip. The needle panel shows a resistance bar. Tissue names are shown in Practice mode only, never in Exam mode (unit + screen test).
+- [ ] F6.1 `tipTissue(state)` returns the tissue label at the tip. The needle panel shows a resistance bar. Tissue names are shown in Practice and Free play modes, never in Exam mode (unit + screen test).
 - [ ] F6.2 Each tissue has a resistance value in `src/sim/tissues.json`. Crossing from ligamentum flavum into epidural space emits one `lossOfResistance` event (unit test on the phantom midline path).
 - [ ] F6.3 Events, each emitted once per entry and stored with time and tip position (unit tests on the phantom):
   - `boneContact`;

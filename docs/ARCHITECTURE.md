@@ -55,6 +55,7 @@ The 3D view only reads the store; it never changes it.
 - **Sacrum and iliac crests:** they are not per-level landmark entries; a region's `Landmarks` has optional `sacrum` and `iliacCrest` fields. The L5–S1 foramen is listed under L5.
 - **Image taps:** a click or tap on the fluoro image makes the render zone emit `imageTap` with the pixel of the image as taken (display flips/rotation and magnification undone), so `createProjection(store.lastImagePose).unproject(tap)` is that pixel's ray. The needle zone's Mark entry tool listens to it (F5.2).
 - **Bone contact:** `NeedleState.boneContact` (optional; absent = false) is set by the needle zone from its model; the sim zone turns a change to true into a `boneContact` event.
+- **Needle direction:** the skin entry is where the beam ray meets the skin on the detector side (the patient's back at pose 0°/0°); the needle points against the beam direction (detector → source). `unproject` rays start at the source, under the table, so walking along them from their start would find the belly.
 - **Sim in the needle panel:** `main.ts` mounts the sim zone into the needle panel's slot, after the needle zone, so its feedback (resistance, Aspirate, event log) shows inside the needle panel.
 - **Unit tests run without a browser page** (Vitest `node` environment, no jsdom/happy-dom). Logic that needs a unit test lives in plain functions; screens are checked by screen tests.
 
@@ -92,7 +93,7 @@ A zone may define its own internal types freely. `src/core/` holds only what cro
 - Wave 4: F10 (needs F1, F3, F5, F6, F9).
 - F4 → F5 and F2 → F7 share a zone, so they always run one after the other.
 - F1 and F3 meet at the region picker. Each side is built and tested against the shared contract on its own, so they still run in parallel; one end-to-end test (F1-S27) is added after both are merged.
-
+- F5, F6 and F7 meet the same way: F5-S11 (canvas tap → entry, needs F7), F5-S14 (real needle → tissue events and the needle-panel layout, needs F6) and F5-S15 (real needle → image, needs F7) wait until both sides are merged.
 ## External services
 - None at runtime.
 - Anatomy source (download only, in interactive sessions): the TotalSegmentator dataset (CC BY 4.0, Zenodo), with VerSe as a fallback. Only converted, size-limited files are committed to `public/data/`. Raw downloads go in `data-raw/`, which is git-ignored.

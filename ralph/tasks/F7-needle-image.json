@@ -40,8 +40,9 @@
       ],
       "acceptance": [
         "Unit test (phantom, pose 0°/0°): a straight needle lying across the beam in muscle makes the pixel at its projected middle darker than the pixels 5 px to either side, and darker than the same pixel with no needle",
+        "Unit test (phantom, pose 0°/0°): a straight needle in muscle beside the spine (x = 30, y = 0, from z = −10 to z = +10; its rays cross no bone) makes its projected middle pixel darker than the pixel at the projected upper vertebra body centre (0, −12, 14) in the same image (metal is darker than bone; checks NEEDLE_ABSORPTION_PER_MM)",
         "Unit test: with no needle option, every pixel equals the image before this story (the existing CPU tests stay green unchanged)",
-        "Unit test: a needle outside the volume's box (in the air above the back) still darkens its pixels"
+        "Unit test: a needle outside the volume's box (in the air above the back at y = 55 mm; the phantom's box ends at y = 47) still darkens its pixels"
       ],
       "verify": "npx vitest run tests/render/needleCpu.test.ts",
       "zone": "render",
@@ -51,18 +52,17 @@
       ],
       "status": "todo",
       "attempts": 0,
-      "notes": ""
+      "notes": "Review fix 2026-11-13 (owner approved all review fixes): darker-than-bone test added; the 'outside the box' needle is placed at y = 55, clearly outside the phantom's grid."
     },
     {
       "id": "F7-S3",
       "title": "Add the needle to the GPU X-ray shader",
-      "description": "drrGpu.ts take() accepts the needle shaft (resampled with resampleShaft, sent as a uniform array of at most 65 points plus a count) and adds the same needle absorption as the CPU reference, on every ray, including outside the volume's box. fluoroCanvas.ts passes store.needle?.shaft at each exposure. Add zone screen-test helpers in tests/e2e/render/ to put a hand-made NeedleState into the store (the dev-server store module trick; like tests/e2e/view3d/view3dPage.ts, but the render zone's own copy).",
+      "description": "drrGpu.ts take() accepts the needle shaft (resampled with resampleShaft, sent as a uniform array of at most 65 points plus a count) and adds the same needle absorption as the CPU reference, on every ray, including outside the volume's box. fluoroCanvas.ts passes store.needle?.shaft at each exposure. Add zone screen-test helpers in tests/e2e/render/ to put a hand-made NeedleState into the store (the dev-server store module trick; like tests/e2e/view3d/view3dPage.ts, but the render zone's own copy). The pixel-by-pixel comparison with the CPU reference is the next story (F7-S8).",
       "specRefs": [
         "F7.1"
       ],
       "acceptance": [
         "Screen test (both set-ups, phantom, pose 0°/0°): with a hand-made straight needle across the beam in soft tissue, a new image's pixels along the projected needle are darker than the pixels 5 px to the side (F7.1)",
-        "Screen test (both set-ups): the GPU image with the needle matches the CPU reference (same needle and pose, no noise): in a 21×21 px box around the needle's projected middle the mean difference is at most 3% of the grey range (as in cpuMatch.spec.ts), and the needle is darker than its surroundings in both",
         "Screen test (both set-ups): with no needle the image is unchanged (existing render screen tests stay green unchanged)"
       ],
       "verify": "npx playwright test tests/e2e/render/needle.spec.ts",
@@ -73,7 +73,52 @@
       ],
       "status": "todo",
       "attempts": 0,
-      "notes": ""
+      "notes": "Review fix 2026-11-13 (owner approved all review fixes): split in two; the GPU-vs-CPU comparison moved to F7-S8."
+    },
+    {
+      "id": "F7-S8",
+      "title": "Check the GPU needle image against the CPU reference",
+      "description": "Screen tests that the GPU needle (F7-S3) matches the CPU reference (F7-S2), with the zone helpers from F7-S3. Fix the shader if they differ. No new feature code beyond such fixes.",
+      "specRefs": [
+        "F7.1"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups): the GPU image with the needle matches the CPU reference (same needle and pose, no noise): in a 21×21 px box around the needle's projected middle the mean difference is at most 3% of the grey range (as in cpuMatch.spec.ts), and the needle is darker than its surroundings in both",
+        "Screen test (both set-ups): a needle in the air above the back (y = 55 mm, outside the volume's box) darkens the GPU image too, matching the CPU reference within the same 3%"
+      ],
+      "verify": "npx playwright test tests/e2e/render/needleCpuMatch.spec.ts",
+      "zone": "render",
+      "priority": 4,
+      "dependsOn": [
+        "F7-S3"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": "Review fix 2026-11-13 (owner approved all review fixes): split out of F7-S3."
+    },
+    {
+      "id": "F7-S7",
+      "title": "Report taps and clicks on the fluoro image as image pixels",
+      "description": "For the needle zone's Mark entry tool (F5.2): a click (desktop) or tap (tablet) on the fluoro canvas while an image is held emits the 'imageTap' bus event with the pixel of the image AS TAKEN: the canvas position scaled to 512×512, then the display flips/rotation undone (unorientPixel in orientation.ts), then magnification undone (the detector position, pipeline step 1), so createProjection(store.lastImagePose).unproject(pixel) gives the ray that made that pixel. Nothing is emitted before the first image or on a collimated (covered) pixel. Put the mapping in a plain function with a unit test. Done early in the feature because F5-S11 (the end-to-end tap test) waits for it.",
+      "specRefs": [
+        "F5.2"
+      ],
+      "acceptance": [
+        "Unit test: with default settings the canvas pixel (300, 200) maps to (300, 200); with flip left-right it maps to (211, 200); with magnification 2 the canvas pixel (356, 256) maps to (306, 256); with rotation 90° the mapping is the inverse of orientPixel",
+        "Screen test (both set-ups; click on desktop, tap on tablet): after one image, tapping the canvas centre emits one imageTap of (256, 256) ±1 px (listened for through the dev-server store module)",
+        "Screen test (both set-ups): before the first image a tap emits nothing",
+        "Screen test (both set-ups): with the left shutter closed to 20%, tapping a pixel inside the covered area emits nothing, and tapping the open centre still emits",
+        "npm run check passes"
+      ],
+      "verify": "npx vitest run tests/render/imageTap.test.ts && npx playwright test tests/e2e/render/imageTap.spec.ts && npm run check",
+      "zone": "render",
+      "priority": 5,
+      "dependsOn": [
+        "F7-S3"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): the bus event `imageTap` (payload ImageTap { x, y } from src/core/store.ts) is on the shared contract. Unblocked. Review fix 2026-11-13 (owner approved all review fixes): test for taps on the covered (collimated) area added; moved earlier."
     },
     {
       "id": "F7-S4",
@@ -89,7 +134,7 @@
       ],
       "verify": "npx playwright test tests/e2e/render/needleHold.spec.ts",
       "zone": "render",
-      "priority": 4,
+      "priority": 6,
       "dependsOn": [
         "F7-S3"
       ],
@@ -110,28 +155,7 @@
       ],
       "verify": "npx playwright test tests/e2e/render/needleTip.spec.ts",
       "zone": "render",
-      "priority": 5,
-      "dependsOn": [
-        "F7-S4"
-      ],
-      "status": "todo",
-      "attempts": 0,
-      "notes": ""
-    },
-    {
-      "id": "F7-S6",
-      "title": "Check down-the-beam and angled needles look right",
-      "description": "Screen test at a fixed depth (needle 40 mm inside the phantom, entry on the back): a straight needle exactly along the ray from the source through its entry point projects to a spot whose longest extent (needle pixels as in F7-S5) is at most 4 px; the same needle at 30° to that ray appears as a line longer than 20 px. This is the feature's last 'test only' story before the canvas tap.",
-      "specRefs": [
-        "F7.3"
-      ],
-      "acceptance": [
-        "Screen test (both set-ups): down the beam, the needle's pixel spot is no longer than 4 px",
-        "Screen test (both set-ups): at 30° to the beam, the needle's line is longer than 20 px"
-      ],
-      "verify": "npx playwright test tests/e2e/render/needleBeam.spec.ts",
-      "zone": "render",
-      "priority": 6,
+      "priority": 7,
       "dependsOn": [
         "F7-S3"
       ],
@@ -140,27 +164,26 @@
       "notes": ""
     },
     {
-      "id": "F7-S7",
-      "title": "Report taps and clicks on the fluoro image as image pixels",
-      "description": "For the needle zone's Mark entry tool (F5.2): a click (desktop) or tap (tablet) on the fluoro canvas while an image is held emits the 'imageTap' bus event with the pixel of the image AS TAKEN: the canvas position scaled to 512×512, then the display flips/rotation undone (unorientPixel in orientation.ts), then magnification undone (the detector position, pipeline step 1), so createProjection(store.lastImagePose).unproject(pixel) gives the ray that made that pixel. Nothing is emitted before the first image or on a collimated (covered) pixel. Put the mapping in a plain function with a unit test. This is the feature's last loop story: run the whole check.",
+      "id": "F7-S6",
+      "title": "Check down-the-beam and angled needles look right",
+      "description": "Screen test at a fixed depth (needle 40 mm inside the phantom, entry on the back): a straight needle exactly along the ray from the source through its entry point projects to a spot whose longest extent (needle pixels as in F7-S5) is at most 4 px; the same needle at 30° to that ray appears as a line longer than 20 px. This is the feature's last loop story: run the whole check.",
       "specRefs": [
-        "F5.2"
+        "F7.3"
       ],
       "acceptance": [
-        "Unit test: with default settings the canvas pixel (300, 200) maps to (300, 200); with flip left-right it maps to (211, 200); with magnification 2 the canvas pixel (356, 256) maps to (306, 256); with rotation 90° the mapping is the inverse of orientPixel",
-        "Screen test (both set-ups; click on desktop, tap on tablet): after one image, tapping the canvas centre emits one imageTap of (256, 256) ±1 px (listened for through the dev-server store module)",
-        "Screen test (both set-ups): before the first image a tap emits nothing",
+        "Screen test (both set-ups): down the beam, the needle's pixel spot is no longer than 4 px",
+        "Screen test (both set-ups): at 30° to the beam, the needle's line is longer than 20 px",
         "npm run check passes"
       ],
-      "verify": "npx vitest run tests/render/imageTap.test.ts && npx playwright test tests/e2e/render/imageTap.spec.ts && npm run check",
+      "verify": "npx playwright test tests/e2e/render/needleBeam.spec.ts && npm run check",
       "zone": "render",
-      "priority": 7,
+      "priority": 8,
       "dependsOn": [
-        "F7-S4"
+        "F7-S5"
       ],
       "status": "todo",
       "attempts": 0,
-      "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): the bus event `imageTap` (payload ImageTap { x, y } from src/core/store.ts) is on the shared contract. Unblocked."
+      "notes": "Review fix 2026-11-13 (owner approved all review fixes): now the last loop story (F7-S7 moved earlier)."
     }
   ]
 }
