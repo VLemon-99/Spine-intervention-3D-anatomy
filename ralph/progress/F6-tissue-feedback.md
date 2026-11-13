@@ -5,6 +5,8 @@
 ## Lessons
 <!-- Reusable learnings for future rounds: gotchas, patterns, commands that work. After the feature is merged, an interactive session promotes the useful ones into CLAUDE.md. -->
 - Phantom labels on the midline (x = 0, z = 0), from the back: air y ≥ 43, skin/fat 42–39, muscle 38–23, ligamentum flavum 22–16, epidural space 15–13, thecal sac 12–10, spinal cord 9–3, thecal sac 2–0, epidural space −1, disc −2 to −22. At y = −28, z = 0: artery x 11 to 5, vein x −5 to −13, muscle between. At x = 13, z = 0: joint space y 22–14, nerve root y 7–3. The line x = 30 leaves the body (air), so it is not a muscle-only path.
+- Phantom nerve roots: cylinders along x for |x| 5–26, radius 2 mm around y = 5, z = 0; nerve voxels at x = 13 are y 3–7 on z = 0.
+- ESLint here flags `_`-prefixed unused destructured names (`{ a: _drop, ...rest }`); copy the object and `delete` the field instead.
 - To print phantom labels, a throwaway `tests/sim/zz*.test.ts` with `console.log` needs `--reporter=verbose` to show stdout; delete it afterwards.
 
 ## Rounds
@@ -39,3 +41,9 @@
 - Files touched: src/sim/tracker.ts, tests/sim/safetyEvents.test.ts, this log, the task file.
 - Test result: verify passed (6/6), tracker tests still pass; `npm run check` passed (lint, types, all unit tests, 409 screen tests passed, 25 skipped by set-up).
 - Next round should know: like loss of resistance, entry events need a previous sample: the very first update after creation/reset emits nothing, even if the tip is already in the sac. Going straight from artery into vein would emit a second 'intravascular' (label changed); the phantom's vessels do not touch, so no test covers it.
+
+## Round — 2026-11-13 05:06 — F6-S5 — done
+- What I did: extended `src/sim/tracker.ts`: `update` takes an optional 4th argument `landmarks`. Each sample records `nearNerve` (`isNearNerve`: any nerve-root voxel whose centre is within `NERVE_CONTACT_MM` = 1 mm, checking only voxels in the 1 mm box); a false→true change emits 'nerveContact'. `nearestForamen(landmarks, point)` gives level + side of the nearest foramen centre; message 'Paresthesia — left L4', or just 'Paresthesia' without level/side when there are no foramina or no landmarks. Tests first in `tests/sim/nerveContact.test.ts` (7 tests, including a one-nerve-voxel test volume for the 1.5 mm / 0.8 mm check).
+- Files touched: src/sim/tracker.ts, tests/sim/nerveContact.test.ts, this log (plus Lessons), the task file.
+- Test result: verify passed (7/7), all 42 sim tests pass; `npm run check` passed after one lint fix (lint, types, all unit tests, 409 screen tests passed, 25 skipped by set-up).
+- Next round should know: like the other events, nerve contact needs a previous sample (none on the first update). The runner (F6-S8) should pass `store.landmarks` as the 4th argument.
