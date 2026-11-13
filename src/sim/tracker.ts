@@ -122,6 +122,8 @@ function samplePath(a: Vec3, b: Vec3): Vec3[] {
 
 export function createTissueTracker(): TissueTracker {
   let previous: Sample | null = null;
+  // Bone contact as last reported by the needle state (absent counts as false).
+  let touchingBone = false;
 
   return {
     update(needle, volume, time, landmarks) {
@@ -148,10 +150,16 @@ export function createTissueTracker(): TissueTracker {
         last = sample;
       }
       previous = last;
+      const boneContact = needle.boneContact === true;
+      if (boneContact && !touchingBone) {
+        events.push({ type: 'boneContact', time, tip: { ...tip }, message: 'Bone contact' });
+      }
+      touchingBone = boneContact;
       return events;
     },
     reset() {
       previous = null;
+      touchingBone = false;
     },
   };
 }

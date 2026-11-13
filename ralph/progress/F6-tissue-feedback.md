@@ -47,3 +47,9 @@
 - Files touched: src/sim/tracker.ts, tests/sim/nerveContact.test.ts, this log (plus Lessons), the task file.
 - Test result: verify passed (7/7), all 42 sim tests pass; `npm run check` passed after one lint fix (lint, types, all unit tests, 409 screen tests passed, 25 skipped by set-up).
 - Next round should know: like the other events, nerve contact needs a previous sample (none on the first update). The runner (F6-S8) should pass `store.landmarks` as the 4th argument.
+
+## Round — 2026-11-13 05:12 — F6-S6 — done
+- What I did: extended `src/sim/tracker.ts`: it remembers the last `NeedleState.boneContact` (absent = false) and emits 'boneContact' ('Bone contact', time, needle tip) when it goes from false/absent to true; `reset()` forgets the flag too. Unlike the tissue-entry events, this one can fire on the very first update (absent → true). Tests first in `tests/sim/boneContact.test.ts` (5 tests).
+- Files touched: src/sim/tracker.ts, tests/sim/boneContact.test.ts, this log, the task file.
+- Test result: verify passed (5/5), all 47 sim tests pass; `npm run check` passed (lint, types, all unit tests, 409 screen tests passed, 25 skipped by set-up).
+- Next round should know: F6-S7 (aspirate) depends only on S1. The bone-contact event comes after any tissue events from the same update in the returned list.
