@@ -4,7 +4,8 @@
 
 ## Lessons
 <!-- Reusable learnings for future rounds: gotchas, patterns, commands that work. After the feature is merged, an interactive session promotes the useful ones into CLAUDE.md. -->
-- [none yet]
+- The needle is a chain of flat-ended tubes: `needlePathLength` intersects the ray with each piece's infinite tube, then cuts to the piece's length along its axis. This is exact, handles a ray along the needle (no infinity), and colinear pieces never double-count. The GPU shader (F7-S3) should copy this maths line for line.
+- `needlePathLength` counts only t ≥ 0 (in front of the ray's start), so pass the X-ray source as the ray origin.
 
 ## Rounds
 <!--
@@ -14,3 +15,9 @@
 - Test result:
 - Next round should know:
 -->
+
+## Round — 2026-11-13 04:40 — F7-S1 — done
+- What I did: Added step 2b (the needle) to the ORDER OF STEPS in `src/render/pipeline.ts`, with NEEDLE_RADIUS_MM = 0.35, NEEDLE_ABSORPTION_PER_MM = 3 (draft) and MAX_NEEDLE_SEGMENTS = 64; `resampleShaft` (always 65 evenly spaced points for a shaft with length; [] / one point otherwise) and `needlePathLength` (ray vs flat-ended tube per piece, ray direction need not be unit length).
+- Files touched: src/render/pipeline.ts, tests/render/needleMaths.test.ts (new), this task file and log.
+- Test result: verify 11/11 passed; `npm run check` green (unit 501 passed; screen 409 passed, 25 skipped by set-up).
+- Next round should know: NEEDLE_ABSORPTION_PER_MM = 3 was picked from a rough phantom estimate (vertebra body ray ≈ 0.3 more absorption than muscle; needle diameter gives 2.1). F7-S2's darker-than-bone test checks it; tune there if needed.
