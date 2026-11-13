@@ -2,6 +2,16 @@
 
 > One entry per meaningful choice, newest at the top. This stops future sessions and loop rounds from quietly undoing past decisions. Loop rounds don't edit this file — they record proposals in their progress log, and an interactive session adds them here after review.
 
+## 2026-11-13 — F5–F7 story review fixes
+- **Decision (owner approved all 13 review fixes):**
+  - **The needle goes in from the back.** The skin entry is where the beam ray meets the skin on the **detector side** (the patient's back at pose 0°/0°), found by walking from the detector toward the source. The needle points **against** the beam direction (detector → source). "Down the beam" (F5.3) means the needle lies along the ray and is seen end-on. The needle-to-beam angle (F5.6) is measured between the two lines (0–90°), whichever way each points.
+  - **"Intravascular" does not say artery or vein.** The event message is "Intravascular" for both, so the event does not give away what aspiration (50% for arteries) and contrast are meant to teach.
+  - **Aspirate random numbers:** made when the sim zone starts and again at each `caseStart` (nothing sends `caseStart` before F10). Seed: a fixed number in development and test builds; the time in milliseconds at that moment in the production build.
+  - **Story fixes:** F5-S3 split (new F5-S12), F5-S9 split (new F5-S13), F7-S3 split (new F7-S8); new end-to-end checks after merging, blocked by design: F5-S14 (real needle → tissue events, plus the F12.3 "panels fit" check with both zones in the needle panel) and F5-S15 (real needle → on the next image); missing tests added (F5-S3, F5-S4, F7-S2, F7-S7, F6-S8); clearer test wording (F6-S4, F6-S5, F7-S2); F6-S8 now depends on F6-S6; F7-S7 moved earlier. Story IDs kept; only priorities changed.
+- **Why:** The review found that F5-S1 walked from the X-ray source (under the table) and so would have put the entry on the belly. The F4 model's tests already insert toward the front (−y). Naming the vessel would tell learners what the arterial aspiration rule is meant to leave uncertain. Nothing sends `caseStart` in Free play, so Aspirate would have had no random numbers there.
+- **Alternatives considered:** Keeping "Intravascular — artery / vein"; making Aspirate's random numbers only at `caseStart`; leaving the large stories whole.
+- **Revisit if:** Lateral or other approaches need an entry on a side other than the detector side; the owner wants the vessel kind shown in Practice mode.
+
 ## 2026-11-13 — F5–F7 planning choices and shared-contract additions
 - **Decision (owner accepted every planning default):**
   - **Shared contract (`src/core/`) extended:** an optional `boneContact` field on `NeedleState` (the needle zone fills it, F5-S10; the sim zone turns it into the `boneContact` event, F6-S6), and a bus event `imageTap` whose payload (`ImageTap { x, y }`) is the tapped pixel of the image **as taken** — the render zone undoes display flips/rotation and magnification (F7-S7), so `createProjection(store.lastImagePose).unproject(tap)` is the ray that made that pixel; the needle zone's Mark entry tool uses it (F5-S4).

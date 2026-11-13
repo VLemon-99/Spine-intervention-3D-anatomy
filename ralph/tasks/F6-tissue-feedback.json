@@ -79,13 +79,13 @@
     {
       "id": "F6-S4",
       "title": "Report dural puncture, cord contact and intravascular placement",
-      "description": "Extend the tracker (F6-S3): entering the thecal sac emits 'duralPuncture' (message 'Dural puncture'), entering the spinal cord emits 'cordContact' ('Spinal cord contact'), entering an artery or a vein emits 'intravascular' ('Intravascular — artery' / 'Intravascular — vein'). Each is emitted once per entry, with time and tip position.",
+      "description": "Extend the tracker (F6-S3): entering the thecal sac emits 'duralPuncture' (message 'Dural puncture'), entering the spinal cord emits 'cordContact' ('Spinal cord contact'), entering an artery or a vein emits 'intravascular' with the message 'Intravascular' — the same message for both, so the learner is not told which kind of vessel (that is what aspiration and contrast are for; owner decision 2026-11-13). Each is emitted once per entry, with time and tip position.",
       "specRefs": [
         "F6.3"
       ],
       "acceptance": [
         "Unit test (phantom): a path down the midline from y = 46 to y = 4 gives duralPuncture once, then cordContact once, in that order",
-        "Unit test (phantom): a path into the artery (x 8, y −28) gives one intravascular event naming the artery; into the vein (x −9, y −28) one naming the vein",
+        "Unit test (phantom): a path from the side at y = −28, z = 0, from (40, −28, 0) to the artery centre (8, −28, 0), gives exactly one intravascular event; the path from (−40, −28, 0) to the vein centre (−9, −28, 0) gives exactly one too; both messages are exactly 'Intravascular' (neither says 'artery' or 'vein')",
         "Unit test: staying inside the thecal sac for several steps gives no further duralPuncture; leaving and re-entering gives a second one",
         "Unit test: every event carries the time passed to update and a tip inside the tissue entered"
       ],
@@ -97,19 +97,19 @@
       ],
       "status": "todo",
       "attempts": 0,
-      "notes": ""
+      "notes": "Review fix 2026-11-13 (owner approved all review fixes): intravascular message does not name the vessel; artery and vein paths come from the side so they cross only muscle and skin first."
     },
     {
       "id": "F6-S5",
       "title": "Report nerve contact with its level and side",
-      "description": "Extend the tracker: when the tip comes within 1 mm of a nerve-root voxel (check every voxel whose centre is within 1 mm of the sample point), emit 'nerveContact' once per entry into that zone. The level and side come from the nearest foramen centre in the region's Landmarks (a foramen is listed under the level above it, docs/ARCHITECTURE.md); the side is that foramen's side. Message: 'Paresthesia — left L4' (side, then level). Without any foramen landmark the message is just 'Paresthesia' and level/side are left out.",
+      "description": "Extend the tracker: when the tip comes within 1 mm of a nerve-root voxel (distance from the sample point to the nearest nerve-root voxel CENTRE; check every voxel whose centre is within 1 mm), emit 'nerveContact' once per entry into that zone. The level and side come from the nearest foramen centre in the region's Landmarks (a foramen is listed under the level above it, docs/ARCHITECTURE.md); the side is that foramen's side. Message: 'Paresthesia — left L4' (side, then level). Without any foramen landmark the message is just 'Paresthesia' and level/side are left out.",
       "specRefs": [
         "F6.3"
       ],
       "acceptance": [
         "Unit test (phantom): a path toward the left foramen (13, 5, 0) from behind gives one nerveContact with level 'L4', side 'left', message 'Paresthesia — left L4'",
         "Unit test (phantom): the same on the right side gives 'right'",
-        "Unit test: a tip 1.5 mm from the nearest nerve-root voxel gives no event; 0.8 mm gives one",
+        "Unit test: a tip whose distance to the nearest nerve-root voxel centre is 1.5 mm gives no event; 0.8 mm gives one",
         "Unit test: landmarks without foramina give the message 'Paresthesia' with no level or side"
       ],
       "verify": "npx vitest run tests/sim/nerveContact.test.ts",
@@ -120,7 +120,7 @@
       ],
       "status": "todo",
       "attempts": 0,
-      "notes": ""
+      "notes": "Review fix 2026-11-13 (owner approved all review fixes): distances are measured to voxel centres."
     },
     {
       "id": "F6-S6",
@@ -175,6 +175,7 @@
       ],
       "acceptance": [
         "Unit test (test store and bus, fake clock): putting needle states along the phantom midline into the store emits lossOfResistance then duralPuncture as tissueEvent, with the fake clock's times",
+        "Unit test (test store and bus): putting a needle state with boneContact true into the store emits one boneContact tissueEvent; repeating it with boneContact still true emits nothing more",
         "Unit test: caseStart clears the stored events",
         "Unit test: no needle → no events and tipTissue null",
         "Screen test (both set-ups): putting a hand-made needle with its tip in the epidural space into the store (dev-server store module trick) makes window.__sim.sim().tipTissue 'epiduralSpace'"
@@ -185,11 +186,12 @@
       "dependsOn": [
         "F6-S4",
         "F6-S5",
+        "F6-S6",
         "F6-S7"
       ],
       "status": "todo",
       "attempts": 0,
-      "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): simulation time = seconds since the last caseStart. F9 will need the same clock (see PLAN.md gaps)."
+      "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): simulation time = seconds since the last caseStart. F9 will need the same clock (see PLAN.md gaps). Review fix 2026-11-13 (owner approved all review fixes): depends on F6-S6 and checks that bone contact reaches the bus."
     },
     {
       "id": "F6-S9",
@@ -217,12 +219,13 @@
     {
       "id": "F6-S10",
       "title": "Add an Aspirate button that shows the result",
-      "description": "Add an Aspirate button (data-testid aspirate, at least 44×44 px on the tablet) to the sim section. Pressing it shows the result (data-testid aspirate-result: 'CSF', 'Blood' or 'Nothing') for the tissue at the tip. It is disabled with no needle. The random numbers come from createRandom(seed) made at each caseStart; the seed is in the 'sim' debug getter so tests can predict results. Planning default: the seed is a fixed number in dev/test builds and the time at caseStart otherwise.",
+      "description": "Add an Aspirate button (data-testid aspirate, at least 44×44 px on the tablet) to the sim section. Pressing it shows the result (data-testid aspirate-result: 'CSF', 'Blood' or 'Nothing') for the tissue at the tip. It is disabled with no needle. The random numbers come from createRandom(seed), made when the sim zone is mounted (so Aspirate works in Free play, where no caseStart is sent today) and made again at each caseStart. The seed is in the 'sim' debug getter so tests can predict results. Seed rule (owner decision 2026-11-13): a fixed number in dev/test builds, the time (milliseconds) at mount or caseStart in the production build.",
       "specRefs": [
         "F6.4"
       ],
       "acceptance": [
         "Screen test (both set-ups; click / tap): tip in the thecal sac → 'CSF'; in the vein → 'Blood'; in muscle → 'Nothing'",
+        "Screen test (both set-ups): with no caseStart ever emitted (Free play), Aspirate with the tip in the vein still shows 'Blood' and window.__sim.sim().seed is a number",
         "Screen test (both set-ups): disabled with no needle",
         "Screen test (tablet): the button is at least 44×44 px"
       ],
@@ -234,7 +237,7 @@
       ],
       "status": "todo",
       "attempts": 0,
-      "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): the sim zone is mounted in the needle panel's slot. Unblocked."
+      "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): the sim zone is mounted in the needle panel's slot. Review fix 2026-11-13 (owner approved all review fixes): random numbers are also made at mount (nothing sends caseStart before F10); the seed rule is recorded in docs/DECISIONS.md."
     },
     {
       "id": "F6-S11",

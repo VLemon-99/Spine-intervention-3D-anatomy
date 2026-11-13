@@ -12,13 +12,14 @@
     {
       "id": "F5-S1",
       "title": "Find where a beam ray meets the skin",
-      "description": "Create src/needle/entry.ts with skinEntry(volume, ray): walk along the ray (origin + direction from src/core/geometry.ts unproject) in steps of at most half the smallest voxel spacing and return the first point whose label (labelAt in src/needle/sample.ts) is not air — the skin entry point — or null if the ray never meets tissue inside the grid. Refine the hit to within 0.1 mm by halving the last step. Plain TypeScript, no browser code; no edits in src/core/.",
+      "description": "Create src/needle/entry.ts with skinEntry(volume, ray): the ray comes from src/core/geometry.ts unproject (origin = the X-ray source, which is under the table, in front of the prone patient; direction = source → detector). The needle goes in from the BACK, which faces the detector, so do not walk from the source (that finds the belly skin). Instead start where the ray leaves the volume's grid on the detector side and walk back toward the source, in steps of at most half the smallest voxel spacing, and return the first point whose label (labelAt in src/needle/sample.ts) is not air — the skin entry point on the detector side — or null if the ray never meets tissue inside the grid. Refine the hit to within 0.1 mm by halving the last step. Plain TypeScript, no browser code; no edits in src/core/.",
       "specRefs": [
         "F5.2"
       ],
       "acceptance": [
-        "Unit test (phantom, pose 0°/0°): the ray through the image centre gives a point whose label is not air while the point 1 voxel back along the ray is air (the skin boundary, within 1 voxel)",
-        "Unit test (phantom): the returned point projects with geometry.project to the pixel the ray was made from, within 0.5 px, for 5 pixels inside the body and for 2 oblique poses",
+        "Unit test (phantom, pose 0°/0°): the ray through the image centre gives a point on the BACK: y > 30 mm (the phantom's back skin is near y = 42), whose label is not air while the point 1 voxel further toward the detector is air (the skin boundary, within 1 voxel)",
+        "Unit test (phantom, pose 0°/0°): the returned point is not on the belly side (y < −30 never happens for 5 pixels inside the body)",
+        "Unit test (phantom): for 5 pixels inside the body and for 2 oblique poses, the returned point projects with geometry.project to the pixel the ray was made from, within 0.5 px, and every sample from it toward the detector up to the grid's edge is air (it is the detector-side skin)",
         "Unit test: a ray that misses the body (an image corner at pose 0°/0°) returns null",
         "Unit test: a volume not in the standard layout is rejected"
       ],
@@ -28,12 +29,12 @@
       "dependsOn": [],
       "status": "todo",
       "attempts": 0,
-      "notes": ""
+      "notes": "Review fix 2026-11-13 (owner approved all review fixes): walk from the detector side, so the entry is on the back (the first draft walked from the source and would have found the belly skin)."
     },
     {
       "id": "F5-S2",
       "title": "Keep one needle session that obeys the handling rules",
-      "description": "Create src/needle/session.ts: a plain-TypeScript needle session that wraps the F4 model (src/needle/model.ts). It holds the chosen needle id and pre-bend (0–30° in steps of 5°), the entry point and the model (null before an entry is marked). Functions: chooseNeedle(id), choosePreBend(deg), markEntry(point, beamDirection) (creates the model with the needle pointing down the beam, F5.3), setHubAngles (each axis clamped to ±45° of the start, F5.4), nudgeHub(dPitch, dYaw), advance(mm), withdraw(mm), rotateBevel(deg), withdrawFully() (removes the needle). While the inserted depth is above 0, chooseNeedle, choosePreBend and markEntry change nothing and report 'locked' (F5.1); after withdrawFully they work again. For the curved-tip RF cannula the pre-bend is its built-in curve (owner decision 2026-11-11), so choosePreBend has no effect for it. toNeedleState() gives the shared NeedleState. No browser code, no edits in src/core/.",
+      "description": "Create src/needle/session.ts: a plain-TypeScript needle session that wraps the F4 model (src/needle/model.ts). It holds the chosen needle id and pre-bend (0–30° in steps of 5°), the entry point and the model (null before an entry is marked). Functions: chooseNeedle(id), choosePreBend(deg), markEntry(point, beamDirection) (beamDirection = the ray's source → detector direction; creates the model with insertion direction = MINUS beamDirection, so the needle goes from the back into the body toward the source and is seen end-on, 'down the beam', F5.3), setHubAngles (each axis clamped to ±45° of the start, F5.4), nudgeHub(dPitch, dYaw), advance(mm), withdraw(mm), rotateBevel(deg), withdrawFully() (removes the needle). While the inserted depth is above 0, chooseNeedle, choosePreBend and markEntry change nothing and report 'locked' (F5.1); after withdrawFully they work again. For the curved-tip RF cannula the pre-bend is its built-in curve (owner decision 2026-11-11), so choosePreBend has no effect for it. toNeedleState() gives the shared NeedleState. No browser code, no edits in src/core/. Also correct the comment on CreateNeedleInput.direction in src/needle/model.ts (it says 'F5 passes the beam direction'; it should say F5 passes the reversed beam direction, detector → source). Comment only, no code change in model.ts.",
       "specRefs": [
         "F5.1",
         "F5.3",
@@ -42,7 +43,7 @@
       "acceptance": [
         "Unit test: before insertion, choosing a needle and a pre-bend changes them; a pre-bend that is not a multiple of 5 or is outside 0–30 is rejected",
         "Unit test: after markEntry and advance(1), chooseNeedle, choosePreBend and markEntry are refused (locked) and the needle stays the same; after withdrawFully they are accepted again",
-        "Unit test (F5.3): right after markEntry, the needle's direction (entry point minus hub) is parallel to the beam direction passed in (within 0.1°)",
+        "Unit test (F5.3): right after markEntry, the needle's direction (entry point minus hub) is OPPOSITE to the beam direction passed in (angle 180° within 0.1°); at pose 0°/0° advancing 5 mm moves the tip toward −y (into the body from the back)",
         "Unit test (F5.4): setHubAngles(60, -70) is clamped to (45, -45); nudgeHub never goes past ±45°",
         "Unit test: the same sequence of calls always gives an identical NeedleState (deterministic)"
       ],
@@ -54,12 +55,12 @@
       ],
       "status": "todo",
       "attempts": 0,
-      "notes": ""
+      "notes": "Review fix 2026-11-13 (owner approved all review fixes): the needle points against the beam direction (detector → source), matching the F4 model's tests, which insert toward the front (−y)."
     },
     {
       "id": "F5-S3",
       "title": "Show the needle and pre-bend pickers and publish the needle to the store",
-      "description": "In src/needle/index.ts build the needle panel's set-up row: a needle picker (data-testid needle-select, one entry per catalogue needle, by name) and a pre-bend picker (data-testid prebend-select, 0–30° in 5° steps; disabled for the curved-tip cannula). Keep one session (F5-S2) for the app and write its NeedleState to store.needle whenever it changes (null when there is no needle). On caseStart, and when store.volume changes to a different volume, the needle is removed (default from F5–F7 planning; see notes). Register a debug getter 'needle' returning { needleId, preBend, locked, entryPoint, hubAngles, bevelAngle, insertedDepth, tip } or null. Pickers are disabled while locked. Add markEntryAtPixel(pixel) to the app's session: it marks the entry where the ray through that image pixel, at store.lastImagePose, meets the skin (F5-S1), pointing down that ray (F5.3); it does nothing before the first image or while locked. Export the app's one session as needleSession from src/needle/session.ts so the zone's screen-test helper tests/e2e/needle/needlePage.ts can call markEntryAtPixel through the dev server's module (the same trick as setPose; zone helpers are not shared). Every new control is at least 44×44 px in the tablet set-up.",
+      "description": "In src/needle/index.ts build the needle panel's set-up row: a needle picker (data-testid needle-select, one entry per catalogue needle, by name) and a pre-bend picker (data-testid prebend-select, 0–30° in 5° steps; disabled for the curved-tip cannula). Keep one session (F5-S2) for the app, exported as needleSession from src/needle/session.ts, and write its NeedleState to store.needle whenever it changes (null when there is no needle). On caseStart, and when store.volume changes to a different volume, the needle is removed (default from F5–F7 planning; see notes). Register a debug getter 'needle' returning { needleId, preBend, locked, entryPoint, hubAngles, bevelAngle, insertedDepth, tip } or null. Pickers are disabled while locked. Every new control is at least 44×44 px in the tablet set-up. Marking an entry from an image pixel is the next story (F5-S12).",
       "specRefs": [
         "F5.1",
         "F12.3"
@@ -68,9 +69,8 @@
         "Screen test (both set-ups): the needle picker lists all six catalogue needles; picking one (select on desktop, tap + choose on tablet) changes window.__sim.needle().needleId",
         "Screen test (both set-ups): the pre-bend picker offers 0, 5, … 30; picking 15 shows 15 in the getter; for the curved-tip cannula the pre-bend picker is disabled",
         "Screen test (tablet): both pickers are at least 44×44 px",
-        "Screen test (both set-ups, phantom, after one image at 0°/0°): markEntryAtPixel((256, 256)) through the helper gives an entry point that is not air with air 1 voxel back along the ray, projecting to (256, 256) within 2 px; the same at oblique 20° and pixel (240, 270) (F5.2 logic)",
-        "Screen test (both set-ups): before the first image markEntryAtPixel does nothing",
-        "Unit test: emitting caseStart on a test store/bus removes the needle (store.needle becomes null)"
+        "Unit test: emitting caseStart on a test store/bus removes the needle (store.needle becomes null)",
+        "Unit test: putting a different volume into a test store removes the needle; putting the same volume back does not"
       ],
       "verify": "npx playwright test tests/e2e/needle/pickers.spec.ts && npx vitest run tests/needle/storeLink.test.ts",
       "zone": "needle",
@@ -80,12 +80,35 @@
       ],
       "status": "todo",
       "attempts": 0,
-      "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): the needle is removed on caseStart and when a different volume is loaded."
+      "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): the needle is removed on caseStart and when a different volume is loaded. Review fix 2026-11-13 (owner approved all review fixes): split in two (marking from a pixel moved to F5-S12); a test for removal on a new volume added."
+    },
+    {
+      "id": "F5-S12",
+      "title": "Mark the entry from an image pixel, with a screen-test helper",
+      "description": "Add markEntryAtPixel(pixel) to the app's needle session (src/needle/session.ts): it marks the entry where the ray through that image pixel, at store.lastImagePose, meets the skin on the detector side (F5-S1), with the needle pointing against that ray's direction (F5-S2, F5.3); it does nothing before the first image or while locked. Write the zone's screen-test helper tests/e2e/needle/needlePage.ts that calls needleSession.markEntryAtPixel through the dev server's module (the same trick as setPose; zone helpers are not shared).",
+      "specRefs": [
+        "F5.2",
+        "F5.3"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups, phantom, after one image at 0°/0°): markEntryAtPixel((256, 256)) through the helper gives an entry point on the back (y > 30), not air, with air 1 voxel further toward the detector, projecting to (256, 256) within 2 px; the same at oblique 20° and pixel (240, 270) (F5.2 logic)",
+        "Screen test (both set-ups): right after marking, the needle points against the beam (window.__sim.needle() tip is the entry point and advancing 5 mm moves the tip toward the source)",
+        "Screen test (both set-ups): before the first image markEntryAtPixel does nothing"
+      ],
+      "verify": "npx playwright test tests/e2e/needle/markPixel.spec.ts",
+      "zone": "needle",
+      "priority": 4,
+      "dependsOn": [
+        "F5-S3"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": "Review fix 2026-11-13 (owner approved all review fixes): split out of F5-S3."
     },
     {
       "id": "F5-S4",
       "title": "Mark the skin entry point from a tap on the fluoro image",
-      "description": "Add a Mark entry tool button (data-testid mark-entry) to the needle panel. While it is active and no needle is inserted, an 'imageTap' bus event (payload ImageTap: the pixel of the held image as taken, src/core/store.ts) calls markEntryAtPixel (F5-S3) with that pixel. The tool then switches off. The tool is disabled before the first image and while the needle is inserted. The render zone emits 'imageTap' from the canvas (F7-S7); this story's screen tests emit the bus event themselves through the dev server's store module (the setPose trick). Every new control is at least 44×44 px in the tablet set-up.",
+      "description": "Add a Mark entry tool button (data-testid mark-entry) to the needle panel. While it is active and no needle is inserted, an 'imageTap' bus event (payload ImageTap: the pixel of the held image as taken, src/core/store.ts) calls markEntryAtPixel (F5-S3) with that pixel. The tool then switches off. The tool is disabled before the first image and while the needle is inserted. The render zone emits 'imageTap' from the canvas (F7-S7); this story's screen tests emit the bus event themselves through the dev server's store module (the setPose trick). Every new control is at least 44×44 px in the tablet set-up. This is the feature's last loop story: run the whole check.",
       "specRefs": [
         "F5.2",
         "F5.3"
@@ -94,17 +117,19 @@
         "Screen test (both set-ups, phantom, after one image at pose 0°/0°): with Mark entry on, emitting imageTap at pixel (256, 256) gives the same entry point as markEntryAtPixel((256, 256)), and the tool switches off",
         "Screen test (both set-ups): with Mark entry off, imageTap changes nothing",
         "Screen test (both set-ups): Mark entry is disabled before the first image",
+        "Screen test (both set-ups): after marking an entry and advancing 1 mm, Mark entry is disabled and imageTap changes nothing; after Withdraw fully it is enabled again",
         "Screen test (tablet): the Mark entry button is at least 44×44 px"
       ],
-      "verify": "npx playwright test tests/e2e/needle/markEntry.spec.ts",
+      "verify": "npx playwright test tests/e2e/needle/markEntry.spec.ts && npm run check",
       "zone": "needle",
-      "priority": 10,
+      "priority": 12,
       "dependsOn": [
-        "F5-S3"
+        "F5-S12",
+        "F5-S13"
       ],
       "status": "todo",
       "attempts": 0,
-      "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): the bus event `imageTap` (payload ImageTap { x, y } from src/core/store.ts) is on the shared contract. Unblocked."
+      "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): the bus event `imageTap` (payload ImageTap { x, y } from src/core/store.ts) is on the shared contract. Unblocked. Review fix 2026-11-13 (owner approved all review fixes): test for 'disabled while inserted' added; depends on F5-S12 and F5-S13."
     },
     {
       "id": "F5-S5",
@@ -123,9 +148,9 @@
       ],
       "verify": "npx playwright test tests/e2e/needle/keys.spec.ts",
       "zone": "needle",
-      "priority": 4,
+      "priority": 5,
       "dependsOn": [
-        "F5-S3"
+        "F5-S12"
       ],
       "status": "todo",
       "attempts": 0,
@@ -146,7 +171,7 @@
       ],
       "verify": "npx playwright test tests/e2e/needle/padMouse.spec.ts",
       "zone": "needle",
-      "priority": 5,
+      "priority": 6,
       "dependsOn": [
         "F5-S5"
       ],
@@ -168,7 +193,7 @@
       ],
       "verify": "npx playwright test tests/e2e/needle/padTouch.spec.ts",
       "zone": "needle",
-      "priority": 6,
+      "priority": 7,
       "dependsOn": [
         "F5-S6"
       ],
@@ -190,7 +215,7 @@
       ],
       "verify": "npx playwright test tests/e2e/needle/advanceButtons.spec.ts",
       "zone": "needle",
-      "priority": 7,
+      "priority": 8,
       "dependsOn": [
         "F5-S5"
       ],
@@ -200,29 +225,49 @@
     },
     {
       "id": "F5-S9",
-      "title": "Show depth, bevel clock face and angle to the beam, and a Withdraw fully button",
-      "description": "Add readouts to the needle panel (F5.6): inserted depth in mm with one decimal (data-testid needle-depth), a clock-face bevel indicator (data-testid needle-bevel, with data-angle = bevelAngle and the notch drawn at that clock position, 12 o'clock = head, as on a real hub), and the angle between the needle's outside part (hub → entry point) and the beam ray from the current C-arm pose's source through the entry point, in whole degrees (data-testid needle-beam-angle). Put the angle maths in a plain function (src/needle/readouts.ts) with a unit test. Add a Withdraw fully button (data-testid needle-withdraw-all) that removes the needle (store.needle null, pickers unlocked). Buttons at least 44×44 px on the tablet.",
+      "title": "Show depth, bevel clock face and angle to the beam",
+      "description": "Add readouts to the needle panel (F5.6): inserted depth in mm with one decimal (data-testid needle-depth), a clock-face bevel indicator (data-testid needle-bevel, with data-angle = bevelAngle and the notch drawn at that clock position, 12 o'clock = head, as on a real hub), and the angle between the needle's outside part (hub → entry point) and the beam ray from the current C-arm pose's source through the entry point, in whole degrees (data-testid needle-beam-angle). The angle is between the two LINES, 0–90°, whichever way each points (the needle points against the beam, so a naive vector angle would read 180°). Put the angle maths in a plain function (src/needle/readouts.ts) with a unit test. Withdraw fully and the lock checks are the next story (F5-S13).",
       "specRefs": [
-        "F5.6",
-        "F5.1"
+        "F5.6"
       ],
       "acceptance": [
-        "Unit test: a needle pointing along the beam gives 0°; tilted 30° away gives 30° (±0.5°)",
+        "Unit test: a needle pointing exactly against the beam gives 0°, and so does one pointing along it; tilted 30° away gives 30° (±0.5°); the result is never above 90°",
         "Screen test (both set-ups): after advancing 12.4 mm the depth readout shows 12.4",
         "Screen test (both set-ups): after rotating the bevel to 90°, needle-bevel has data-angle 90",
-        "Screen test (both set-ups): right after marking an entry the beam angle shows 0; after changing the hub by 10° it shows 10 (±1)",
-        "Screen test (both set-ups): Withdraw fully sets window.__sim.needle() to null and the needle picker is enabled again (F5.1 unlock)",
-        "Screen test (both set-ups): while inserted, the needle and pre-bend pickers are disabled and picking does not change the needle (F5.1 lock)"
+        "Screen test (both set-ups): right after marking an entry the beam angle shows 0; after changing the hub by 10° it shows 10 (±1)"
       ],
       "verify": "npx vitest run tests/needle/readouts.test.ts && npx playwright test tests/e2e/needle/readouts.spec.ts",
       "zone": "needle",
-      "priority": 8,
+      "priority": 9,
       "dependsOn": [
         "F5-S8"
       ],
       "status": "todo",
       "attempts": 0,
-      "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): the beam angle is measured against the CURRENT C-arm pose's beam."
+      "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): the beam angle is measured against the CURRENT C-arm pose's beam. Review fix 2026-11-13 (owner approved all review fixes): angle is between lines (0–90°); Withdraw fully and lock tests moved to F5-S13."
+    },
+    {
+      "id": "F5-S13",
+      "title": "Add a Withdraw fully button and check the needle lock",
+      "description": "Add a Withdraw fully button (data-testid needle-withdraw-all, at least 44×44 px on the tablet) to the needle panel that removes the needle (store.needle null, pickers unlocked) (F5.6, F5.1).",
+      "specRefs": [
+        "F5.6",
+        "F5.1"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups; click / tap): Withdraw fully sets window.__sim.needle() to null and the needle picker is enabled again (F5.1 unlock)",
+        "Screen test (both set-ups): while inserted, the needle and pre-bend pickers are disabled and picking does not change the needle (F5.1 lock)",
+        "Screen test (tablet): the button is at least 44×44 px"
+      ],
+      "verify": "npx playwright test tests/e2e/needle/withdrawAll.spec.ts",
+      "zone": "needle",
+      "priority": 10,
+      "dependsOn": [
+        "F5-S5"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": "Review fix 2026-11-13 (owner approved all review fixes): split out of F5-S9."
     },
     {
       "id": "F5-S10",
@@ -239,7 +284,7 @@
       ],
       "verify": "npx vitest run tests/needle/boneState.test.ts && npm run check",
       "zone": "needle",
-      "priority": 9,
+      "priority": 11,
       "dependsOn": [
         "F5-S2"
       ],
@@ -260,13 +305,60 @@
       ],
       "verify": "npx playwright test tests/e2e/needle/markEntryCanvas.spec.ts && npm run check",
       "zone": "needle",
-      "priority": 11,
+      "priority": 13,
       "dependsOn": [
         "F5-S4"
       ],
       "status": "blocked",
       "attempts": 0,
       "notes": "Blocked by design (planning 2026-11-12), not by a failed attempt: needs F7-S7 (the render zone's imageTap from the canvas) merged into main. No owner decision is needed — once F5 and F7 are both merged, set this to 'todo' or do it in a short interactive session."
+    },
+    {
+      "id": "F5-S14",
+      "title": "Check end to end that steering the real needle gives tissue events, and that the panels still fit",
+      "description": "Screen tests with the real needle controls (F5) and the real sim zone (F6) together, after both are merged: mark an entry on the phantom's midline at pose 0°/0° (needlePage helper), advance with W (desktop) or the Advance button (tablet) down the midline, and read the sim zone's event log and debug getter. Also checks the F12.3 layout now that both zones fill the needle panel. Test only; changes no code outside tests/e2e/needle/.",
+      "specRefs": [
+        "F6.2",
+        "F6.5",
+        "F12.3"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups, phantom): advancing from the back skin down the midline past y = 14 makes the event log (data-testid event-log) show 'Loss of resistance', and window.__sim.sim().tipTissue is 'epiduralSpace' at that point",
+        "Screen test (both set-ups): at 1280×800 (desktop) and 1024×768 (tablet), with a needle inserted and events in the log, all four panels are visible and the page does not scroll",
+        "npm run check passes"
+      ],
+      "verify": "npx playwright test tests/e2e/needle/simEndToEnd.spec.ts && npm run check",
+      "zone": "needle",
+      "priority": 14,
+      "dependsOn": [
+        "F5-S4"
+      ],
+      "status": "blocked",
+      "attempts": 0,
+      "notes": "Blocked by design (review 2026-11-13), not by a failed attempt: needs F6 (sim zone) merged into main. No owner decision is needed — once F5 and F6 are both merged, set this to 'todo' or do it in a short interactive session. If the layout check fails, that is a layout change for the app zone (F12), not for this story."
+    },
+    {
+      "id": "F5-S15",
+      "title": "Check end to end that the real needle appears on the next image",
+      "description": "Screen test with the real needle controls (F5) and the needle in the image (F7) together, after both are merged: mark an entry on the phantom at pose 0°/0°, advance 30 mm with the real controls, change the oblique to 20° through the store (setPose), take an image, and check the needle shows. Test only; changes no code outside tests/e2e/needle/.",
+      "specRefs": [
+        "F7.1",
+        "F7.4"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups, phantom): after taking the image, window.__sim.render().lastImage.needleTip equals window.__sim.needle().tip (within 0.01 mm), and the canvas pixel at geometry.project(tip) is darker than the same pixel in an image taken with no needle",
+        "Screen test (both set-ups): advancing the needle 5 mm more without a new image leaves the picture unchanged (last image hold, F7.4)",
+        "npm run check passes"
+      ],
+      "verify": "npx playwright test tests/e2e/needle/imageEndToEnd.spec.ts && npm run check",
+      "zone": "needle",
+      "priority": 15,
+      "dependsOn": [
+        "F5-S4"
+      ],
+      "status": "blocked",
+      "attempts": 0,
+      "notes": "Blocked by design (review 2026-11-13), not by a failed attempt: needs F7 (needle in the image) merged into main. No owner decision is needed — once F5 and F7 are both merged, set this to 'todo' or do it in a short interactive session."
     }
   ]
 }
