@@ -6,6 +6,7 @@
 <!-- Reusable learnings for future rounds: gotchas, patterns, commands that work. After the feature is merged, an interactive session promotes the useful ones into CLAUDE.md. -->
 - The needle is a chain of flat-ended tubes: `needlePathLength` intersects the ray with each piece's infinite tube, then cuts to the piece's length along its axis. This is exact, handles a ray along the needle (no infinity), and colinear pieces never double-count. The GPU shader (F7-S3) should copy this maths line for line.
 - GPU precision: the source is ~650 mm from the needle, so |w|² in float32 swamps r² (0.12 mm²). The shader first moves the ray start to its closest point to each piece's start (tShift) and counts the ray's own start as t = −tShift. Keep that if the shader is changed.
+- A Playwright `tap()` on the tablet set-up also fires a `click` event, so one 'click' listener covers mouse and touch (fluoroCanvas.ts imageTap).
 - `needlePathLength` counts only t ≥ 0 (in front of the ray's start), so pass the X-ray source as the ray origin.
 
 ## Rounds
@@ -40,3 +41,9 @@
 - Files touched: tests/e2e/render/needleCpuMatch.spec.ts (new), this task file and log.
 - Test result: verify 6/6 passed (both set-ups); `npm run check` green (lint + types; unit 506 passed; screen 419 passed, 25 skipped by set-up).
 - Next round should know: next eligible is F7-S7 (imageTap), then F7-S4. The tShift precision trick in the shader is enough for the GPU to match the CPU.
+
+## Round — 2026-11-13 05:45 — F7-S7 — done
+- What I did: New plain function `imageTapPixel` (src/render/imageTap.ts): canvas pixel (floored, on the 512 grid) → unorientPixel with the CURRENT display flips/rotation → null if collimated by the held image's shutters → detectorPosition with the held image's magnification. fluoroCanvas.ts listens for 'click' on the canvas, scales the position from the canvas's on-screen box, and emits 'imageTap' only while an image is held.
+- Files touched: src/render/imageTap.ts (new), src/render/fluoroCanvas.ts, tests/render/imageTap.test.ts (new), tests/e2e/render/imageTap.spec.ts (new), this task file and log.
+- Test result: verify passed (unit 8/8, screen 6/6 in both set-ups); `npm run check` green (unit 514 passed; screen 425 passed, 25 skipped by set-up).
+- Next round should know: the emitted pixel is a whole-pixel position (e.g. 256, not 256.5), scaled by magnification (so 306 at m = 2 can be fractional for odd offsets). F5-S11 can now be unblocked by the owner once F7 is merged.

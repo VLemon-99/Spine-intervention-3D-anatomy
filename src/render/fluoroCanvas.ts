@@ -17,12 +17,17 @@
 // display setting (invert, flips, rotation) changes, only the display step runs again — the
 // held image is re-shown at once, with no new exposure. The store's needle
 // (its shaft) is drawn into each new image.
+//
+// A click (desktop) or tap (tablet) on the held image emits 'imageTap' with
+// the pixel of the image as taken (imageTap.ts); nothing before the first
+// image or on a pixel covered by a shutter.
 import { Color, WebGLRenderer } from 'three';
 import { IMAGE_SIZE_PX } from '../core/geometry';
 import { registerDebugGetter } from '../core/debugRegistry';
 import type { EventBus, Store } from '../core/store';
 import type { CArmPose, ImageKind } from '../core/types';
 import { createDrrGpu } from './drrGpu';
+import { imageTapPixel } from './imageTap';
 import { noiseLevelFor } from './pipeline';
 import { cloneSettings, renderSettings, type RenderSettings, type SettingsStore } from './settings';
 
@@ -126,6 +131,25 @@ export function createFluoroCanvas(
       holding = false;
       fill(NO_VOLUME);
     }
+  });
+  // A click, or a tap (which the browser also reports as a click), on the held image.
+  canvas.addEventListener('click', (event) => {
+    if (!holding || !lastImage) return;
+    const box = canvas.getBoundingClientRect();
+    if (box.width <= 0 || box.height <= 0) return;
+    const { flipHorizontal, flipVertical, rotation } = settings.get();
+    const pixel = imageTapPixel(
+      {
+        x: ((event.clientX - box.left) / box.width) * IMAGE_SIZE_PX,
+        y: ((event.clientY - box.top) / box.height) * IMAGE_SIZE_PX,
+      },
+      {
+        orientation: { flipHorizontal, flipVertical, rotation },
+        magnification: lastImage.settings.magnification,
+        collimation: lastImage.settings.collimation,
+      },
+    );
+    if (pixel) bus.emit('imageTap', pixel);
   });
   // Display settings apply straight away, to the held image.
   settings.subscribe(() => {
