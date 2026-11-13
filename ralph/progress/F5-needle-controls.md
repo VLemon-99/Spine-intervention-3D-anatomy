@@ -4,7 +4,8 @@
 
 ## Lessons
 <!-- Reusable learnings for future rounds: gotchas, patterns, commands that work. After the feature is merged, an interactive session promotes the useful ones into CLAUDE.md. -->
-- [none yet]
+- `window.__sim.needle()` is null whenever no needle is placed (F5-S13 expects null after Withdraw fully). Screen tests that need needleId/preBend first place an uninserted needle (markEntry at depth 0) through the dev server's `/src/needle/session.ts` module; picking a needle/pre-bend at depth 0 rebuilds it at the same entry.
+- The app's session (`needleSession`) notifies through `needleSession.subscribe(listener)`; UI parts subscribe to stay in step (disabled while locked).
 
 ## Rounds
 <!--
@@ -26,3 +27,9 @@
 - Files touched: src/needle/session.ts, src/needle/model.ts (comment), tests/needle/session.test.ts
 - Test result: session tests 7/7; unit suite 502 passed; lint + typecheck clean; screen tests 409 passed, 25 skipped.
 - Next round should know: the session's `volume` is a writable property (advance returns 'rejected' without one). F5-S3 must export the app's one `needleSession` from session.ts and keep `volume` in sync with store.volume. "Locked" = model exists with depth > 0 (withdrawing back to 0 also unlocks).
+
+## Round — 2026-11-13 04:55 — F5-S3 — done
+- What I did: added `subscribe` and the app-wide `needleSession` to src/needle/session.ts; src/needle/storeLink.ts (`linkNeedleToStore`: publishes NeedleState to store.needle on each change, keeps session.volume = store.volume, removes the needle on caseStart and on a different volume); src/needle/pickers.ts (needle-select, prebend-select; disabled while locked, pre-bend disabled for the curved cannula); index.ts mounts the row, links once and registers the 'needle' getter.
+- Files touched: src/needle/{session,storeLink,pickers,index}.ts, tests/needle/storeLink.test.ts, tests/e2e/needle/pickers.spec.ts
+- Test result: verify passed (pickers 7 passed + 1 skipped; storeLink 3/3); npm run check: 505 unit, 416 screen tests passed.
+- Next round should know: pickers.spec.ts has an inline `placeNeedle` helper; F5-S12 writes the shared zone helper tests/e2e/needle/needlePage.ts (later specs can use that instead).

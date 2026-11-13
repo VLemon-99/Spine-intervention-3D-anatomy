@@ -78,7 +78,7 @@
       "dependsOn": [
         "F5-S2"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): the needle is removed on caseStart and when a different volume is loaded. Review fix 2026-11-13 (owner approved all review fixes): split in two (marking from a pixel moved to F5-S12); a test for removal on a new volume added."
     },

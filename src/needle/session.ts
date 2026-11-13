@@ -48,6 +48,8 @@ export interface NeedleSession {
   withdrawFully(): SessionResult;
   /** The shared NeedleState, or null when there is no needle. */
   toNeedleState(): NeedleState | null;
+  /** Calls listener after every change. Returns a function that unsubscribes. */
+  subscribe(listener: () => void): () => void;
 }
 
 const clampHub = (v: number): number =>
@@ -59,6 +61,12 @@ export function createNeedleSession(volume: Volume | null = null): NeedleSession
   let preBend = 0;
   let model: NeedleModel | null = null;
   let entry: { point: Vec3; direction: Vec3 } | null = null;
+  const listeners = new Set<() => void>();
+  /** Tells listeners about a change and passes the result on. */
+  const changed = (result: SessionResult): SessionResult => {
+    if (result === 'ok') for (const listener of [...listeners]) listener();
+    return result;
+  };
 
   const isLocked = () => model !== null && model.depth > 0;
   const isCurved = (id: string) => catalogue.needles.find((n) => n.id === id)?.tipType === 'curved';
@@ -93,7 +101,7 @@ export function createNeedleSession(volume: Volume | null = null): NeedleSession
       if (!catalogue.needles.some((n) => n.id === id)) return 'rejected';
       needleId = id;
       rebuild();
-      return 'ok';
+      return changed('ok');
     },
     choosePreBend(deg) {
       if (isLocked()) return 'locked';
@@ -107,7 +115,7 @@ export function createNeedleSession(volume: Volume | null = null): NeedleSession
       if (isCurved(needleId)) return 'ignored';
       preBend = deg;
       rebuild();
-      return 'ok';
+      return changed('ok');
     },
     markEntry(point, beamDirection) {
       if (isLocked()) return 'locked';
@@ -116,12 +124,12 @@ export function createNeedleSession(volume: Volume | null = null): NeedleSession
         return 'rejected';
       entry = { point: { ...point }, direction: { ...beamDirection } };
       rebuild();
-      return 'ok';
+      return changed('ok');
     },
     setHubAngles(pitch, yaw) {
       if (!model) return 'noNeedle';
       model = setModelHubAngles(model, { pitch: clampHub(pitch), yaw: clampHub(yaw) });
-      return 'ok';
+      return changed('ok');
     },
     nudgeHub(dPitch, dYaw) {
       if (!model) return 'noNeedle';
@@ -132,26 +140,37 @@ export function createNeedleSession(volume: Volume | null = null): NeedleSession
       if (!model) return 'noNeedle';
       if (!session.volume) return 'rejected';
       model = advanceModel(model, mm, session.volume).state;
-      return 'ok';
+      return changed('ok');
     },
     withdraw(mm) {
       if (!model) return 'noNeedle';
       model = withdrawModel(model, mm);
-      return 'ok';
+      return changed('ok');
     },
     rotateBevel(deg) {
       if (!model) return 'noNeedle';
       model = rotateModelBevel(model, deg);
-      return 'ok';
+      return changed('ok');
     },
     withdrawFully() {
+      if (!model && !entry) return 'ok';
       model = null;
       entry = null;
-      return 'ok';
+      return changed('ok');
     },
     toNeedleState() {
       return model ? modelToState(model) : null;
     },
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
   };
   return session;
 }
+
+/** The app's one needle session (F5-S3). Unit tests create their own with createNeedleSession(). */
+export const needleSession = createNeedleSession();
+
