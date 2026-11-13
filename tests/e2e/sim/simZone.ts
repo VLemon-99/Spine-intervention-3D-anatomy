@@ -1,5 +1,5 @@
 // Screen-test helpers of the sim zone (not a spec file).
-import type { Page } from '@playwright/test';
+import { test, type Page } from '@playwright/test';
 import type { Mode, NeedleState, TissueEvent, Vec3 } from '../../../src/core/types';
 
 /** What window.__sim.sim() returns. */
@@ -7,6 +7,8 @@ export interface SimInfo {
   tipTissue: string | null;
   resistance: number | null;
   events: TissueEvent[];
+  /** Seed of the Aspirate random numbers (F6-S10). */
+  seed?: number;
 }
 
 type SimHook = { __sim: { sim(): SimInfo } };
@@ -52,4 +54,14 @@ export async function setMode(page: Page, mode: Mode): Promise<void> {
     const { store } = (await import(/* @vite-ignore */ storeModule)) as typeof import('../../../src/core/store');
     store.set({ mode: m });
   }, mode);
+}
+
+/** Press a control the way the set-up's user would: a click on desktop, a tap on the tablet. */
+export async function press(page: Page, testId: string): Promise<void> {
+  const control = page.getByTestId(testId);
+  if (test.info().project.use.hasTouch) {
+    await control.tap();
+  } else {
+    await control.click();
+  }
 }

@@ -1,9 +1,14 @@
 // The sim zone's section in the needle panel (F6.1): a resistance bar and the
 // name of the tissue at the tip. The name is hidden in Exam mode
-// (owner decision 2026-11-13: shown in Practice and Free play).
+// (owner decision 2026-11-13: shown in Practice and Free play). An Aspirate
+// button shows what comes back (F6.4).
 
 import type { Mode } from '../core/types';
+import type { AspirateResult } from './aspirate';
 import type { TipTissue } from './tissue';
+
+/** The aspiration result as shown to the learner. */
+const RESULT_TEXT: Record<AspirateResult, string> = { CSF: 'CSF', blood: 'Blood', nothing: 'Nothing' };
 
 const STYLE_ID = 'sim-feedback-style';
 const CSS = `
@@ -15,6 +20,11 @@ const CSS = `
   .sim-resistance-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0;
     background: #e0a43a; }
   .sim-tip-tissue { font-weight: 600; }
+  .sim-aspirate { min-width: 88px; min-height: 32px; padding: 4px 12px; font: inherit; border-radius: 6px;
+    border: 1px solid #3d4a5c; background: #243041; color: inherit; cursor: pointer; }
+  .sim-aspirate:disabled { opacity: 0.5; cursor: default; }
+  @media (pointer: coarse) { .sim-aspirate { min-height: 44px; min-width: 88px; } }
+  .sim-aspirate-result { font-weight: 600; }
 `;
 
 export interface FeedbackView {
@@ -22,8 +32,11 @@ export interface FeedbackView {
   show(tissue: TipTissue | null, mode: Mode): void;
 }
 
-/** Builds the sim section (data-testid sim-feedback) and appends it to `parent`. */
-export function createFeedbackView(parent: HTMLElement): FeedbackView {
+/**
+ * Builds the sim section (data-testid sim-feedback) and appends it to `parent`.
+ * `onAspirate` is called when Aspirate is pressed and returns the result to show.
+ */
+export function createFeedbackView(parent: HTMLElement, onAspirate: () => AspirateResult | null): FeedbackView {
   if (!document.getElementById(STYLE_ID)) {
     const style = document.createElement('style');
     style.id = STYLE_ID;
@@ -57,7 +70,26 @@ export function createFeedbackView(parent: HTMLElement): FeedbackView {
   name.className = 'sim-tip-tissue';
   name.dataset.testid = 'tip-tissue';
 
-  section.append(barRow, name);
+  const aspirateRow = document.createElement('div');
+  aspirateRow.className = 'sim-feedback-row';
+  const aspirateButton = document.createElement('button');
+  aspirateButton.type = 'button';
+  aspirateButton.className = 'sim-aspirate';
+  aspirateButton.dataset.testid = 'aspirate';
+  aspirateButton.textContent = 'Aspirate';
+  const result = document.createElement('span');
+  result.className = 'sim-aspirate-result';
+  result.dataset.testid = 'aspirate-result';
+  result.setAttribute('aria-live', 'polite');
+  result.hidden = true;
+  aspirateButton.addEventListener('click', () => {
+    const outcome = onAspirate();
+    result.textContent = outcome ? RESULT_TEXT[outcome] : '';
+    result.hidden = outcome === null;
+  });
+  aspirateRow.append(aspirateButton, result);
+
+  section.append(barRow, name, aspirateRow);
   parent.append(section);
 
   return {
@@ -75,6 +107,11 @@ export function createFeedbackView(parent: HTMLElement): FeedbackView {
       const showName = tissue !== null && mode !== 'exam';
       name.textContent = showName ? tissue.name : '';
       name.hidden = !showName;
+      aspirateButton.disabled = tissue === null;
+      if (tissue === null) {
+        result.textContent = '';
+        result.hidden = true;
+      }
     },
   };
 }
