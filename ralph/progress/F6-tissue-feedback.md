@@ -53,3 +53,9 @@
 - Files touched: src/sim/tracker.ts, tests/sim/boneContact.test.ts, this log, the task file.
 - Test result: verify passed (5/5), all 47 sim tests pass; `npm run check` passed (lint, types, all unit tests, 409 screen tests passed, 25 skipped by set-up).
 - Next round should know: F6-S7 (aspirate) depends only on S1. The bone-contact event comes after any tissue events from the same update in the returned list.
+
+## Round — 2026-11-13 05:18 — F6-S7 — done
+- What I did: added `src/sim/aspirate.ts`: `aspirate(tissueKey, random, probability = tissues.arterialAspirationProbability)` → 'CSF' (thecal sac), 'blood' (vein), artery 'blood' when random() < probability else 'nothing', everything else 'nothing'. random() is only called in an artery. Tests first in `tests/sim/aspirate.test.ts` (6 tests; seed 12345 for the 1000-draw check).
+- Files touched: src/sim/aspirate.ts, tests/sim/aspirate.test.ts, this log, the task file.
+- Test result: verify passed (6/6); `npm run check` passed (lint, types, all unit tests, 409 screen tests passed, 25 skipped by set-up).
+- Next round should know: F6-S8 (runner) is now eligible: S4–S7 are all done. The screen will show 'CSF' / 'Blood' / 'Nothing' (F6-S10), so capitalise 'blood' and 'nothing' at display time.
