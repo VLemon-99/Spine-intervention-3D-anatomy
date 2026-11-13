@@ -27,7 +27,7 @@
       "zone": "needle",
       "priority": 1,
       "dependsOn": [],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": "Review fix 2026-11-13 (owner approved all review fixes): walk from the detector side, so the entry is on the back (the first draft walked from the source and would have found the belly skin)."
     },
