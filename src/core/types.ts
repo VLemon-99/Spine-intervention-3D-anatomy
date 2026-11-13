@@ -153,6 +153,12 @@ export interface NeedleState {
   shaft: Vec3[];
   /** Tip position, mm (same as the last shaft point). */
   tip: Vec3;
+  /**
+   * True while the tip rests against bone (F4.7), as the needle model reports
+   * it; the sim zone turns it into a 'boneContact' event (F6.3). Absent counts
+   * as false. Owner decision 2026-11-13.
+   */
+  boneContact?: boolean;
 }
 
 /** Tissue event types (F6.2, F6.3, F9.6). */

@@ -1,0 +1,262 @@
+{
+  "feature": "F6",
+  "name": "Tissue feedback and events",
+  "branch": "ralph/F6-tissue-feedback",
+  "zone": "sim",
+  "dependsOnFeatures": [
+    "F0",
+    "F4"
+  ],
+  "stories": [
+    {
+      "id": "F6-S1",
+      "title": "Add the tissue resistance file and its check",
+      "description": "Create src/sim/tissues.json (reviewedByOwner: false; a notes field saying the numbers are drafts) with a resistance value from 0 to 1 for every tissue key in TISSUE_LABELS (src/core/labels.ts) — bone and ligamentum flavum high, epidural space and thecal sac low — and arterialAspirationProbability: 0.5 (owner decision 2026-11-09). Create src/sim/data.ts with a hand-written validator (no new dependency) that loads and checks it. Plain TypeScript, no browser code.",
+      "specRefs": [
+        "F6.2",
+        "F6.4"
+      ],
+      "acceptance": [
+        "Unit test: the file passes the validator; every tissue key has a resistance between 0 and 1; reviewedByOwner is false",
+        "Unit test: ligamentum flavum's resistance is higher than the epidural space's (the drop that loss of resistance is about)",
+        "Unit test: the validator rejects a missing tissue key, a value outside 0–1, and a probability outside 0–1",
+        "Unit test: arterialAspirationProbability is 0.5"
+      ],
+      "verify": "npx vitest run tests/sim/data.test.ts",
+      "zone": "sim",
+      "priority": 1,
+      "dependsOn": [],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F6-S2",
+      "title": "Tell which tissue is at the needle tip",
+      "description": "Create src/sim/tissue.ts with labelAt(volume, point) (nearest voxel; outside the grid = air; a volume not in the standard layout is rejected — the sim zone's own copy, since zones do not import each other) and tipTissue(needle, volume): the tissue label entry (id, key, name from TISSUE_LABELS) at needle.tip, plus its resistance from tissues.json. Plain TypeScript.",
+      "specRefs": [
+        "F6.1"
+      ],
+      "acceptance": [
+        "Unit test (phantom): a needle whose tip is at the documented test points gives the expected tissue — body centre: cancellous bone; (0, 6, 0): spinal cord; (0, 19, 0): ligamentum flavum; (0, 14, 0): epidural space",
+        "Unit test: the resistance returned matches tissues.json for that tissue",
+        "Unit test: a tip outside the grid gives air",
+        "Unit test: a non-standard volume is rejected"
+      ],
+      "verify": "npx vitest run tests/sim/tissue.test.ts",
+      "zone": "sim",
+      "priority": 2,
+      "dependsOn": [
+        "F6-S1"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F6-S3",
+      "title": "Detect loss of resistance between two tip positions",
+      "description": "Create src/sim/tracker.ts: a plain-TypeScript tissue tracker. update(needle, volume, time) compares the previous tip with the new one and samples the straight segment between them every 0.25 mm (so a 1 mm step cannot jump over a thin layer). Each time the samples cross from ligamentum flavum into epidural space it returns one 'lossOfResistance' TissueEvent (time, tip position where it happened, message 'Loss of resistance'). A tracker starts with no previous tip; reset() forgets it. No browser code.",
+      "specRefs": [
+        "F6.2"
+      ],
+      "acceptance": [
+        "Unit test (phantom midline path, PHANTOM_TEST_POINTS.midlineLine): moving the tip from y = 46 to y = 10 in 1 mm steps gives exactly one lossOfResistance event, at a tip y between 14 and 16",
+        "Unit test: the same path in one single 36 mm step also gives exactly one event",
+        "Unit test: withdrawing back into the ligamentum flavum and advancing again gives a second event (once per entry)",
+        "Unit test: a path through muscle only gives no event; the result is the same for the same inputs (deterministic)"
+      ],
+      "verify": "npx vitest run tests/sim/tracker.test.ts",
+      "zone": "sim",
+      "priority": 3,
+      "dependsOn": [
+        "F6-S2"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F6-S4",
+      "title": "Report dural puncture, cord contact and intravascular placement",
+      "description": "Extend the tracker (F6-S3): entering the thecal sac emits 'duralPuncture' (message 'Dural puncture'), entering the spinal cord emits 'cordContact' ('Spinal cord contact'), entering an artery or a vein emits 'intravascular' ('Intravascular — artery' / 'Intravascular — vein'). Each is emitted once per entry, with time and tip position.",
+      "specRefs": [
+        "F6.3"
+      ],
+      "acceptance": [
+        "Unit test (phantom): a path down the midline from y = 46 to y = 4 gives duralPuncture once, then cordContact once, in that order",
+        "Unit test (phantom): a path into the artery (x 8, y −28) gives one intravascular event naming the artery; into the vein (x −9, y −28) one naming the vein",
+        "Unit test: staying inside the thecal sac for several steps gives no further duralPuncture; leaving and re-entering gives a second one",
+        "Unit test: every event carries the time passed to update and a tip inside the tissue entered"
+      ],
+      "verify": "npx vitest run tests/sim/safetyEvents.test.ts",
+      "zone": "sim",
+      "priority": 4,
+      "dependsOn": [
+        "F6-S3"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F6-S5",
+      "title": "Report nerve contact with its level and side",
+      "description": "Extend the tracker: when the tip comes within 1 mm of a nerve-root voxel (check every voxel whose centre is within 1 mm of the sample point), emit 'nerveContact' once per entry into that zone. The level and side come from the nearest foramen centre in the region's Landmarks (a foramen is listed under the level above it, docs/ARCHITECTURE.md); the side is that foramen's side. Message: 'Paresthesia — left L4' (side, then level). Without any foramen landmark the message is just 'Paresthesia' and level/side are left out.",
+      "specRefs": [
+        "F6.3"
+      ],
+      "acceptance": [
+        "Unit test (phantom): a path toward the left foramen (13, 5, 0) from behind gives one nerveContact with level 'L4', side 'left', message 'Paresthesia — left L4'",
+        "Unit test (phantom): the same on the right side gives 'right'",
+        "Unit test: a tip 1.5 mm from the nearest nerve-root voxel gives no event; 0.8 mm gives one",
+        "Unit test: landmarks without foramina give the message 'Paresthesia' with no level or side"
+      ],
+      "verify": "npx vitest run tests/sim/nerveContact.test.ts",
+      "zone": "sim",
+      "priority": 5,
+      "dependsOn": [
+        "F6-S3"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F6-S6",
+      "title": "Report bone contact from the needle state",
+      "description": "Extend the tracker: when NeedleState.boneContact (shared contract) changes from false/absent to true, emit 'boneContact' ('Bone contact') once, with time and tip; it can fire again only after the flag has gone false.",
+      "specRefs": [
+        "F6.3"
+      ],
+      "acceptance": [
+        "Unit test: a sequence of hand-made needle states with boneContact false, true, true, false, true gives exactly two boneContact events",
+        "Unit test: a needle state without the field never gives a boneContact event"
+      ],
+      "verify": "npx vitest run tests/sim/boneContact.test.ts",
+      "zone": "sim",
+      "priority": 6,
+      "dependsOn": [
+        "F6-S3"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): NeedleState has the optional `boneContact` field (src/core/types.ts). Unblocked."
+    },
+    {
+      "id": "F6-S7",
+      "title": "Aspirate: CSF, blood or nothing, with a seeded chance in an artery",
+      "description": "Create src/sim/aspirate.ts with aspirate(tissueKey, random, probability = tissues.json arterialAspirationProbability): 'CSF' in the thecal sac, 'blood' in a vein, in an artery 'blood' only when random() < probability, otherwise 'nothing'. random is a RandomFn from src/core/random.ts. Plain TypeScript.",
+      "specRefs": [
+        "F6.4"
+      ],
+      "acceptance": [
+        "Unit test: thecal sac → 'CSF'; vein → 'blood'; muscle and epidural space → 'nothing'",
+        "Unit test: in an artery with a fixed seed, 1000 aspirations give 'blood' between 45% and 55% of the time",
+        "Unit test: the same seed gives the same sequence of results; probability 0 never gives blood, 1 always does"
+      ],
+      "verify": "npx vitest run tests/sim/aspirate.test.ts",
+      "zone": "sim",
+      "priority": 7,
+      "dependsOn": [
+        "F6-S1"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F6-S8",
+      "title": "Watch the store's needle and send tissue events on the bus",
+      "description": "Create src/sim/runner.ts: connectSim(store, bus, clock) subscribes to store changes; whenever store.needle changes it runs the tracker against store.volume and store.landmarks, emits each new event as 'tissueEvent' on the bus, and keeps this attempt's events (oldest first). The clock gives simulation time in seconds: seconds since the last caseStart (or since connecting), injectable for tests. caseStart clears the events and the tracker; a needle going to null resets the tracker (not the events). mount() in src/sim/index.ts connects it to the app's store and bus and registers a debug getter 'sim' returning { tipTissue: key or null, resistance, events }.",
+      "specRefs": [
+        "F6.2",
+        "F6.3"
+      ],
+      "acceptance": [
+        "Unit test (test store and bus, fake clock): putting needle states along the phantom midline into the store emits lossOfResistance then duralPuncture as tissueEvent, with the fake clock's times",
+        "Unit test: caseStart clears the stored events",
+        "Unit test: no needle → no events and tipTissue null",
+        "Screen test (both set-ups): putting a hand-made needle with its tip in the epidural space into the store (dev-server store module trick) makes window.__sim.sim().tipTissue 'epiduralSpace'"
+      ],
+      "verify": "npx vitest run tests/sim/runner.test.ts && npx playwright test tests/e2e/sim/runner.spec.ts",
+      "zone": "sim",
+      "priority": 8,
+      "dependsOn": [
+        "F6-S4",
+        "F6-S5",
+        "F6-S7"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): simulation time = seconds since the last caseStart. F9 will need the same clock (see PLAN.md gaps)."
+    },
+    {
+      "id": "F6-S9",
+      "title": "Show a resistance bar and, in Practice and Free play, the tissue name",
+      "description": "The sim zone's section in the needle panel (data-testid sim-feedback) shows a resistance bar (data-testid resistance-bar, with data-value = resistance 0–1, empty with no needle) and the tissue name at the tip (data-testid tip-tissue). The name is hidden when store.mode is 'exam' (owner decision 2026-11-13: shown in practice and freeplay). The sim zone's mount() receives the needle panel's slot (src/app/main.ts), so the section goes after the needle panel inside that slot.",
+      "specRefs": [
+        "F6.1"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups): a hand-made needle with its tip in the ligamentum flavum shows that tissue's resistance in data-value and 'Ligamentum flavum' as the name",
+        "Screen test (both set-ups): with mode 'exam' the name is not visible and not in the panel's text, but the bar still shows",
+        "Screen test (both set-ups): with no needle the bar is empty and no name shows",
+        "Screen test (both set-ups): the sim section is inside the needle panel and the page does not scroll at 1280×800 and 1024×768"
+      ],
+      "verify": "npx playwright test tests/e2e/sim/feedback.spec.ts",
+      "zone": "sim",
+      "priority": 9,
+      "dependsOn": [
+        "F6-S8"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): src/app/main.ts now mounts the sim zone into the needle panel's slot (layout.needle, after the needle zone), so the sim's section appears inside the needle panel. Tissue names show in Practice and Free play and are hidden in Exam. Unblocked."
+    },
+    {
+      "id": "F6-S10",
+      "title": "Add an Aspirate button that shows the result",
+      "description": "Add an Aspirate button (data-testid aspirate, at least 44×44 px on the tablet) to the sim section. Pressing it shows the result (data-testid aspirate-result: 'CSF', 'Blood' or 'Nothing') for the tissue at the tip. It is disabled with no needle. The random numbers come from createRandom(seed) made at each caseStart; the seed is in the 'sim' debug getter so tests can predict results. Planning default: the seed is a fixed number in dev/test builds and the time at caseStart otherwise.",
+      "specRefs": [
+        "F6.4"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups; click / tap): tip in the thecal sac → 'CSF'; in the vein → 'Blood'; in muscle → 'Nothing'",
+        "Screen test (both set-ups): disabled with no needle",
+        "Screen test (tablet): the button is at least 44×44 px"
+      ],
+      "verify": "npx playwright test tests/e2e/sim/aspirate.spec.ts",
+      "zone": "sim",
+      "priority": 10,
+      "dependsOn": [
+        "F6-S9"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): the sim zone is mounted in the needle panel's slot. Unblocked."
+    },
+    {
+      "id": "F6-S11",
+      "title": "List this attempt's events in the needle panel, newest first",
+      "description": "Add an event log (data-testid event-log) to the sim section: one row per event of this attempt (time in seconds with one decimal and the message), newest at the top. caseStart empties it. This is the feature's last loop story: run the whole check.",
+      "specRefs": [
+        "F6.5"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups): moving a hand-made needle down the phantom midline shows 'Dural puncture' above 'Loss of resistance'",
+        "Screen test (both set-ups): emitting caseStart empties the log",
+        "npm run check passes"
+      ],
+      "verify": "npx playwright test tests/e2e/sim/eventLog.spec.ts && npm run check",
+      "zone": "sim",
+      "priority": 11,
+      "dependsOn": [
+        "F6-S9"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): the sim zone is mounted in the needle panel's slot; the log lists every event, Intravascular included. Unblocked."
+    }
+  ]
+}

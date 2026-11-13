@@ -8,7 +8,7 @@ A static website: TypeScript, built with Vite. It runs entirely in the browser, 
 ## Components
 | Component | What it does | Where it lives |
 |---|---|---|
-| Core (shared contracts) | Shared types (`Volume`, `Landmarks`, `Mode`, `CArmPose`, `NeedleState`, `TissueEvent`, `AttemptRecord`), tissue label list, C-arm projection geometry, central state store (pose, shot count, fluoro time, last image pose and kind, mode, volume, landmarks, needle state, contrast volume, list of regions on offer, list of procedures on offer) + event bus (`exposure`, `caseStart`, `tissueEvent`, `regionRequest`, `procedureRequest`, `attemptFinished`), shared list of keyboard shortcuts for the help overlay, seeded random numbers, synthetic phantom (with landmarks), `window.__sim` test hook | `src/core/` |
+| Core (shared contracts) | Shared types (`Volume`, `Landmarks`, `Mode`, `CArmPose`, `NeedleState`, `TissueEvent`, `AttemptRecord`), tissue label list, C-arm projection geometry, central state store (pose, shot count, fluoro time, last image pose and kind, mode, volume, landmarks, needle state, contrast volume, list of regions on offer, list of procedures on offer) + event bus (`exposure`, `caseStart`, `tissueEvent`, `regionRequest`, `procedureRequest`, `attemptFinished`, `imageTap`), shared list of keyboard shortcuts for the help overlay, seeded random numbers, synthetic phantom (with landmarks), `window.__sim` test hook | `src/core/` |
 | App shell | Disclaimer, home screen, modes (Practice / Exam / Quiz / Free play), layout, history (browser storage), About page, WebGL2 check. `main.ts` mounts every zone's panel | `src/app/` |
 | Anatomy | Converter script (NIfTI → web format), soft-tissue modeller, region loader, landmarks | `tools/anatomy/`, `src/anatomy/`, `public/data/` |
 | Renderer | GPU DRR shader, CPU reference DRR, display (invert, noise, collimation, magnification, flip), needle and contrast in the image, fluoro panel | `src/render/` |
@@ -53,6 +53,9 @@ The 3D view only reads the store; it never changes it.
 - **Image kind:** the C-arm zone sets `store.lastImageKind` (`'shot'` or `'fluoro'`) together with `lastImagePose`, before emitting `exposure`. The renderer uses more grain for fluoro frames.
 - **Shortcut help:** each zone registers its keys as a group in `src/core/shortcuts.ts`; the help overlay (C-arm zone) lists every group.
 - **Sacrum and iliac crests:** they are not per-level landmark entries; a region's `Landmarks` has optional `sacrum` and `iliacCrest` fields. The L5–S1 foramen is listed under L5.
+- **Image taps:** a click or tap on the fluoro image makes the render zone emit `imageTap` with the pixel of the image as taken (display flips/rotation and magnification undone), so `createProjection(store.lastImagePose).unproject(tap)` is that pixel's ray. The needle zone's Mark entry tool listens to it (F5.2).
+- **Bone contact:** `NeedleState.boneContact` (optional; absent = false) is set by the needle zone from its model; the sim zone turns a change to true into a `boneContact` event.
+- **Sim in the needle panel:** `main.ts` mounts the sim zone into the needle panel's slot, after the needle zone, so its feedback (resistance, Aspirate, event log) shows inside the needle panel.
 - **Unit tests run without a browser page** (Vitest `node` environment, no jsdom/happy-dom). Logic that needs a unit test lives in plain functions; screens are checked by screen tests.
 
 ## Work zones (for parallel loops)
