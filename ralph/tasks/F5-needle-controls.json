@@ -333,7 +333,7 @@
       "dependsOn": [
         "F5-S4"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": "Blocked by design (review 2026-11-13), not by a failed attempt: needs F6 (sim zone) merged into main. No owner decision is needed — once F5 and F6 are both merged, set this to 'todo' or do it in a short interactive session. If the layout check fails, that is a layout change for the app zone (F12), not for this story. Unblocked 2026-11-14 by the owner: F5 and F6 are merged into main."
     },

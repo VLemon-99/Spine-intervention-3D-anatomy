@@ -103,3 +103,9 @@
 - Files touched: tests/e2e/needle/markEntryCanvas.spec.ts
 - Test result: verify: 2/2 (desktop + tablet); npm run check: 599 unit, 539 screen tests passed (43 skipped by set-up).
 - Next round should know: next is F5-S14 (sim end to end + layout). The sim zone's screen helpers are in tests/e2e/sim/simZone.ts (getSim etc.); zone helpers are not shared, so write needle-zone versions if needed.
+
+## Round — 2026-11-14 02:20 — F5-S14 — done
+- What I did: tests/e2e/needle/simEndToEnd.spec.ts. Mark the entry at image pixel (256, 256) at 0°/0° (the midline, |x|, |z| < 0.5 mm), then advance 1 mm at a time with W (desktop) or the Advance button (tablet) until tip.y < 14: sim().tipTissue is 'epiduralSpace', the events include 'Loss of resistance' and the event log in the needle panel shows it. Layout: with that needle and events, all four panels lie inside the viewport, the page does not scroll, and needle-steer / needle-readouts / event-log end inside the needle panel. Test only, no app code changed.
+- Files touched: tests/e2e/needle/simEndToEnd.spec.ts
+- Test result: verify: 4/4 (2 per set-up); npm run check: 599 unit, 543 screen tests passed (43 skipped by set-up).
+- Next round should know: last story is F5-S15 (needle in the image end to end). The render zone's getter is window.__sim.render() with lastImage.needleTip; tests/e2e/fixtures/readCanvas.ts reads canvas grey values.
