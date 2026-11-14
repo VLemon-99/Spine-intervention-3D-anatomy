@@ -27,7 +27,7 @@
       "zone": "needle",
       "priority": 1,
       "dependsOn": [],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": "Review fix 2026-11-13 (owner approved all review fixes): walk from the detector side, so the entry is on the back (the first draft walked from the source and would have found the belly skin)."
     },
@@ -53,7 +53,7 @@
       "dependsOn": [
         "F5-S1"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": "Review fix 2026-11-13 (owner approved all review fixes): the needle points against the beam direction (detector → source), matching the F4 model's tests, which insert toward the front (−y)."
     },
@@ -78,7 +78,7 @@
       "dependsOn": [
         "F5-S2"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): the needle is removed on caseStart and when a different volume is loaded. Review fix 2026-11-13 (owner approved all review fixes): split in two (marking from a pixel moved to F5-S12); a test for removal on a new volume added."
     },
@@ -101,7 +101,7 @@
       "dependsOn": [
         "F5-S3"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": "Review fix 2026-11-13 (owner approved all review fixes): split out of F5-S3."
     },
@@ -127,7 +127,7 @@
         "F5-S12",
         "F5-S13"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): the bus event `imageTap` (payload ImageTap { x, y } from src/core/store.ts) is on the shared contract. Unblocked. Review fix 2026-11-13 (owner approved all review fixes): test for 'disabled while inserted' added; depends on F5-S12 and F5-S13."
     },
@@ -152,7 +152,7 @@
       "dependsOn": [
         "F5-S12"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": ""
     },
@@ -175,7 +175,7 @@
       "dependsOn": [
         "F5-S5"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): drag 0.2° per pixel; the wheel steers only over the needle pad (accepted as drafts the owner may tune later)."
     },
@@ -197,7 +197,7 @@
       "dependsOn": [
         "F5-S6"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": ""
     },
@@ -219,7 +219,7 @@
       "dependsOn": [
         "F5-S5"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): hold delay 300 ms and 5 mm/s (accepted as drafts)."
     },
@@ -242,7 +242,7 @@
       "dependsOn": [
         "F5-S8"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): the beam angle is measured against the CURRENT C-arm pose's beam. Review fix 2026-11-13 (owner approved all review fixes): angle is between lines (0–90°); Withdraw fully and lock tests moved to F5-S13."
     },
@@ -265,7 +265,7 @@
       "dependsOn": [
         "F5-S5"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": "Review fix 2026-11-13 (owner approved all review fixes): split out of F5-S9."
     },
@@ -288,7 +288,7 @@
       "dependsOn": [
         "F5-S2"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): NeedleState has the optional `boneContact` field (src/core/types.ts). Unblocked."
     },
