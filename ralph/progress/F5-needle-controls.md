@@ -97,3 +97,9 @@
 - Files touched: src/needle/{index,pad,readoutRow,withdrawAll}.ts, docs/DECISIONS.md
 - Test result: npm run check: 599 unit, 537 screen tests passed (43 skipped by set-up); the event log now ends at 753 ≤ 760 on the tablet and 757 ≤ 792 on desktop.
 - Next round should know: next by priority is F5-S11.
+
+## Round — 2026-11-14 02:00 — F5-S11 — done
+- What I did: baseline was the green `npm run check` of commit fb59972 (the needle-panel fix). Added tests/e2e/needle/markEntryCanvas.spec.ts: after one image at 0°/0°, turn Mark entry on, click/tap the real fluoro-canvas at image pixel (256, 256) (canvas box × pixel/512, default display); the render zone's real imageTap marks the entry: on the back (y > 30), not air, air 1 voxel toward the detector, projects to (256, 256) within 2 px; the tool switches off. Test only, no app code changed.
+- Files touched: tests/e2e/needle/markEntryCanvas.spec.ts
+- Test result: verify: 2/2 (desktop + tablet); npm run check: 599 unit, 539 screen tests passed (43 skipped by set-up).
+- Next round should know: next is F5-S14 (sim end to end + layout). The sim zone's screen helpers are in tests/e2e/sim/simZone.ts (getSim etc.); zone helpers are not shared, so write needle-zone versions if needed.
