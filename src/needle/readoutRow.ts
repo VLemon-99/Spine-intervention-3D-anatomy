@@ -7,7 +7,7 @@ import type { Store } from '../core/store';
 import { needleBeamAngleDeg } from './readouts';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const DIAL_PX = 30;
+const DIAL_PX = 26;
 
 function labelled(label: string, value: HTMLElement, unit: string): HTMLElement {
   const item = document.createElement('span');
@@ -26,11 +26,12 @@ export function buildReadouts(store: Store): HTMLElement {
   row.dataset.testid = 'needle-readouts';
   Object.assign(row.style, {
     display: 'flex',
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
+    whiteSpace: 'nowrap',
     alignItems: 'center',
-    gap: '4px 12px',
-    fontSize: '13px',
-    marginTop: '6px',
+    justifyContent: 'center',
+    gap: '4px',
+    fontSize: '12px',
   });
 
   const depth = document.createElement('span');

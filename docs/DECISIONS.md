@@ -186,3 +186,9 @@
 - **Why:** F8-S3 asks for the whole C-arm in the start view (the source is 650 mm from the isocentre). The F8-S2 loop had added the 50 mm limit as an extra check beyond its acceptance criteria, so the two contradicted each other and the loop blocked F8-S3.
 - **Alternatives considered:** Dropping the "whole C-arm" camera requirement from F8-S3 (the learner would have to zoom out to find the C-arm).
 - **Revisit if:** The C-arm looks too small on the tablet and learners prefer a close-up start view.
+
+## 2026-11-14 — Needle panel: two compact rows so the tissue feedback fits
+- **Decision:** The needle zone's controls take two rows: (1) needle picker, pre-bend picker, Mark entry; (2) Withdraw, the control pad with the depth / bevel / angle-to-beam readouts inside it, Advance, Withdraw fully. Every control stays at least 44×44 px on the tablet.
+- **Why:** With F5 and F6 both merged into main, the needle panel (needle controls + resistance bar, Aspirate and event log) was too tall, and F6's test "the event log stays inside the needle panel" failed on main (15 px over on desktop, 43 px on tablet). Making the needle controls more compact fixes it inside one zone, without changing the app layout or the sim zone.
+- **Alternatives considered:** A taller needle panel (app layout change, F12); a shorter event log (sim zone, F6).
+- **Revisit if:** More controls are added to the needle panel, or the readouts become hard to read on the tablet.

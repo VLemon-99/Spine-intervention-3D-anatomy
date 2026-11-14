@@ -8,6 +8,7 @@
 - Zone screen-test helpers live in tests/e2e/needle/needlePage.ts: `readNeedle`, `waitForVolume`, `markEntryAtPixel`, `advanceNeedle` (wait for the volume after acceptDisclaimer; take an image before marking).
 - Chromium turns Shift + wheel into a sideways scroll (deltaX), so wheel handlers read deltaY, falling back to deltaX.
 - To test "does not scroll the page" on the tablet, first make the page scrollable in the test (html overflow auto + a 3000 px spacer); a swipe off the pad then scrolls ~250 px, so the check is meaningful.
+- The needle panel is full (decision 2026-11-14): needle rows are set-up (44 px) + steering (56 px, readouts inside the pad); the sim feedback fills the rest. Don't add rows; at 1024×768 the readouts use 230 of 233 px with the deepest needle.
 - The app's session (`needleSession`) notifies through `needleSession.subscribe(listener)`; UI parts subscribe to stay in step (disabled while locked).
 
 ## Rounds
@@ -90,3 +91,9 @@
 - Files touched: src/needle/markEntryTool.ts, src/needle/index.ts, tests/e2e/needle/needlePage.ts, tests/e2e/needle/markEntry.spec.ts
 - Test result: verify: markEntry 9 passed (1 desktop skip for the tablet-size test); npm run check: 513 unit, 462 screen tests passed. A throwaway check confirmed every needle control lies inside the needle panel at 1280×800 and 1024×768.
 - Next round should know: no `todo` stories remain. F5-S11, F5-S14 and F5-S15 stay blocked by design until F6/F7 are merged (see their notes).
+
+## Interactive fix — 2026-11-14 — baseline (needle panel overflow) — done
+- What I did: the baseline after merging F5, F6 and F7 failed tests/e2e/sim/eventLog.spec.ts:42 in both set-ups (the event log ran past the needle panel). The owner chose to compact the needle controls (docs/DECISIONS.md, 2026-11-14): readouts moved inside the control pad (one nowrap line, 12 px text), Withdraw fully moved to the steering row (max 76 px wide, label wraps), one whole row removed. No test was changed.
+- Files touched: src/needle/{index,pad,readoutRow,withdrawAll}.ts, docs/DECISIONS.md
+- Test result: npm run check: 599 unit, 537 screen tests passed (43 skipped by set-up); the event log now ends at 753 ≤ 760 on the tablet and 757 ≤ 792 on desktop.
+- Next round should know: next by priority is F5-S11.

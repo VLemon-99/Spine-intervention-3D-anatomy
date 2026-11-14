@@ -27,12 +27,19 @@ export function buildPad(session: NeedleSession): HTMLElement {
   pad.setAttribute('role', 'application');
   pad.setAttribute('aria-label', 'Needle control pad: drag to angle the hub, scroll to advance or withdraw');
   pad.title = 'Drag to angle the hub; scroll to advance / withdraw (Shift = fine)';
-  pad.textContent = 'Drag to steer · scroll to advance';
+  // The hint sits on top; the panel puts the needle readouts under it, inside
+  // the pad, to keep the needle panel compact (owner decision 2026-11-14).
+  const hint = document.createElement('span');
+  hint.textContent = 'Drag to steer · scroll to advance';
+  hint.style.fontSize = '11px';
+  pad.append(hint);
   Object.assign(pad.style, {
     minHeight: '56px',
     minWidth: '88px',
     flex: '1 1 120px',
     display: 'flex',
+    flexDirection: 'column',
+    gap: '2px',
     alignItems: 'center',
     justifyContent: 'center',
     textAlign: 'center',
@@ -45,7 +52,7 @@ export function buildPad(session: NeedleSession): HTMLElement {
     userSelect: 'none',
     touchAction: 'none',
     boxSizing: 'border-box',
-    padding: '4px',
+    padding: '4px 2px',
   });
 
   let drag: Drag | null = null;
