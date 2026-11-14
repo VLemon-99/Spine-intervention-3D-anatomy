@@ -1,0 +1,384 @@
+{
+  "feature": "F11",
+  "name": "Image-recognition quiz",
+  "branch": "ralph/F11-quiz",
+  "zone": "quiz",
+  "dependsOnFeatures": [
+    "F0",
+    "F1",
+    "F2"
+  ],
+  "stories": [
+    {
+      "id": "F11-S1",
+      "title": "Define the question format and its check",
+      "description": "Create src/quiz/format.ts: the types of a quiz question and a question file, and a hand-written validator validateBank(data) (no new dependency) that returns the checked file or throws naming the question and the fault. A file is { status: 'draft', reviewedByOwner: false, note, questions }. A question has: id (unique in the file); category ('cervical' | 'thoracic' | 'lumbar' | 'sacrumSI' — what F11.1 counts); region (the anatomy region to show: 'cervical', 'thoracic', 'lumbosacral' or 'phantom'); pose { oblique, tilt } in degrees within the F3.1 ranges (−90…90, −40…40); kind 'structure' or 'view'; for 'structure' a structure { label, level, side }; an optional centreOn { label, level, side } (what the image is centred on; required for 'view', defaults to the structure otherwise); prompt (the question text); choices (exactly 4 different non-empty texts); answer (0–3, the position of the correct choice); explanation (non-empty); status ('draft' or 'reviewed'). A structure's label is one of the points the region's landmarks hold (src/core/types.ts): 'vertebralBody', 'pedicle', 'superiorEndplate', 'inferiorEndplate', 'superiorArticularProcess', 'foramen', 'iliacCrest'. level is a LevelCode (src/core/labels.ts); side ('left' | 'right') is required for pedicle, superiorArticularProcess, foramen and iliacCrest and must be absent for the others. The sacrum's points use level 'sacrum' (superiorEndplate, superiorArticularProcess only); iliacCrest uses level 'ilium'. The level must belong to the region (cervical C1–T1, thoracic T1–L1, lumbosacral L1–L5 + sacrum + ilium, phantom L4–L5), and C1 and C2 cannot be used in a structure or centreOn (they have no landmarks yet). Plain TypeScript, no browser code.",
+      "specRefs": [
+        "F11.1"
+      ],
+      "acceptance": [
+        "Unit test: a hand-made file with one valid 'structure' question and one valid 'view' question passes and comes back unchanged",
+        "Unit test: the validator rejects (each on its own): a repeated id; 3 or 5 choices; two equal choices; answer 4; an empty explanation; a status other than draft/reviewed; oblique 95; an unknown category; a 'structure' question without a structure; a 'view' question without centreOn",
+        "Unit test: it rejects a pedicle without a side, a vertebralBody with a side, an unknown label, level 'L4' in region 'cervical', level 'C2' in a structure, 'iliacCrest' with level 'L5', and 'pedicle' with level 'sacrum'",
+        "Unit test: the error message names the question id and what is wrong"
+      ],
+      "verify": "npx vitest run tests/quiz/format.test.ts",
+      "zone": "quiz",
+      "priority": 1,
+      "dependsOn": [],
+      "status": "todo",
+      "attempts": 0,
+      "notes": "Planning default (2026-11-14, for the owner to confirm): the spec's 'highlighted structure (label + level + side)' is read as one of the landmark points the anatomy files already hold — that is the only data that gives a structure a centre. The category field is added because 'lumbar' and 'sacrum/SI' questions both use the lumbosacral region."
+    },
+    {
+      "id": "F11-S2",
+      "title": "Find a structure's centre in the landmarks",
+      "description": "Create src/quiz/structure.ts with structureCentre(landmarks, structure): the point (mm, patient coordinates) of a question's structure in a region's Landmarks (src/core/types.ts), or null when the landmarks do not hold it. vertebralBody → bodyCentre; pedicle → pedicleCentre[side]; superiorEndplate / inferiorEndplate → that endplate's centre; superiorArticularProcess → superiorArticularProcessTip[side]; foramen → foramenCentre[side] (listed under the level above it); level 'sacrum' → landmarks.sacrum (superiorEndplate centre, superiorArticularProcessTip[side]); iliacCrest → landmarks.iliacCrest[side]. Returns a copy. Plain TypeScript.",
+      "specRefs": [
+        "F11.2"
+      ],
+      "acceptance": [
+        "Unit test (phantom landmarks, createPhantomLandmarks): each of the six vertebra labels on L4 gives the matching landmark point (e.g. vertebralBody L4 → (0, −12, 14); foramen L4 left → (13, 5, 0); pedicle L5 right → (−11, 7, −17))",
+        "Unit test (hand-made landmarks with sacrum and iliacCrest): superiorEndplate 'sacrum', superiorArticularProcess 'sacrum' left and iliacCrest right give those points",
+        "Unit test: null for a level the landmarks do not list, for a foramen on a level without one (phantom L5), and for sacrum or iliac crest points on the phantom",
+        "Unit test: changing the returned point does not change the landmarks"
+      ],
+      "verify": "npx vitest run tests/quiz/structure.test.ts",
+      "zone": "quiz",
+      "priority": 2,
+      "dependsOn": [
+        "F11-S1"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F11-S3",
+      "title": "Work out the C-arm pose for a question",
+      "description": "Create src/quiz/pose.ts with questionPose(question, landmarks): a full CArmPose with the question's oblique and tilt and the table offsets that bring the question's centreOn point (or, without one, its structure) to the C-arm's rotation centre, so it sits in the middle of the image (src/core/geometry.ts: the isocentre always projects to the image centre). Returns null when the landmarks do not hold that point. The quiz draws its own image, so the table offsets are not held to the learner's table limits (F3.1). Plain TypeScript.",
+      "specRefs": [
+        "F11.2"
+      ],
+      "acceptance": [
+        "Unit test (phantom landmarks): for a structure question on the L4 left pedicle at oblique 0° / tilt 0°, createProjection(questionPose).project(pedicle centre) is within 0.5 px of the image centre (256, 256)",
+        "Unit test: the same at oblique 30° / tilt −15° and at oblique −90° (lateral); the pose's oblique and tilt equal the question's",
+        "Unit test: with centreOn = vertebralBody L4 and structure = pedicle L4 left, the body centre projects to the image centre and the pedicle does not (it is more than 10 px away)",
+        "Unit test: null when the structure or centreOn point is not in the landmarks"
+      ],
+      "verify": "npx vitest run tests/quiz/pose.test.ts",
+      "zone": "quiz",
+      "priority": 3,
+      "dependsOn": [
+        "F11-S2"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": "Planning default (2026-11-14): the question file holds the two angles only; the table position is worked out from the landmarks when the question is shown, because the real regions' positions are not known until F1.7."
+    },
+    {
+      "id": "F11-S4",
+      "title": "Work out where the arrow goes",
+      "description": "Create src/quiz/arrow.ts with questionArrow(question, landmarks): for a 'structure' question, { tip, tail } in image pixels (512×512, (0, 0) top-left) where tip = createProjection(questionPose).project(structure centre) and the tail is 60 px from the tip, on the side pointing away from the image centre (straight up when the tip is within 1 px of the centre), pulled back inside the image if it would leave it. null for a 'view' question, when the structure is not in the landmarks, or when the tip falls outside the image. Plain TypeScript.",
+      "specRefs": [
+        "F11.2"
+      ],
+      "acceptance": [
+        "Unit test (phantom landmarks, structure = pedicle L4 left, centreOn = vertebralBody L4, three poses): the tip is within 0.01 px of createProjection(questionPose).project(pedicle centre)",
+        "Unit test: the tail is 60 px from the tip and farther from the image centre than the tip; with the structure itself centred the tail is straight above the tip",
+        "Unit test: both ends are always inside the image (0…511), also for a tip near the edge (hand-made landmarks)",
+        "Unit test: null for a 'view' question and for a structure the landmarks do not hold"
+      ],
+      "verify": "npx vitest run tests/quiz/arrow.test.ts",
+      "zone": "quiz",
+      "priority": 4,
+      "dependsOn": [
+        "F11-S3"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F11-S5",
+      "title": "Write the phantom question set",
+      "description": "Create src/quiz/phantomBank.json: at least 12 questions on region 'phantom' (category 'lumbar', levels L4 and L5 only), in the format of F11-S1, status 'draft', file reviewedByOwner false. At least 9 'structure' questions (covering every vertebra label at least once, some with a centreOn different from the structure) and at least 2 'view' questions (e.g. AP at 0°/0° and lateral at ±90°). These are what the automated tests use and what the quiz shows while the synthetic phantom is the only anatomy (see F11-S10); they describe the phantom's simple blocks, not real anatomy. Not always the same answer position. Write the explanations in your own words; never copy text from a textbook.",
+      "specRefs": [
+        "F11.1"
+      ],
+      "acceptance": [
+        "Unit test: the file passes validateBank; every question has region 'phantom' and status 'draft'; reviewedByOwner is false",
+        "Unit test: at least 12 questions, at least 9 of kind 'structure' and at least 2 of kind 'view'; each of the six vertebra labels is used at least once",
+        "Unit test: for every question, questionPose (phantom landmarks) is not null, and for every 'structure' question questionArrow is not null (the structure is in the phantom and inside the image)",
+        "Unit test: each answer position 0–3 is the correct one in at least one question"
+      ],
+      "verify": "npx vitest run tests/quiz/phantomBank.test.ts",
+      "zone": "quiz",
+      "priority": 5,
+      "dependsOn": [
+        "F11-S4"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": "Planning default (2026-11-14): a separate phantom set, like F10's phantom demo case, because tests never use the real CT and no real region is committed yet."
+    },
+    {
+      "id": "F11-S6",
+      "title": "Write the cervical and thoracic questions",
+      "description": "Create src/quiz/bank.json (format of F11-S1; file status 'draft', reviewedByOwner false, with a note that every question is a draft for the owner's clinical review) with at least 10 'cervical' questions (region 'cervical') and at least 10 'thoracic' questions (region 'thoracic'). Mix 'structure' questions (levels C3–C7 and T1 for cervical — C1 and C2 have no landmarks; T1–L1 for thoracic) with 'view' questions (e.g. AP, lateral, oblique), using views that are standard for reading fluoroscopic images of that part of the spine. Every question's status is 'draft'. Write prompts, choices and explanations in your own words from general anatomy knowledge; never copy text or figures from a textbook. The real regions are not converted yet (F1.7), so these questions cannot be looked at on real anatomy in this story: keep each explanation to what is true of the anatomy in general.",
+      "specRefs": [
+        "F11.1"
+      ],
+      "acceptance": [
+        "Unit test: the file passes validateBank; reviewedByOwner is false and every question's status is 'draft'",
+        "Unit test: at least 10 questions with category 'cervical' (all with region 'cervical') and at least 10 with category 'thoracic' (all with region 'thoracic')",
+        "Unit test: each of these two categories has at least 2 'view' and at least 5 'structure' questions",
+        "Unit test: each answer position 0–3 is the correct one in at least two questions; every explanation is at least 40 characters long"
+      ],
+      "verify": "npx vitest run tests/quiz/bankUpper.test.ts",
+      "zone": "quiz",
+      "priority": 6,
+      "dependsOn": [
+        "F11-S1"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": "Clinical content: stays 'draft' until the owner reviews it (CLAUDE.md). Planning note (2026-11-14): questions about C1/C2 structures (dens, atlas) are left out until the owner decides on C1/C2 landmarks (docs/SPEC.md → Open questions)."
+    },
+    {
+      "id": "F11-S7",
+      "title": "Write the lumbar and sacrum/SI questions",
+      "description": "Add to src/quiz/bank.json at least 10 'lumbar' questions (region 'lumbosacral', levels L1–L5) and at least 10 'sacrumSI' questions (region 'lumbosacral': the sacrum's superior endplate and superior articular processes, the iliac crests, the L5–S1 foramen listed under L5, and views used for the sacrum and SI joints), so the file holds at least 40 questions in all (F11.1). Same rules as F11-S6: 'structure' and 'view' questions, status 'draft', own words, nothing copied from a textbook. The sacral hiatus, sacral foramina and SI-joint points have no landmarks yet, so they can appear only in 'view' questions and explanations, not as a highlighted structure.",
+      "specRefs": [
+        "F11.1"
+      ],
+      "acceptance": [
+        "Unit test: the file still passes validateBank and holds at least 40 questions",
+        "Unit test: at least 8 questions in each of the four categories cervical, thoracic, lumbar and sacrumSI (F11.1); in fact at least 10 'lumbar' and at least 10 'sacrumSI', all with region 'lumbosacral'",
+        "Unit test: every question has a region, a pose, a structure or a 'view' prompt, 4 choices, an answer, an explanation and status 'draft'",
+        "Unit test: the 'lumbar' and 'sacrumSI' categories each have at least 2 'view' and at least 5 'structure' questions; every 'sacrumSI' structure or centreOn is on level L5, 'sacrum' or 'ilium'"
+      ],
+      "verify": "npx vitest run tests/quiz/bank.test.ts",
+      "zone": "quiz",
+      "priority": 7,
+      "dependsOn": [
+        "F11-S6"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": "Clinical content: stays 'draft' until the owner reviews it."
+    },
+    {
+      "id": "F11-S8",
+      "title": "Run a quiz session of 10 seeded questions",
+      "description": "Create src/quiz/session.ts with createSession(questions, seed, count = 10): picks `count` different questions with createRandom(seed) from src/core/random.ts (all of them, in seeded order, if fewer are given). The session gives current() (the question on show, or null when finished), index and total, answer(choice) → { correct, correctChoice, explanation } (each question can be answered once; answering moves nothing), next() (to the following question; only after answering), finished(), and result() → { correct, total, score } where score = correct ÷ total × 100 rounded to a whole number. Plain TypeScript.",
+      "specRefs": [
+        "F11.4"
+      ],
+      "acceptance": [
+        "Unit test (40 hand-made questions): a session has 10 different questions; the same seed gives the same 10 in the same order; two different seeds give different picks",
+        "Unit test: answer() reports correct for the right choice and incorrect with the right choice's position otherwise; a second answer to the same question is ignored; next() before answering does nothing",
+        "Unit test: after 10 answers and next() calls the session is finished, current() is null, and 7 right answers give { correct: 7, total: 10, score: 70 }",
+        "Unit test: with only 6 questions the session has 6 (total 6; 3 right → score 50); with none it is finished at once with score 0"
+      ],
+      "verify": "npx vitest run tests/quiz/session.test.ts",
+      "zone": "quiz",
+      "priority": 8,
+      "dependsOn": [
+        "F11-S1"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": "Planning default (2026-11-14): choices are shown in the order written in the question file (no shuffling)."
+    },
+    {
+      "id": "F11-S9",
+      "title": "Turn a finished session into an attempt record",
+      "description": "Create src/quiz/record.ts with quizAttemptRecord(result, date): a QuizAttemptRecord (src/core/types.ts): kind 'quiz', mode 'quiz', date as an ISO 8601 text, totalScore = result.score, scoreParts { correct, questions }, unsafe false, and none of the procedure-only fields. This is the shared format the app saves in the history (it arrives on the bus as 'attemptFinished', F11-S16). Plain TypeScript.",
+      "specRefs": [
+        "F11.4"
+      ],
+      "acceptance": [
+        "Unit test: { correct: 7, total: 10, score: 70 } on a given Date gives kind 'quiz', mode 'quiz', totalScore 70, scoreParts { correct: 7, questions: 10 }, unsafe false and that date in ISO form",
+        "Unit test: the record has no procedureId, shots or fluoroTimeSeconds keys",
+        "Unit test: totalScore is always from 0 to 100 (0 of 10, 10 of 10, 0 of 0)"
+      ],
+      "verify": "npx vitest run tests/quiz/record.test.ts",
+      "zone": "quiz",
+      "priority": 9,
+      "dependsOn": [
+        "F11-S8"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": ""
+    },
+    {
+      "id": "F11-S10",
+      "title": "Choose the questions that fit the anatomy on offer",
+      "description": "Create src/quiz/available.ts with availableQuestions(bank, phantomBank, regions, loadedRegion): the bank's questions whose region is among the regions on offer (store.regions, filled from the manifest); when there are none and the loaded volume is the synthetic phantom, the phantom questions instead; otherwise an empty list. So a build without real anatomy (today, and every automated test) runs the quiz on the phantom, and a build with real regions never shows phantom questions. Plain TypeScript.",
+      "specRefs": [
+        "F11.4"
+      ],
+      "acceptance": [
+        "Unit test: with regions cervical, thoracic and lumbosacral on offer, all bank questions come back and no phantom question",
+        "Unit test: with only lumbosacral on offer, only the questions with region 'lumbosacral'",
+        "Unit test: with no regions on offer and loadedRegion 'phantom', exactly the phantom questions",
+        "Unit test: with no regions on offer and no phantom loaded, an empty list"
+      ],
+      "verify": "npx vitest run tests/quiz/available.test.ts",
+      "zone": "quiz",
+      "priority": 10,
+      "dependsOn": [
+        "F11-S5",
+        "F11-S7"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": "Planning default (2026-11-14, for the owner to confirm): same idea as 'Phantom' in the region picker (decision 2026-11-12)."
+    },
+    {
+      "id": "F11-S11",
+      "title": "Ask for a question's region and wait until it is loaded",
+      "description": "Create src/quiz/region.ts with ensureRegion(store, bus, region): a Promise that resolves at once when store.volume.region is already that region and store.landmarks is there; otherwise it emits 'regionRequest' (the anatomy zone loads it, docs/ARCHITECTURE.md → Regions) and resolves when the store holds that region's volume and landmarks. It rejects after a time limit (default 30 s, handed in so tests can shorten it) with a message naming the region. Plain TypeScript (store, bus and timers only). Note: this changes the region shown in the simulator too — the store holds one volume.",
+      "specRefs": [
+        "F11.2"
+      ],
+      "acceptance": [
+        "Unit test (test store and bus): with the phantom loaded, ensureRegion('phantom') resolves without emitting anything",
+        "Unit test: ensureRegion('thoracic') emits one 'regionRequest' with 'thoracic' and resolves only after a volume with region 'thoracic' and its landmarks are put in the store",
+        "Unit test: it does not resolve when a different region is put in the store",
+        "Unit test: with a 50 ms limit and no answer it rejects with a message containing 'thoracic', and stops listening to the store"
+      ],
+      "verify": "npx vitest run tests/quiz/region.test.ts",
+      "zone": "quiz",
+      "priority": 11,
+      "dependsOn": [
+        "F11-S1"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": "Planning note (2026-11-14): no real region is committed, so region switching inside the quiz can only be unit-tested for now; check it by hand after F1.7."
+    },
+    {
+      "id": "F11-S12",
+      "title": "Let other zones ask the renderer for an image",
+      "description": "ZONE: render (not quiz). BLOCKED until the shared image service exists in src/core/ (see notes). Planned: at mount the render zone registers a function with the shared image service that draws the X-ray image of a given volume at a given pose off screen, as a plain single shot (magnification 1, no collimation, not inverted, no flip or rotation, no needle, no contrast, the default shot grain with the seed handed in), and returns its 512×512 grey values (0–255, row 0 at the top, same pixel convention as src/core/geometry.ts). It must not change the image held on the fluoro panel, the shot count, the fluoro time or anything in the store.",
+      "specRefs": [
+        "F11.2"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups; the service is called through the dev-server module of the shared file, like tests/fixtures/simPage.ts does for the store): for the phantom at pose 0°/0° the returned image is 512×512 and the pixel at geometry.project(L4 body centre) is at least 50 grey levels darker than the corner pixel (5, 5)",
+        "Screen test (both set-ups): the returned image matches what the fluoro canvas shows for a Shot at the same pose with default settings — mean absolute difference at most 3% of the grey range",
+        "Screen test (both set-ups): after a Shot at one pose, asking the service for an image at another pose leaves the fluoro canvas's pixels, the pose text and window.__sim.getState().shotCount unchanged",
+        "Screen test (both set-ups): the same seed gives the same image twice"
+      ],
+      "verify": "npx playwright test tests/e2e/render/imageService.spec.ts",
+      "zone": "render",
+      "priority": 12,
+      "dependsOn": [],
+      "status": "blocked",
+      "attempts": 0,
+      "notes": "Blocked by planning (2026-11-14), needs the owner: how the quiz gets its fluoro image. Zones may not import each other, and the X-ray renderer lives in the render zone. Recommended: a small shared 'image service' file in src/core/ (the render zone registers its renderer there; the quiz asks it for an image of a volume at a pose) — a shared-contract change made in an interactive session, like the shortcut list. Alternatives: the quiz reuses the simulator's fluoro panel (the learner's display settings, needle and contrast would leak into quiz images), or the quiz gets its own copy of the X-ray maths (duplicate code, slow on real regions). This story is in the render zone: while it runs, no other render-zone feature may loop."
+    },
+    {
+      "id": "F11-S13",
+      "title": "Show a question with its image and four choices",
+      "description": "BLOCKED until F11-S12 is done. Planned: mount() in src/quiz/index.ts builds the quiz in the quiz screen's slot. A Start button (data-testid quiz-start) begins a session of the available questions (F11-S10, from store.regions and the loaded volume) with a seed: a fixed number in development and test builds, the time in milliseconds in the production build (the same rule as the sim zone, decision 2026-11-13). When no question is available it shows 'No quiz questions for this anatomy yet' and no Start button. For the question on show: wait for its region (F11-S11), ask the shared image service for the image at questionPose (F11-S3) and draw it on the quiz's own canvas (data-testid quiz-image, 512×512), with the prompt (quiz-prompt), 'Question 1 of 10' (quiz-progress) and four choice buttons (quiz-choice, in the file's order, each at least 44×44 px on the tablet). Register the debug getter 'quiz': { state ('idle' | 'question' | 'answered' | 'finished'), seed, questionIds, index, total, questionId, pose, arrowTip (null until F11-S14) }. Screen tests reach the quiz with Home → Quiz (own helper in tests/e2e/quiz/).",
+      "specRefs": [
+        "F11.2",
+        "F11.4"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups): Home → Quiz shows the Start button; after pressing it window.__sim.quiz() reports state 'question', total 10, ten different question ids from src/quiz/phantomBank.json, and a number as seed",
+        "Screen test (both set-ups): the quiz image is a real X-ray image at the reported pose — the pixel at geometry.project(L4 body centre) for that pose is at least 50 grey levels darker than the corner pixel (5, 5)",
+        "Screen test (both set-ups): the prompt and the four choices on screen are those of the reported question in phantomBank.json, in the file's order, and the progress text is 'Question 1 of 10'",
+        "Screen test (both set-ups): the image and all four choices are on screen without scrolling at 1280×800 and 1024×768; (tablet) every button is at least 44×44 px",
+        "Screen test (both set-ups): reloading and starting again gives the same ten question ids (same seed in test builds)"
+      ],
+      "verify": "npx playwright test tests/e2e/quiz/question.spec.ts",
+      "zone": "quiz",
+      "priority": 13,
+      "dependsOn": [
+        "F11-S10",
+        "F11-S11",
+        "F11-S12"
+      ],
+      "status": "blocked",
+      "attempts": 0,
+      "notes": "Blocked by planning (2026-11-14): waits for F11-S12 (the quiz's image needs the owner's decision on the shared image service)."
+    },
+    {
+      "id": "F11-S14",
+      "title": "Draw the arrow at the highlighted structure",
+      "description": "BLOCKED until F11-S13 is done. Planned: for a 'structure' question the quiz draws an arrow over the image (data-testid quiz-arrow; its tip marked with data-testid quiz-arrow-tip) from questionArrow (F11-S4), scaled with the image; a 'view' question shows no arrow. The debug getter's arrowTip is the tip in image pixels (null for a 'view' question).",
+      "specRefs": [
+        "F11.2"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups): for the first 'structure' question of the session, window.__sim.quiz().arrowTip is within 3 px of createProjection(reported pose).project(structureCentre(phantom landmarks, the question's structure)), computed in the test from src/core/ and phantomBank.json",
+        "Screen test (both set-ups): the arrow tip drawn on screen is at that image pixel — the centre of quiz-arrow-tip, mapped from screen position to the 512×512 image through the quiz image's box, is within 3 px of it",
+        "Screen test (both set-ups): stepping through the session, every 'structure' question shows an arrow and every 'view' question shows none (the phantom set has both kinds)",
+        "Screen test (both set-ups): the arrow moves when the next 'structure' question with a different structure is shown"
+      ],
+      "verify": "npx playwright test tests/e2e/quiz/arrow.spec.ts",
+      "zone": "quiz",
+      "priority": 14,
+      "dependsOn": [
+        "F11-S13"
+      ],
+      "status": "blocked",
+      "attempts": 0,
+      "notes": "Blocked by planning (2026-11-14): waits for F11-S13."
+    },
+    {
+      "id": "F11-S15",
+      "title": "Show correct or incorrect and the explanation after an answer",
+      "description": "BLOCKED until F11-S13 is done. Planned: picking a choice (click on desktop, tap on tablet) shows 'Correct' or 'Incorrect' (data-testid quiz-feedback) and the question's explanation (quiz-explanation), marks the correct choice (data-correct=\"true\") and the one picked, disables the four choices, and shows a Next button (quiz-next, at least 44×44 px on the tablet) that goes to the following question. The debug getter's state is 'answered' in between.",
+      "specRefs": [
+        "F11.3"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups): picking the correct choice (known from phantomBank.json) shows 'Correct' and that question's explanation text",
+        "Screen test (both set-ups): picking a wrong choice shows 'Incorrect', the explanation, and marks the correct choice",
+        "Screen test (both set-ups): before answering, no feedback, explanation or Next button is visible; after answering, the choices are disabled and a second press changes nothing",
+        "Screen test (both set-ups): Next shows 'Question 2 of 10' with a different question and no feedback"
+      ],
+      "verify": "npx playwright test tests/e2e/quiz/answer.spec.ts",
+      "zone": "quiz",
+      "priority": 15,
+      "dependsOn": [
+        "F11-S13"
+      ],
+      "status": "blocked",
+      "attempts": 0,
+      "notes": "Blocked by planning (2026-11-14): waits for F11-S13."
+    },
+    {
+      "id": "F11-S16",
+      "title": "End the session with a score saved in the history",
+      "description": "BLOCKED until F11-S14 and F11-S15 are done. Planned: after the last question's Next the quiz shows the result (data-testid quiz-result, e.g. '7 of 10 correct — 70') and emits one 'attemptFinished' on the bus with quizAttemptRecord (F11-S9) and the current date; the app shell saves it (docs/ARCHITECTURE.md → Procedures). A 'New quiz' button (quiz-restart) goes back to the Start state. Leaving for Home in the middle of a session saves nothing. This is the feature's last story: run the whole check.",
+      "specRefs": [
+        "F11.4"
+      ],
+      "acceptance": [
+        "Screen test (both set-ups): answering all 10 questions (7 correctly, using phantomBank.json) shows '7 of 10 correct' and a score of 70, and window.__sim.quiz().state is 'finished'",
+        "Screen test (both set-ups): Home → History then lists one quiz attempt with score 70; it is still there after a reload",
+        "Screen test (both set-ups): exactly one record is saved per finished session (finish, press New quiz, go to History: one entry)",
+        "Screen test (both set-ups): a session left for Home after 3 answers adds nothing to the History",
+        "npm run check passes"
+      ],
+      "verify": "npx playwright test tests/e2e/quiz/finish.spec.ts && npm run check",
+      "zone": "quiz",
+      "priority": 16,
+      "dependsOn": [
+        "F11-S9",
+        "F11-S14",
+        "F11-S15"
+      ],
+      "status": "blocked",
+      "attempts": 0,
+      "notes": "Blocked by planning (2026-11-14): waits for F11-S14 and F11-S15."
+    }
+  ]
+}
