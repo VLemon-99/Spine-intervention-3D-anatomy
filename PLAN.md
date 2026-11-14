@@ -11,9 +11,9 @@
 | F2 — Fluoro renderer | `ralph/tasks/F2-renderer.json` | render | F0 | merged | `claude/ralph-f2-renderer-fa4hl7` | 21/21 stories done; merged ([PR #8](https://github.com/VLemon-99/Spine-intervention-3D-anatomy/pull/8)) |
 | F3 — C-arm, table & exposure | `ralph/tasks/F3-carm.json` | carm | F0 | merged | `claude/ralph-loop-f3-carm-plwi0m` | 11/11 stories done; merged ([PR #14](https://github.com/VLemon-99/Spine-intervention-3D-anatomy/pull/14)) |
 | F4 — Needle mechanics | `ralph/tasks/F4-needle-mechanics.json` | needle | F0 | merged | `claude/inspiring-shannon-l7tzoc` | 9/9 stories done; merged ([PR #10](https://github.com/VLemon-99/Spine-intervention-3D-anatomy/pull/10)). Tuning numbers (`params.json`, catalogue stiffness) need owner review |
-| F5 — Needle handling controls | `ralph/tasks/F5-needle-controls.json` | needle | F3, F4 | planned | `ralph/F5-needle-controls` | 15 stories; 12 for the loop. Blocked by design until the other side is merged: S11 (canvas tap, needs F7), S14 (real needle → tissue events + needle-panel layout, needs F6), S15 (real needle → image, needs F7) |
-| F6 — Tissue feedback & events | `ralph/tasks/F6-tissue-feedback.json` | sim | F4 | planned | `ralph/F6-tissue-feedback` | 11 stories, all for the loop. Tissue resistances (`tissues.json`) need owner review |
-| F7 — Needle in the image | `ralph/tasks/F7-needle-image.json` | render | F2, F4 | planned | `ralph/F7-needle-image` | 8 stories, all for the loop |
+| F5 — Needle handling controls | `ralph/tasks/F5-needle-controls.json` | needle | F3, F4 | in review | `claude/f5-needle-controls-rk30wl` | 15/15 stories done. S1–S13 merged ([PR #20](https://github.com/VLemon-99/Spine-intervention-3D-anatomy/pull/20)); the end-to-end checks S11, S14, S15 and the needle-panel fit (owner decision 2026-11-14) are in review ([PR #22](https://github.com/VLemon-99/Spine-intervention-3D-anatomy/pull/22)). Draft handling numbers need owner review |
+| F6 — Tissue feedback & events | `ralph/tasks/F6-tissue-feedback.json` | sim | F4 | merged | `claude/fervent-babbage-5v2fey` | 11/11 stories done; merged ([PR #21](https://github.com/VLemon-99/Spine-intervention-3D-anatomy/pull/21)). Tissue resistances (`tissues.json`) need owner review |
+| F7 — Needle in the image | `ralph/tasks/F7-needle-image.json` | render | F2, F4 | merged | `claude/epic-ride-xvy9yc` | 8/8 stories done; merged ([PR #19](https://github.com/VLemon-99/Spine-intervention-3D-anatomy/pull/19)) |
 | F8 — 3D see-through view | `ralph/tasks/F8-view3d.json` | view3d | F0 | merged | `claude/confident-mccarthy-e314nq` | 9/9 stories done; merged ([PR #12](https://github.com/VLemon-99/Spine-intervention-3D-anatomy/pull/12)) |
 | F9 — Contrast injection | `ralph/tasks/F9-contrast.json` | contrast | F2, F6 | not planned | `ralph/F9-contrast` | |
 | F10 — Procedures & scoring | `ralph/tasks/F10-procedures.json` | procedures | F1, F3, F5, F6, F9 | not planned | `ralph/F10-procedures` | Rules need owner review; completes v1 |
@@ -24,21 +24,21 @@
 
 ## Can run in parallel right now
 <!-- Features whose zones don't overlap and whose dependencies are merged. See docs/ARCHITECTURE.md → Work zones. -->
-- **F5, F6 and F7 are planned and can loop in parallel now**: three different zones (needle, sim, render), and everything they depend on (F2, F3, F4) is merged. None of their loop stories changes a shared file; each writes its own screen-test helpers in its own `tests/e2e/<zone>/` folder.
-- They meet in two places, built against the shared contract on each side (like F1 and F3 at the region picker): F7 reports taps on the fluoro image and F5 marks the entry from them (one end-to-end test, F5-S11, after both merge); F5 publishes bone contact and F6 turns it into an event (F6-S6 tests with hand-made needle states, so F5 need not be merged). Two more end-to-end checks wait for merges: F5-S14 (real needle → tissue events and the needle-panel layout, needs F6) and F5-S15 (real needle → image, needs F7).
-- The shared-contract changes they rely on (`NeedleState.boneContact`, the `imageTap` event, the sim mounted in the needle panel) were made interactively on 2026-11-13, so the loops change no shared file. F5-S11, F5-S14 and F5-S15 are the only blocked stories (by design).
-- **F11 (quiz) can also be planned now:** F1 and F2 are merged. Afterwards: F9 needs F6; F10 needs nearly everything.
+- **Nothing is ready to loop yet**: the next features (F9, F11) need planning first.
+- **F11 (quiz) can be planned now:** F1 and F2 are merged.
+- **F9 (contrast) can be planned now:** F2 and F6 are merged. Before planning it, add the shared simulation clock and the shared "tissue label at a point" helper to `src/core/` (see "Waiting on me").
+- **F10 (procedures)** needs F5 merged ([PR #22](https://github.com/VLemon-99/Spine-intervention-3D-anatomy/pull/22)) and F9.
+- F9 and F11 use different zones (contrast, quiz), so once planned they can loop in parallel.
 
 ## Waiting on me
 <!-- Blocked stories, open questions, pull requests to review. -->
-- **F5–F7 planning:** you accepted every default on 2026-11-13 (recorded in `docs/DECISIONS.md`). The shared contract now has `NeedleState.boneContact` and the `imageTap` bus event, and the sim zone is mounted in the needle panel. All F5–F7 stories are `todo` except F5-S11 (end-to-end tap test, blocked by design until F5 and F7 are merged — no decision needed). The story review below added two more by-design blocks, F5-S14 and F5-S15.
-- **F5–F7 story review (2026-11-13):** you approved all 13 fixes (recorded in `docs/DECISIONS.md`). Most important: the needle now goes in from the back (the first draft would have entered through the belly).
-- After F5 and F6 are merged: set F5-S14 to `todo`. It also re-checks that all four panels fit without scrolling now that both zones fill the needle panel. After F5 and F7 are merged: set F5-S11 and F5-S15 to `todo`.
-- Next step: merge this planning branch, then start the F5, F6 and F7 loops (they can run together).
+- **Review F5's last pull request** ([PR #22](https://github.com/VLemon-99/Spine-intervention-3D-anatomy/pull/22)): the three end-to-end checks plus the compact needle panel (owner decision 2026-11-14 in `docs/DECISIONS.md`). On a tablet, check that the depth / bevel / angle readouts inside the control pad (12 px text) are easy to read.
+- **F5 draft handling numbers** (yours to tune): pad drag 0.2° per pixel (`src/needle/pad.ts`); Advance/Withdraw hold delay 300 ms and 5 mm/s (`src/needle/holdButtons.ts`).
+- **The needle panel is full:** needle controls (two rows) plus the sim zone's resistance, Aspirate and event log just fit at 1024×768. A new control there needs a layout decision (e.g. giving the needle panel more height, an F12 change).
 - Before planning F9: add a shared simulation clock to `src/core/` (F6 uses "seconds since the case started"; contrast washout needs the same clock).
 - F4, F8 and F12 planning questions: all answered 2026-11-11 (you accepted every default; recorded in `docs/DECISIONS.md`). The shared contract now has `store.procedures`, `procedureRequest` and `attemptFinished`.
 - Gaps found while planning F4, F8 and F12 (docs not changed):
-  - Shortcuts off the simulator screen: the C-arm (and later needle) keys should read `data-screen` and ignore keys on other screens — a later change in those zones.
+  - Shortcuts off the simulator screen: the C-arm keys should read `data-screen` and ignore keys on other screens — a later change in the C-arm zone. (The F5 needle keys already do.)
   - No shared "tissue label at a point" helper in `src/core/`: the needle zone has its own, and F6 plans the sim zone's own copy (F6-S2), so loops are not blocked. Contrast (F9) would be the third copy; worth moving into core before F9.
   - Per-tissue numbers will live in two files: needle drift stiffness (`src/needle/params.json`) and tissue resistance (`src/sim/tissues.json`, F6). Both are yours to tune.
   - Touch-gesture test helpers are written per zone (F3 `tests/e2e/carm/controls.ts`, F8 `tests/e2e/view3d/touch.ts`); they could move to `tests/fixtures/` later.
@@ -86,3 +86,5 @@
 2026-11-13 merged main (F1 finished: [PR #15](https://github.com/VLemon-99/Spine-intervention-3D-anatomy/pull/15)) into the planning branch; F1 marked merged except S22 (real CT, with the owner).
 
 2026-11-13 F5–F7 story review (branch `claude/review-task-spec-pn33bp`): the owner approved all 13 fixes. Only task files and docs changed, no application code. Needle entry on the detector-side (back) skin, needle pointing against the beam, angle to the beam between lines; F5-S3, F5-S9 and F7-S3 split (new F5-S12, F5-S13, F7-S8); end-to-end checks F5-S14 and F5-S15 added, blocked by design; missing tests and clearer wording; F6-S8 depends on F6-S6; Aspirate random numbers made at mount; "Intravascular" message without the vessel kind; F7-S7 moved earlier. SPEC F6.1 wording now matches the 2026-11-13 decision (names in Practice and Free play).
+
+2026-11-14 F5, F6 and F7 merged into main: F7 ([PR #19](https://github.com/VLemon-99/Spine-intervention-3D-anatomy/pull/19)), F5 stories S1–S13 ([PR #20](https://github.com/VLemon-99/Spine-intervention-3D-anatomy/pull/20)), F6 ([PR #21](https://github.com/VLemon-99/Spine-intervention-3D-anatomy/pull/21)). Together they broke one test on main: F6's event log ran past the bottom of the needle panel. The owner chose to compact the needle controls into two rows (`docs/DECISIONS.md`, 2026-11-14), with no test changed. F5-S11, S14 and S15 were then unblocked and done by the loop (test only); all 15 F5 stories are done and in review ([PR #22](https://github.com/VLemon-99/Spine-intervention-3D-anatomy/pull/22)). Final check: 599 unit and 547 screen tests passed. Next: merge PR #22, then plan F9 and/or F11.

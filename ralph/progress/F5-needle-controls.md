@@ -8,6 +8,7 @@
 - Zone screen-test helpers live in tests/e2e/needle/needlePage.ts: `readNeedle`, `waitForVolume`, `markEntryAtPixel`, `advanceNeedle` (wait for the volume after acceptDisclaimer; take an image before marking).
 - Chromium turns Shift + wheel into a sideways scroll (deltaX), so wheel handlers read deltaY, falling back to deltaX.
 - To test "does not scroll the page" on the tablet, first make the page scrollable in the test (html overflow auto + a 3000 px spacer); a swipe off the pad then scrolls ~250 px, so the check is meaningful.
+- The needle panel is full (decision 2026-11-14): needle rows are set-up (44 px) + steering (56 px, readouts inside the pad); the sim feedback fills the rest. Don't add rows; at 1024×768 the readouts use 230 of 233 px with the deepest needle.
 - The app's session (`needleSession`) notifies through `needleSession.subscribe(listener)`; UI parts subscribe to stay in step (disabled while locked).
 
 ## Rounds
@@ -90,3 +91,27 @@
 - Files touched: src/needle/markEntryTool.ts, src/needle/index.ts, tests/e2e/needle/needlePage.ts, tests/e2e/needle/markEntry.spec.ts
 - Test result: verify: markEntry 9 passed (1 desktop skip for the tablet-size test); npm run check: 513 unit, 462 screen tests passed. A throwaway check confirmed every needle control lies inside the needle panel at 1280×800 and 1024×768.
 - Next round should know: no `todo` stories remain. F5-S11, F5-S14 and F5-S15 stay blocked by design until F6/F7 are merged (see their notes).
+
+## Interactive fix — 2026-11-14 — baseline (needle panel overflow) — done
+- What I did: the baseline after merging F5, F6 and F7 failed tests/e2e/sim/eventLog.spec.ts:42 in both set-ups (the event log ran past the needle panel). The owner chose to compact the needle controls (docs/DECISIONS.md, 2026-11-14): readouts moved inside the control pad (one nowrap line, 12 px text), Withdraw fully moved to the steering row (max 76 px wide, label wraps), one whole row removed. No test was changed.
+- Files touched: src/needle/{index,pad,readoutRow,withdrawAll}.ts, docs/DECISIONS.md
+- Test result: npm run check: 599 unit, 537 screen tests passed (43 skipped by set-up); the event log now ends at 753 ≤ 760 on the tablet and 757 ≤ 792 on desktop.
+- Next round should know: next by priority is F5-S11.
+
+## Round — 2026-11-14 02:00 — F5-S11 — done
+- What I did: baseline was the green `npm run check` of commit fb59972 (the needle-panel fix). Added tests/e2e/needle/markEntryCanvas.spec.ts: after one image at 0°/0°, turn Mark entry on, click/tap the real fluoro-canvas at image pixel (256, 256) (canvas box × pixel/512, default display); the render zone's real imageTap marks the entry: on the back (y > 30), not air, air 1 voxel toward the detector, projects to (256, 256) within 2 px; the tool switches off. Test only, no app code changed.
+- Files touched: tests/e2e/needle/markEntryCanvas.spec.ts
+- Test result: verify: 2/2 (desktop + tablet); npm run check: 599 unit, 539 screen tests passed (43 skipped by set-up).
+- Next round should know: next is F5-S14 (sim end to end + layout). The sim zone's screen helpers are in tests/e2e/sim/simZone.ts (getSim etc.); zone helpers are not shared, so write needle-zone versions if needed.
+
+## Round — 2026-11-14 02:20 — F5-S14 — done
+- What I did: tests/e2e/needle/simEndToEnd.spec.ts. Mark the entry at image pixel (256, 256) at 0°/0° (the midline, |x|, |z| < 0.5 mm), then advance 1 mm at a time with W (desktop) or the Advance button (tablet) until tip.y < 14: sim().tipTissue is 'epiduralSpace', the events include 'Loss of resistance' and the event log in the needle panel shows it. Layout: with that needle and events, all four panels lie inside the viewport, the page does not scroll, and needle-steer / needle-readouts / event-log end inside the needle panel. Test only, no app code changed.
+- Files touched: tests/e2e/needle/simEndToEnd.spec.ts
+- Test result: verify: 4/4 (2 per set-up); npm run check: 599 unit, 543 screen tests passed (43 skipped by set-up).
+- Next round should know: last story is F5-S15 (needle in the image end to end). The render zone's getter is window.__sim.render() with lastImage.needleTip; tests/e2e/fixtures/readCanvas.ts reads canvas grey values.
+
+## Round — 2026-11-14 02:40 — F5-S15 — done
+- What I did: tests/e2e/needle/imageEndToEnd.spec.ts. At 0°/0°: one image, mark the entry at (256, 256), advance 30 mm with the real controls (W / Advance button); setPose oblique 20°; take an image. render().lastImage.needleTip equals needle().tip within 0.01 mm, and the canvas at project(tip) is darker than the same pixel in a no-needle image at the same pose (Withdraw fully, new image): grey 3 vs 125, stable over 3 repeats. Advancing 5 mm more without a new image leaves a checksum of every canvas pixel and lastImage.needleTip unchanged. Test only, no app code changed.
+- Files touched: tests/e2e/needle/imageEndToEnd.spec.ts
+- Test result: verify: 4/4 (2 per set-up); npm run check: 599 unit, 547 screen tests passed (43 skipped by set-up).
+- Next round should know: every F5 story is done.

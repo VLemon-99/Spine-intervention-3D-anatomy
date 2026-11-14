@@ -9,7 +9,14 @@ export function buildWithdrawAll(session: NeedleSession): HTMLButtonElement {
   button.dataset.testid = 'needle-withdraw-all';
   button.textContent = 'Withdraw fully';
   button.title = 'Remove the needle';
-  Object.assign(button.style, { minWidth: '44px', minHeight: '44px', fontSize: '14px', cursor: 'pointer' });
+  Object.assign(button.style, {
+    minWidth: '44px',
+    minHeight: '44px',
+    maxWidth: '76px',
+    fontSize: '14px',
+    lineHeight: '1.15',
+    cursor: 'pointer',
+  });
   button.addEventListener('click', () => {
     session.withdrawFully();
   });

@@ -1,9 +1,11 @@
 // Needle catalogue, physics and handling controls — F4, F5.
 // mount() builds this zone's panel (needle-panel): the set-up row with the
-// needle and pre-bend pickers (F5.1) and the Mark entry tool (F5.2), the
-// steering row (Withdraw, control pad, Advance: F5.4, F5.5), the readouts and
-// Withdraw fully (F5.6) and the desktop needle keys (F5.4). The app's needle session is linked to the store
-// (store.needle) and registered as the 'needle' debug getter.
+// needle and pre-bend pickers (F5.1) and the Mark entry tool (F5.2), and the
+// steering row: Withdraw, the control pad (F5.4, F5.5) with the readouts
+// inside it (F5.6), Advance and Withdraw fully (F5.6). Plus the desktop needle
+// keys (F5.4). The app's needle session is linked to the store (store.needle)
+// and registered as the 'needle' debug getter. Two rows only, so the sim
+// zone's feedback fits below them (owner decision 2026-11-14).
 
 import { registerDebugGetter } from '../core/debugRegistry';
 import { shortcuts } from '../core/shortcuts';
@@ -87,19 +89,19 @@ export function mount(element: HTMLElement): void {
     });
   }
 
-  // Steering row: Withdraw, the control pad, Advance (F5.4, F5.5).
+  // Steering row: Withdraw, the control pad with the readouts inside it,
+  // Advance, Withdraw fully (F5.4–F5.6).
   const steerRow = document.createElement('div');
   steerRow.dataset.testid = 'needle-steer';
   Object.assign(steerRow.style, { display: 'flex', gap: '6px', alignItems: 'stretch', marginTop: '6px' });
   const { advance, withdraw } = buildAdvanceButtons(needleSession);
-  steerRow.append(withdraw, buildPad(needleSession), advance);
-
-  const readouts = buildReadouts(store);
-  readouts.append(buildWithdrawAll(needleSession));
+  const pad = buildPad(needleSession);
+  pad.append(buildReadouts(store));
+  steerRow.append(withdraw, pad, advance, buildWithdrawAll(needleSession));
 
   const setUp = buildPickers(needleSession);
   setUp.append(buildMarkEntryTool(needleSession, store, bus));
 
-  panel.append(marker, heading, setUp, steerRow, readouts);
+  panel.append(marker, heading, setUp, steerRow);
   element.append(panel);
 }
