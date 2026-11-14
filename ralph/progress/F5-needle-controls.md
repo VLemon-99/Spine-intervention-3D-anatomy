@@ -109,3 +109,9 @@
 - Files touched: tests/e2e/needle/simEndToEnd.spec.ts
 - Test result: verify: 4/4 (2 per set-up); npm run check: 599 unit, 543 screen tests passed (43 skipped by set-up).
 - Next round should know: last story is F5-S15 (needle in the image end to end). The render zone's getter is window.__sim.render() with lastImage.needleTip; tests/e2e/fixtures/readCanvas.ts reads canvas grey values.
+
+## Round — 2026-11-14 02:40 — F5-S15 — done
+- What I did: tests/e2e/needle/imageEndToEnd.spec.ts. At 0°/0°: one image, mark the entry at (256, 256), advance 30 mm with the real controls (W / Advance button); setPose oblique 20°; take an image. render().lastImage.needleTip equals needle().tip within 0.01 mm, and the canvas at project(tip) is darker than the same pixel in a no-needle image at the same pose (Withdraw fully, new image): grey 3 vs 125, stable over 3 repeats. Advancing 5 mm more without a new image leaves a checksum of every canvas pixel and lastImage.needleTip unchanged. Test only, no app code changed.
+- Files touched: tests/e2e/needle/imageEndToEnd.spec.ts
+- Test result: verify: 4/4 (2 per set-up); npm run check: 599 unit, 547 screen tests passed (43 skipped by set-up).
+- Next round should know: every F5 story is done.

@@ -356,7 +356,7 @@
       "dependsOn": [
         "F5-S4"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": "Blocked by design (review 2026-11-13), not by a failed attempt: needs F7 (needle in the image) merged into main. No owner decision is needed — once F5 and F7 are both merged, set this to 'todo' or do it in a short interactive session. Unblocked 2026-11-14 by the owner: F5 and F7 are merged into main."
     }
