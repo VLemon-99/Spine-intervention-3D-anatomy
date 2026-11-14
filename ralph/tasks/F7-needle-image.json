@@ -27,7 +27,7 @@
       "zone": "render",
       "priority": 1,
       "dependsOn": [],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): one tube width (0.35 mm radius) for every needle."
     },
@@ -50,7 +50,7 @@
       "dependsOn": [
         "F7-S1"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": "Review fix 2026-11-13 (owner approved all review fixes): darker-than-bone test added; the 'outside the box' needle is placed at y = 55, clearly outside the phantom's grid."
     },
@@ -71,7 +71,7 @@
       "dependsOn": [
         "F7-S2"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": "Review fix 2026-11-13 (owner approved all review fixes): split in two; the GPU-vs-CPU comparison moved to F7-S8."
     },
@@ -92,7 +92,7 @@
       "dependsOn": [
         "F7-S3"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": "Review fix 2026-11-13 (owner approved all review fixes): split out of F7-S3."
     },
@@ -116,7 +116,7 @@
       "dependsOn": [
         "F7-S3"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": "Owner decision 2026-11-13 (accepted every F5–F7 planning default): the bus event `imageTap` (payload ImageTap { x, y } from src/core/store.ts) is on the shared contract. Unblocked. Review fix 2026-11-13 (owner approved all review fixes): test for taps on the covered (collimated) area added; moved earlier."
     },
@@ -138,7 +138,7 @@
       "dependsOn": [
         "F7-S3"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": ""
     },
@@ -159,7 +159,7 @@
       "dependsOn": [
         "F7-S3"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": ""
     },
@@ -181,7 +181,7 @@
       "dependsOn": [
         "F7-S5"
       ],
-      "status": "todo",
+      "status": "done",
       "attempts": 0,
       "notes": "Review fix 2026-11-13 (owner approved all review fixes): now the last loop story (F7-S7 moved earlier)."
     }

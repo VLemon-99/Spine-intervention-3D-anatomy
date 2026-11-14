@@ -15,13 +15,21 @@
 // The image is drawn in two steps (see drrGpu.ts): each exposure takes the
 // X-ray image into a held off-screen image and then displays it. When a
 // display setting (invert, flips, rotation) changes, only the display step runs again — the
-// held image is re-shown at once, with no new exposure.
+// held image is re-shown at once, with no new exposure. The store's needle
+// (its shaft) is copied at each exposure and drawn into that image only:
+// later needle changes do not redraw the held image, and display changes
+// re-show it with the needle as it was (F7.4).
+//
+// A click (desktop) or tap (tablet) on the held image emits 'imageTap' with
+// the pixel of the image as taken (imageTap.ts); nothing before the first
+// image or on a pixel covered by a shutter.
 import { Color, WebGLRenderer } from 'three';
 import { IMAGE_SIZE_PX } from '../core/geometry';
 import { registerDebugGetter } from '../core/debugRegistry';
 import type { EventBus, Store } from '../core/store';
-import type { CArmPose, ImageKind } from '../core/types';
+import type { CArmPose, ImageKind, Vec3 } from '../core/types';
 import { createDrrGpu } from './drrGpu';
+import { imageTapPixel } from './imageTap';
 import { noiseLevelFor } from './pipeline';
 import { cloneSettings, renderSettings, type RenderSettings, type SettingsStore } from './settings';
 
@@ -35,6 +43,10 @@ export interface LastImage {
   kind: ImageKind | null;
   /** The noise level the image was actually taken with: higher than the setting for a fluoro frame. */
   noiseLevel: number;
+  /** The needle's shaft (hub → tip) copied at the exposure; [] if there was no needle. */
+  needleShaft: Vec3[];
+  /** The needle's tip copied at the exposure, or null if there was no needle. */
+  needleTip: Vec3 | null;
 }
 
 const BLANK = new Color(0x000000);
@@ -52,10 +64,17 @@ export function createFluoroCanvas(
   let imageCount = 0;
   registerDebugGetter('render', () => ({
     settings: cloneSettings(settings.get()),
-    lastImage: lastImage && { ...lastImage, pose: { ...lastImage.pose }, settings: cloneSettings(lastImage.settings) },
+    lastImage: lastImage && {
+      pose: { ...lastImage.pose },
+      settings: cloneSettings(lastImage.settings),
+      noiseSeed: lastImage.noiseSeed,
+      kind: lastImage.kind,
+      noiseLevel: lastImage.noiseLevel,
+      needleTip: lastImage.needleTip && { ...lastImage.needleTip },
+    },
   }));
   bus.on('exposure', () => {
-    const { lastImagePose, lastImageKind, pose } = store.get();
+    const { lastImagePose, lastImageKind, pose, needle } = store.get();
     imageCount += 1;
     const taken = cloneSettings(settings.get());
     lastImage = {
@@ -64,6 +83,9 @@ export function createFluoroCanvas(
       noiseSeed: imageCount,
       kind: lastImageKind,
       noiseLevel: noiseLevelFor(lastImageKind, taken.noiseLevel),
+      // The needle as it is at this exposure, copied so later changes leave this image alone.
+      needleShaft: needle ? needle.shaft.map((p) => ({ x: p.x, y: p.y, z: p.z })) : [],
+      needleTip: needle ? { x: needle.tip.x, y: needle.tip.y, z: needle.tip.z } : null,
     };
   });
 
@@ -116,6 +138,8 @@ export function createFluoroCanvas(
         contrast: store.get().contrast,
         // Fresh grain for every image; a reloaded page repeats the same sequence of seeds.
         noise: { seed: lastImage.noiseSeed, level: lastImage.noiseLevel },
+        // The needle copied at this exposure (F7.1, F7.4).
+        needle: lastImage.needleShaft,
       });
       holding = true;
       display();
@@ -123,6 +147,25 @@ export function createFluoroCanvas(
       holding = false;
       fill(NO_VOLUME);
     }
+  });
+  // A click, or a tap (which the browser also reports as a click), on the held image.
+  canvas.addEventListener('click', (event) => {
+    if (!holding || !lastImage) return;
+    const box = canvas.getBoundingClientRect();
+    if (box.width <= 0 || box.height <= 0) return;
+    const { flipHorizontal, flipVertical, rotation } = settings.get();
+    const pixel = imageTapPixel(
+      {
+        x: ((event.clientX - box.left) / box.width) * IMAGE_SIZE_PX,
+        y: ((event.clientY - box.top) / box.height) * IMAGE_SIZE_PX,
+      },
+      {
+        orientation: { flipHorizontal, flipVertical, rotation },
+        magnification: lastImage.settings.magnification,
+        collimation: lastImage.settings.collimation,
+      },
+    );
+    if (pixel) bus.emit('imageTap', pixel);
   });
   // Display settings apply straight away, to the held image.
   settings.subscribe(() => {

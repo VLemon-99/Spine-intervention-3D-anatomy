@@ -17,7 +17,9 @@
 //
 // The numbers shared with the CPU reference (drrCpu.ts) live in pipeline.ts.
 // The store's contrast volume, if any, is a second 3D texture on the same grid
-// whose absorption is added along each ray.
+// whose absorption is added along each ray. The needle's shaft (step 2b, F7),
+// resampled with resampleShaft(), is a uniform array of points; its metal
+// absorbs along the whole ray with the same tube maths as needlePathLength().
 //
 // Assumes the volume's orientation is the identity (voxel i, j, k axes along
 // patient x, y, z), which holds for the phantom; general orientations are F2.
@@ -46,8 +48,12 @@ import {
   EXTRA_ABSORPTION_PER_MM,
   MARCH_STEP_MM,
   MAX_MARCH_STEPS,
+  MAX_NEEDLE_SEGMENTS,
+  NEEDLE_ABSORPTION_PER_MM,
+  NEEDLE_RADIUS_MM,
   NOISE_AMPLITUDE,
   NO_SIGNAL,
+  resampleShaft,
   type Collimation,
   type Magnification,
 } from './pipeline';
@@ -88,6 +94,11 @@ const fragmentShader = /* glsl */ `
   uniform sampler3D uExtra;
   uniform bool uHasExtra;
   uniform float uExtraAbsorptionPerMm;
+  // Step 2b: the needle's shaft points (hub -> tip, resampled) and how many are used.
+  uniform vec3 uNeedle[${MAX_NEEDLE_SEGMENTS + 1}];
+  uniform int uNeedleCount;
+  uniform float uNeedleRadius;
+  uniform float uNeedleAbsorptionPerMm;
 
   layout(location = 0) out highp vec4 outColor;
 
@@ -137,6 +148,52 @@ const fragmentShader = /* glsl */ `
       if (uHasExtra) perMm += texture(uExtra, uvw).r * uExtraAbsorptionPerMm;
       total += perMm * uStep;
     }
+    // Step 2b: the needle (needlePathLength() in pipeline.ts), along the whole
+    // ray from the source (t >= 0), also outside the volume's box. Per piece,
+    // the ray's start is first moved to its closest point to the piece's start,
+    // so the numbers stay small enough for the GPU's 32-bit floats.
+    float r2 = uNeedleRadius * uNeedleRadius;
+    float needleLength = 0.0;
+    for (int n = 1; n < ${MAX_NEEDLE_SEGMENTS + 1}; n++) {
+      if (n >= uNeedleCount) break;
+      vec3 a = uNeedle[n - 1];
+      vec3 axis = uNeedle[n] - a;
+      float pieceLength = length(axis);
+      if (pieceLength * pieceLength < 1e-12) continue;
+      vec3 u = axis / pieceLength;
+      float tShift = dot(a - uSource, dir);
+      vec3 o = uSource + dir * tShift - a;
+      float s0 = dot(o, u);
+      float du = dot(dir, u);
+      vec3 w = o - s0 * u;
+      vec3 p = dir - du * u;
+      // t is counted from the shifted start; the ray's own start is at t = -tShift.
+      float lo = -tShift;
+      float hi = 1e30;
+      float qa = dot(p, p);
+      float qb = 2.0 * dot(w, p);
+      float qc = dot(w, w) - r2;
+      if (qa < 1e-12) {
+        if (qc > 0.0) continue;
+      } else {
+        float disc = qb * qb - 4.0 * qa * qc;
+        if (disc <= 0.0) continue;
+        float root = sqrt(disc);
+        lo = max(lo, (-qb - root) / (2.0 * qa));
+        hi = min(hi, (-qb + root) / (2.0 * qa));
+      }
+      if (abs(du) < 1e-9) {
+        if (s0 < 0.0 || s0 > pieceLength) continue;
+      } else {
+        float e1 = -s0 / du;
+        float e2 = (pieceLength - s0) / du;
+        lo = max(lo, min(e1, e2));
+        hi = min(hi, max(e1, e2));
+      }
+      if (hi > lo) needleLength += hi - lo;
+    }
+    total += needleLength * uNeedleAbsorptionPerMm;
+
     float grey = exp(-total);
 
     // Step 3, noise: a seeded random amount per pixel, the same every time for
@@ -211,6 +268,8 @@ export interface TakeOptions {
   contrast: Uint8Array | null;
   /** Grain: the image's seed (a whole number) and the level 0…1. Collimated pixels get none. */
   noise: { seed: number; level: number };
+  /** Step 2b: the needle's shaft points, hub → tip (NeedleState.shaft), or null / absent for no needle. */
+  needle?: readonly Vec3[] | null;
 }
 
 /** The display settings the display step uses. */
@@ -251,6 +310,10 @@ export function createDrrGpu(renderer: WebGLRenderer): DrrGpu {
       uExtra: { value: null },
       uHasExtra: { value: false },
       uExtraAbsorptionPerMm: { value: EXTRA_ABSORPTION_PER_MM },
+      uNeedle: { value: Array.from({ length: MAX_NEEDLE_SEGMENTS + 1 }, () => new Vector3()) },
+      uNeedleCount: { value: 0 },
+      uNeedleRadius: { value: NEEDLE_RADIUS_MM },
+      uNeedleAbsorptionPerMm: { value: NEEDLE_ABSORPTION_PER_MM },
     },
     depthTest: false,
     depthWrite: false,
@@ -338,6 +401,11 @@ export function createDrrGpu(renderer: WebGLRenderer): DrrGpu {
       u.uShutterPx!.value = new Vector4(shutterPx(left), shutterPx(right), shutterPx(top), shutterPx(bottom));
       u.uNoiseLevel!.value = Math.min(1, Math.max(0, options.noise.level));
       u.uNoiseSeed!.value = Math.trunc(options.noise.seed) >>> 0;
+      // Step 2b: the needle, resampled exactly as the CPU reference does it.
+      const needle = resampleShaft(options.needle ?? []);
+      const needlePoints = u.uNeedle!.value as Vector3[];
+      needle.forEach((point, n) => needlePoints[n]!.set(point.x, point.y, point.z));
+      u.uNeedleCount!.value = needle.length;
       // The box spans from the outer face of the first voxel to that of the last.
       u.uBoxMin!.value = new Vector3(origin.x - spacing.x / 2, origin.y - spacing.y / 2, origin.z - spacing.z / 2);
       u.uBoxMax!.value = new Vector3(
