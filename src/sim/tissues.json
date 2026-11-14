@@ -1,0 +1,21 @@
+{
+  "reviewedByOwner": false,
+  "notes": "Draft numbers for the owner to review. Resistance is how hard the tissue at the needle tip pushes back, from 0 (none) to 1 (hardest). arterialAspirationProbability is the chance that aspirating in an artery draws blood (owner decision 2026-11-09: 0.5). Only the owner marks this file reviewed.",
+  "arterialAspirationProbability": 0.5,
+  "resistance": {
+    "air": 0,
+    "skinFat": 0.3,
+    "muscle": 0.4,
+    "corticalBone": 1,
+    "cancellousBone": 0.9,
+    "disc": 0.6,
+    "ligamentumFlavum": 0.8,
+    "epiduralSpace": 0.05,
+    "thecalSac": 0.1,
+    "spinalCord": 0.15,
+    "nerveRoot": 0.3,
+    "artery": 0.2,
+    "vein": 0.1,
+    "jointSpace": 0.25
+  }
+}
