@@ -12,7 +12,7 @@
     {
       "id": "F9-S1",
       "title": "Add the contrast numbers file and its check",
-      "description": "Create src/contrast/params.json (reviewedByOwner: false; a notes field saying every number is a draft for the owner to tune) and src/contrast/data.ts with a hand-written validator (no new dependency) that loads and checks it. Fields: stepMl 0.1 and maxTotalMl 5 (F9.1); for each of the five compartments (ContrastCompartment in src/core/types.ts: epidural, intrathecal, intraArticular, softTissue, intravascular) a mm3PerMl (how many cubic millimetres of anatomy one mL fills; draft 1000, intrathecal 4000 because it spreads widely and thinly) and a strength 1–255 (the value written into the absorption volume; draft 255, intrathecal 96); softTissueRadiusMm 15 (F9.2); washoutSeconds 1.5 (F9.3: must be more than 0 and at most 2); seedSearchMm 2 (used by F9-S2). Plain TypeScript, no browser code.",
+      "description": "Create src/contrast/params.json (reviewedByOwner: false; a notes field saying every number is a draft for the owner to tune) and src/contrast/data.ts with a hand-written validator (no new dependency) that loads and checks it. Fields: stepMl 0.1 and maxTotalMl 5 (F9.1); for each of the five compartments (ContrastCompartment in src/core/types.ts: epidural, intrathecal, intraArticular, softTissue, intravascular) a mm3PerMl (how many cubic millimetres of anatomy one mL fills; draft 1000, intrathecal 4000 because it spreads widely and thinly) and a strength 1–255 (the value written into the absorption volume; draft 255, intrathecal 96); softTissueRadiusMm 15 (F9.2); washoutSeconds 1.5 (F9.3: must be more than 0 and at most 2); seedSearchMm 2 (used by F9-S2); perineuralMm 3 (how near a nerve root the tip counts as epidural, used by F9-S15; owner decision 2026-11-14). Plain TypeScript, no browser code.",
       "specRefs": [
         "F9.1",
         "F9.2",
@@ -21,7 +21,7 @@
       "acceptance": [
         "Unit test: the file passes the validator; reviewedByOwner is false; stepMl is 0.1, maxTotalMl is 5, softTissueRadiusMm is 15",
         "Unit test: every one of the five compartments has a mm3PerMl above 0 and a strength from 1 to 255; intrathecal has a larger mm3PerMl and a lower strength than epidural",
-        "Unit test: washoutSeconds is above 0 and at most 2",
+        "Unit test: washoutSeconds is above 0 and at most 2; seedSearchMm and perineuralMm are above 0",
         "Unit test: the validator rejects a missing compartment, an unknown compartment, a strength of 0 or 256, a washoutSeconds of 2.5, and reviewedByOwner that is not a true/false value"
       ],
       "verify": "npx vitest run tests/contrast/data.test.ts",
@@ -35,14 +35,14 @@
     {
       "id": "F9-S2",
       "title": "Tell which compartment the needle tip is in",
-      "description": "Create src/contrast/compartment.ts. voxelAt(volume, point): the index of the voxel nearest to a patient point, or null outside the grid; a volume not in the standard layout (identity orientation, decision 2026-11-10) is rejected. This is the contrast zone's own grid code (zones do not import each other, and contrast needs the voxel itself, not only its label). compartmentAt(volume, tip) returns { compartment, seed (voxel index), fillLabels } from the tissue label at the tip: epidural space → 'epidural' (fills epidural space and nerve root: the root stands in for the nerve-root sleeve); thecal sac → 'intrathecal' (fills thecal sac); joint space → 'intraArticular' (fills joint space); artery → 'intravascular' (fills artery only); vein → 'intravascular' (fills vein only); every other tissue the tip can be in (skin/fat, muscle, disc, ligamentum flavum, nerve root, spinal cord) → 'softTissue' (fills those six labels). Contrast never fills air or bone. If the tip's own voxel is air or bone (a tip resting on bone may round into a bone voxel), the nearest voxel within params seedSearchMm that is neither is used instead; if there is none, the result is 'softTissue' with seed null. Plain TypeScript.",
+      "description": "Create src/contrast/compartment.ts. voxelAt(volume, point): the index of the voxel nearest to a patient point, or null outside the grid; a volume not in the standard layout (identity orientation, decision 2026-11-10) is rejected. This is the contrast zone's own grid code (zones do not import each other, and contrast needs the voxel itself, not only its label). compartmentAt(volume, tip) returns { compartment, seed (voxel index), fillLabels } from the tissue label at the tip: epidural space → 'epidural' (fills epidural space and nerve root: the root stands in for the nerve-root sleeve); thecal sac → 'intrathecal' (fills thecal sac); joint space → 'intraArticular' (fills joint space); artery → 'intravascular' (fills artery only); vein → 'intravascular' (fills vein only); every other tissue the tip can be in (skin/fat, muscle, disc, ligamentum flavum, spinal cord, and for now nerve root) → 'softTissue' (fills skin/fat, muscle, disc, ligamentum flavum, nerve root and spinal cord). Contrast never fills air or bone. If the tip's own voxel is air or bone (a tip resting on bone may round into a bone voxel), the nearest voxel within params seedSearchMm that is neither is used instead; if there is none, the result is 'softTissue' with seed null. Plain TypeScript. The nerve root gets its own rule in F9-S15 (owner decision 2026-11-14), so write no test here for a tip in or beside a nerve root.",
       "specRefs": [
         "F9.2",
         "F9.3"
       ],
       "acceptance": [
         "Unit test (phantom): (0, 14, 0) → epidural; (0, 11, 0) → intrathecal; (15, 18, 0) → intraArticular; (8, −28, 0) → intravascular with fillLabels artery only; (−9, −28, 0) → intravascular with fillLabels vein only; (−28, 0, 20) → softTissue",
-        "Unit test (phantom): the tissues the spec does not list count as soft tissue — disc (0, −12, 0), ligamentum flavum (0, 19, 0), nerve root (20, 5, 0), spinal cord (0, 6, 0)",
+        "Unit test (phantom): the tissues the spec does not list count as soft tissue — disc (0, −12, 0), ligamentum flavum (0, 19, 0), spinal cord (0, 6, 0)",
         "Unit test: a tip in a bone voxel with a muscle voxel next to it (hand-made small volume) gives softTissue seeded at that muscle voxel; a tip deep inside bone (no other tissue within seedSearchMm) gives softTissue with seed null",
         "Unit test: voxelAt gives null outside the grid; a non-standard volume is rejected"
       ],
@@ -54,7 +54,7 @@
       ],
       "status": "todo",
       "attempts": 0,
-      "notes": "Planning default (2026-11-14, for the owner to confirm): nerve root and spinal cord are not in the spec's list, so they count as soft tissue here. Whether a tip in or beside a nerve root should give the epidural pattern is the blocked story F9-S15."
+      "notes": "Owner decision 2026-11-14 (accepted all four planning recommendations and every default; docs/DECISIONS.md). Tissues the spec does not list behave like muscle. A tip in or beside a nerve root is F9-S15's rule; this story leaves it untested so F9-S15 changes no existing test."
     },
     {
       "id": "F9-S3",
@@ -126,7 +126,7 @@
       ],
       "status": "todo",
       "attempts": 0,
-      "notes": "Planning default (2026-11-14): a full joint simply takes no more contrast (no leaking out of the joint)."
+      "notes": "Owner decision 2026-11-14 (accepted all four planning recommendations and every default; docs/DECISIONS.md). A full joint takes no more contrast (no leaking out of the joint)."
     },
     {
       "id": "F9-S6",
@@ -151,6 +151,29 @@
       "notes": ""
     },
     {
+      "id": "F9-S15",
+      "title": "Give the epidural pattern with the tip at a nerve root",
+      "description": "Extend compartmentAt (F9-S2) with the nerve-root rule (owner decision 2026-11-14). In the anatomy the epidural space is the canal; in the foramen the nerve root is surrounded by plain soft tissue (phantom and soft-tissue modeller alike), so without this rule a needle placed correctly for a transforaminal injection would give a soft-tissue blob. Rule: a tip inside a nerve-root voxel, or in a soft-tissue voxel (skin/fat, muscle, disc, ligamentum flavum) whose centre-to-centre distance to the nearest nerve-root voxel is at most params perineuralMm, counts as 'epidural'; the fill starts at that nearest nerve-root voxel and uses the epidural fill labels (epidural space and nerve root), so it runs along the root into the canal. perineuralMm (draft 3) is already in src/contrast/params.json (F9-S1). The other compartments are unchanged.",
+      "specRefs": [
+        "F9.2"
+      ],
+      "acceptance": [
+        "Unit test (phantom): a tip in muscle 2 mm behind the left nerve root at the foramen, (13, 9, 0), gives compartment 'epidural', and 1 mL of contrast lies only in nerve root and epidural space, reaching the canal",
+        "Unit test (phantom): a tip inside the nerve root (20, 5, 0) gives 'epidural'",
+        "Unit test (phantom): a tip in muscle 6 mm from the nearest nerve-root voxel, (13, 13, 0), still gives 'softTissue'",
+        "Unit test: a tip in the epidural space, thecal sac, joint space, artery or vein that lies within perineuralMm of a nerve root keeps its own compartment (e.g. (8, 8, 0) stays epidural seeded at the tip); every existing test of F9-S1 to F9-S6 still passes unchanged"
+      ],
+      "verify": "npx vitest run tests/contrast/perineural.test.ts tests/contrast",
+      "zone": "contrast",
+      "priority": 7,
+      "dependsOn": [
+        "F9-S6"
+      ],
+      "status": "todo",
+      "attempts": 0,
+      "notes": "Owner decision 2026-11-14 (accepted all four planning recommendations and every default; docs/DECISIONS.md). A tip in, or within 3 mm (draft, perineuralMm) of, a nerve root gives the epidural / nerve-root-sleeve pattern. Unblocked. Runs right after F9-S6, before the field and the runner are built on compartmentAt."
+    },
+    {
       "id": "F9-S7",
       "title": "Check that more contrast never gives fewer voxels",
       "description": "A test-only story for F9.4 (change spread.ts only if a test fails): for one tip in each of the five compartments on the phantom, step the volume from 0.1 mL to 5 mL in 0.1 mL steps and check the contrast voxel count never goes down and each smaller amount's voxels are all contained in the next larger amount's. Volumes are counted in whole 0.1 mL steps so that adding 0.1 fifty times gives exactly 5.",
@@ -165,9 +188,9 @@
       ],
       "verify": "npx vitest run tests/contrast/monotonic.test.ts",
       "zone": "contrast",
-      "priority": 7,
+      "priority": 8,
       "dependsOn": [
-        "F9-S6"
+        "F9-S15"
       ],
       "status": "todo",
       "attempts": 0,
@@ -192,7 +215,7 @@
       ],
       "verify": "npx vitest run tests/contrast/field.test.ts",
       "zone": "contrast",
-      "priority": 8,
+      "priority": 9,
       "dependsOn": [
         "F9-S7"
       ],
@@ -217,13 +240,13 @@
       ],
       "verify": "npx vitest run tests/contrast/washout.test.ts",
       "zone": "contrast",
-      "priority": 9,
+      "priority": 10,
       "dependsOn": [
         "F9-S8"
       ],
       "status": "todo",
       "attempts": 0,
-      "notes": "Planning default (2026-11-14): intravascular contrast is fully there and then gone (no gradual fade), so the store's contrast volume changes only twice per injection. A fade would rebuild and re-send the whole volume many times a second, which is heavy on tablets with a real region."
+      "notes": "Owner decision 2026-11-14 (accepted all four planning recommendations and every default; docs/DECISIONS.md). Intravascular contrast is fully there and then gone (no gradual fade), so the store's contrast volume changes only twice per injection."
     },
     {
       "id": "F9-S10",
@@ -240,7 +263,7 @@
       ],
       "verify": "npx vitest run tests/contrast/events.test.ts",
       "zone": "contrast",
-      "priority": 10,
+      "priority": 11,
       "dependsOn": [
         "F9-S8"
       ],
@@ -268,7 +291,7 @@
       ],
       "verify": "npx vitest run tests/contrast/runner.test.ts",
       "zone": "contrast",
-      "priority": 11,
+      "priority": 12,
       "dependsOn": [
         "F9-S9",
         "F9-S10"
@@ -280,7 +303,7 @@
     {
       "id": "F9-S12",
       "title": "Add the Inject button",
-      "description": "BLOCKED until the owner decides where Inject goes and src/app/main.ts mounts the contrast zone there (see notes). Planned: mount() in src/contrast/index.ts connects the runner (F9-S11) to the app's store and bus and builds an Inject button (data-testid inject, text 'Inject 0.1 mL', at least 44×44 px on the tablet) with the case total beside it (data-testid contrast-total, e.g. '0.3 / 5 mL'). The button is disabled whenever canInject is false (no needle, needle not inserted, or 5 mL reached). The controls go into the row that holds the sim zone's Aspirate button when the mount element has one (so the needle panel gets no taller), otherwise into the needle panel, otherwise into the mount element. Register the debug getter 'contrast': { totalMl, canInject, voxelCount (non-zero voxels in store.contrast now), events }. Simulation time: seconds since the last caseStart, or since the zone was mounted (the same rule as the sim zone, decision 2026-11-13). Screen tests put a hand-made needle in the store through the dev-server store module (own helper in tests/e2e/contrast/, like tests/e2e/sim/simZone.ts).",
+      "description": "mount() in src/contrast/index.ts connects the runner (F9-S11) to the app's store and bus and builds an Inject button (data-testid inject, text 'Inject 0.1 mL', at least 44×44 px on the tablet) with the case total beside it (data-testid contrast-total, e.g. '0.3 / 5 mL'). One press injects 0.1 mL; holding the button does not repeat. The button is disabled whenever canInject is false (no needle, needle not inserted, or 5 mL reached). src/app/main.ts mounts this zone in the needle panel's slot, after the sim zone (owner decision 2026-11-14): put the controls into the row that holds the sim zone's Aspirate button (the parent of the element with data-testid aspirate) so the needle panel gets no taller; if there is none, into the needle panel; otherwise into the mount element. Keep the hidden zone-contrast marker. Register the debug getter 'contrast': { totalMl, canInject, voxelCount (non-zero voxels in store.contrast now), events }. Simulation time comes from the shared clock: simClock.time from src/core/simClock.ts; timers use the browser's setTimeout. Screen tests put a hand-made needle in the store through the dev-server store module (own helper in tests/e2e/contrast/, like tests/e2e/sim/simZone.ts).",
       "specRefs": [
         "F9.1"
       ],
@@ -293,18 +316,18 @@
       ],
       "verify": "npx playwright test tests/e2e/contrast/inject.spec.ts",
       "zone": "contrast",
-      "priority": 12,
+      "priority": 13,
       "dependsOn": [
         "F9-S11"
       ],
-      "status": "blocked",
+      "status": "todo",
       "attempts": 0,
-      "notes": "Blocked by planning (2026-11-14), needs the owner: (1) Where Inject goes. Today the contrast zone is mounted in the hidden slot, and the needle panel has no free height (PLAN.md). Recommended: beside the Aspirate button (same row, no extra height); this needs src/app/main.ts to mount the contrast zone in the needle panel's slot after the sim zone — an app-zone change made in an interactive session. (2) The clock: PLAN.md asks for a shared simulation clock in src/core/ before F9. Recommended: add it in the same interactive session and use it here; otherwise this story keeps its own copy of the rule. (3) One press = 0.1 mL (50 presses for 5 mL); say if holding the button should keep injecting."
+      "notes": "Owner decision 2026-11-14 (accepted all four planning recommendations and every default; docs/DECISIONS.md). Inject sits beside Aspirate; src/app/main.ts now mounts the contrast zone in the needle panel's slot after the sim zone; the shared simulation clock is src/core/simClock.ts (the sim zone uses it too). Unblocked."
     },
     {
       "id": "F9-S13",
       "title": "Check that contrast shows dark on new images and stays",
-      "description": "BLOCKED until F9-S12 is unblocked. A screen-test story for F9.5 (change code only if a test fails): injected contrast reaches the renderer as the extra absorption volume and is dark on the next image, not on the held one; it is still there on later images of the same case and gone after a new case starts. The hand-made needle lies along the beam at pose 0°/0° (seen end-on as a dot at the projected tip), and every image compared contains that same needle. Pixels are read with tests/fixtures/readCanvas.ts at 6 px beside geometry.project(tip) (clear of the needle's dot); comparisons leave room for image grain.",
+      "description": "A screen-test story for F9.5 (change code only if a test fails): injected contrast reaches the renderer as the extra absorption volume and is dark on the next image, not on the held one; it is still there on later images of the same case and gone after a new case starts. The hand-made needle lies along the beam at pose 0°/0° (seen end-on as a dot at the projected tip), and every image compared contains that same needle. Pixels are read with tests/fixtures/readCanvas.ts at 6 px beside geometry.project(tip) (clear of the needle's dot); comparisons leave room for image grain.",
       "specRefs": [
         "F9.5"
       ],
@@ -316,18 +339,18 @@
       ],
       "verify": "npx playwright test tests/e2e/contrast/image.spec.ts",
       "zone": "contrast",
-      "priority": 13,
+      "priority": 14,
       "dependsOn": [
         "F9-S12"
       ],
-      "status": "blocked",
+      "status": "todo",
       "attempts": 0,
-      "notes": "Blocked by planning (2026-11-14): waits for F9-S12 (the Inject button needs an owner decision). If the stated pixels do not show the stated difference on the phantom, block with the measured values rather than weakening the check."
+      "notes": "Unblocked 2026-11-14 (F9-S12 unblocked). If the stated pixels do not show the stated difference on the phantom, block with the measured values rather than weakening the check."
     },
     {
       "id": "F9-S14",
       "title": "Check intravascular washout on the screen",
-      "description": "BLOCKED until F9-S12 is unblocked. A screen-test story for F9.3 (change code only if a test fails): with the needle tip in the phantom's vein, contrast is seen on continuous fluoro and then vanishes, and a single shot taken after washout shows nothing. The vein pixel is read at geometry.project((−9, −28, 0)) for pose 0°/0° (a few pixels beside the needle's shadow). Fluoro is held with the F key on desktop and with a finger on the Fluoro pedal on the tablet while a second finger taps Inject (raw touch events through a DevTools session; write the helper in tests/e2e/contrast/). This is the feature's last story: run the whole check.",
+      "description": "A screen-test story for F9.3 (change code only if a test fails): with the needle tip in the phantom's vein, contrast is seen on continuous fluoro and then vanishes, and a single shot taken after washout shows nothing. The vein pixel is read at geometry.project((−9, −28, 0)) for pose 0°/0° (a few pixels beside the needle's shadow). Fluoro is held with the F key on desktop and with a finger on the Fluoro pedal on the tablet while a second finger taps Inject (raw touch events through a DevTools session; write the helper in tests/e2e/contrast/). This is the feature's last story: run the whole check.",
       "specRefs": [
         "F9.3"
       ],
@@ -339,36 +362,13 @@
       ],
       "verify": "npx playwright test tests/e2e/contrast/washout.spec.ts && npm run check",
       "zone": "contrast",
-      "priority": 14,
+      "priority": 15,
       "dependsOn": [
         "F9-S13"
       ],
-      "status": "blocked",
+      "status": "todo",
       "attempts": 0,
-      "notes": "Blocked by planning (2026-11-14): waits for F9-S12. Risk: the 'seen on fluoro' check depends on timing — the software GPU in cloud tests must draw at least one fluoro frame within the 1.5 s the contrast is present. If it cannot, block and report the measured frame time; do not lengthen washoutSeconds past 2 (F9.3)."
-    },
-    {
-      "id": "F9-S15",
-      "title": "Decide what contrast does with the tip at a nerve root",
-      "description": "BLOCKED: a clinical decision for the owner. Today's rule (F9-S2) takes the compartment from the tissue at the tip only. In the anatomy the epidural space is the canal; in the foramen the nerve root is surrounded by generic soft tissue (phantom and soft-tissue modeller alike). So a needle placed correctly for a transforaminal injection — beside the root in the foramen — would give a soft-tissue blob, not the epidural / nerve-root-sleeve pattern (F9.2), and F10 could never score 'contrast pattern correct' for the v1 procedure. Proposed rule to build once approved: a tip inside a nerve-root voxel, or in soft tissue within params perineuralMm (draft 3 mm) of a nerve-root voxel centre, counts as 'epidural' and the fill starts at that nearest nerve-root voxel (it then runs along the root into the canal).",
-      "specRefs": [
-        "F9.2"
-      ],
-      "acceptance": [
-        "Unit test (phantom): a tip in muscle 2 mm behind the left nerve root at the foramen, (13, 9, 0), gives compartment 'epidural', and 1 mL of contrast lies only in nerve root and epidural space, reaching the canal",
-        "Unit test (phantom): a tip inside the nerve root (20, 5, 0) gives 'epidural'",
-        "Unit test (phantom): a tip in muscle 6 mm from the nearest nerve-root voxel, (13, 13, 0), still gives 'softTissue'",
-        "Unit test: the earlier compartment tests of F9-S2 for epidural space, thecal sac, joint space, artery and vein are unchanged"
-      ],
-      "verify": "npx vitest run tests/contrast/perineural.test.ts",
-      "zone": "contrast",
-      "priority": 15,
-      "dependsOn": [
-        "F9-S6"
-      ],
-      "status": "blocked",
-      "attempts": 0,
-      "notes": "Blocked by planning (2026-11-14): needs the owner's clinical answer — should a tip beside (or in) a nerve root in the foramen give the epidural / nerve-root-sleeve pattern, and within what distance? Alternative: model epidural fat around the root inside the foramen in the anatomy converter (anatomy zone, and the real regions would be converted with it). If approved as proposed, F9-S2's test that a nerve-root tip counts as soft tissue is replaced by this story's — say so when unblocking, since a loop may not change an existing test on its own."
+      "notes": "Unblocked 2026-11-14 (F9-S12 unblocked). Risk: the 'seen on fluoro' check depends on timing — the software GPU in cloud tests must draw at least one fluoro frame within the 1.5 s the contrast is present. If it cannot, block and report the measured frame time; do not lengthen washoutSeconds past 2 (F9.3)."
     }
   ]
 }

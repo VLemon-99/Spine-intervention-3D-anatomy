@@ -28,7 +28,7 @@
       "dependsOn": [],
       "status": "todo",
       "attempts": 0,
-      "notes": "Planning default (2026-11-14, for the owner to confirm): the spec's 'highlighted structure (label + level + side)' is read as one of the landmark points the anatomy files already hold — that is the only data that gives a structure a centre. The category field is added because 'lumbar' and 'sacrum/SI' questions both use the lumbosacral region."
+      "notes": "Owner decision 2026-11-14 (accepted all four planning recommendations and every default; docs/DECISIONS.md). A 'structure' is one of the landmark points the anatomy files hold (the spec's 'label + level + side'). The category field is added because 'lumbar' and 'sacrum/SI' questions both use the lumbosacral region."
     },
     {
       "id": "F11-S2",
@@ -74,7 +74,7 @@
       ],
       "status": "todo",
       "attempts": 0,
-      "notes": "Planning default (2026-11-14): the question file holds the two angles only; the table position is worked out from the landmarks when the question is shown, because the real regions' positions are not known until F1.7."
+      "notes": "Owner decision 2026-11-14 (planning default accepted): the question file holds the two angles only; the table position is worked out from the landmarks when the question is shown, because the real regions' positions are not known until F1.7."
     },
     {
       "id": "F11-S4",
@@ -120,7 +120,7 @@
       ],
       "status": "todo",
       "attempts": 0,
-      "notes": "Planning default (2026-11-14): a separate phantom set, like F10's phantom demo case, because tests never use the real CT and no real region is committed yet."
+      "notes": "Owner decision 2026-11-14 (planning default accepted): a separate phantom set, like F10's phantom demo case, because tests never use the real CT and no real region is committed yet."
     },
     {
       "id": "F11-S6",
@@ -189,7 +189,7 @@
       ],
       "status": "todo",
       "attempts": 0,
-      "notes": "Planning default (2026-11-14): choices are shown in the order written in the question file (no shuffling)."
+      "notes": "Owner decision 2026-11-14 (planning default accepted): choices are shown in the order written in the question file (no shuffling)."
     },
     {
       "id": "F11-S9",
@@ -235,7 +235,7 @@
       ],
       "status": "todo",
       "attempts": 0,
-      "notes": "Planning default (2026-11-14, for the owner to confirm): same idea as 'Phantom' in the region picker (decision 2026-11-12)."
+      "notes": "Owner decision 2026-11-14 (planning default accepted): same idea as 'Phantom' in the region picker (decision 2026-11-12)."
     },
     {
       "id": "F11-S11",
@@ -263,12 +263,12 @@
     {
       "id": "F11-S12",
       "title": "Let other zones ask the renderer for an image",
-      "description": "ZONE: render (not quiz). BLOCKED until the shared image service exists in src/core/ (see notes). Planned: at mount the render zone registers a function with the shared image service that draws the X-ray image of a given volume at a given pose off screen, as a plain single shot (magnification 1, no collimation, not inverted, no flip or rotation, no needle, no contrast, the default shot grain with the seed handed in), and returns its 512×512 grey values (0–255, row 0 at the top, same pixel convention as src/core/geometry.ts). It must not change the image held on the fluoro panel, the shot count, the fluoro time or anything in the store.",
+      "description": "ZONE: render (not quiz) — the only render-zone story of this feature. At mount the render zone registers a renderer with the shared image service (imageService.register in src/core/imageService.ts, owner decision 2026-11-14). The renderer draws the X-ray image of the given volume at the given pose off screen, as a plain single shot (magnification 1, no collimation, not inverted, no flip or rotation, no needle, no contrast, the default shot grain with options.noiseSeed, or seed 1 without one), and returns a DrrImage: 512×512 grey values (0–255, row 0 at the top, pixel (x, y) at index x + 512 × y, same pixel convention as src/core/geometry.ts). It must not change the image held on the fluoro panel, the pose text, the shot count, the fluoro time or anything in the store. It returns null when WebGL2 is not available. Do not change src/core/imageService.ts.",
       "specRefs": [
         "F11.2"
       ],
       "acceptance": [
-        "Screen test (both set-ups; the service is called through the dev-server module of the shared file, like tests/fixtures/simPage.ts does for the store): for the phantom at pose 0°/0° the returned image is 512×512 and the pixel at geometry.project(L4 body centre) is at least 50 grey levels darker than the corner pixel (5, 5)",
+        "Screen test (both set-ups; the service is called through the dev-server module '/src/core/imageService.ts', the way tests/fixtures/simPage.ts reaches the store): for the phantom at pose 0°/0° the returned image is 512×512 and the pixel at geometry.project(L4 body centre) is at least 50 grey levels darker than the corner pixel (5, 5)",
         "Screen test (both set-ups): the returned image matches what the fluoro canvas shows for a Shot at the same pose with default settings — mean absolute difference at most 3% of the grey range",
         "Screen test (both set-ups): after a Shot at one pose, asking the service for an image at another pose leaves the fluoro canvas's pixels, the pose text and window.__sim.getState().shotCount unchanged",
         "Screen test (both set-ups): the same seed gives the same image twice"
@@ -277,14 +277,14 @@
       "zone": "render",
       "priority": 12,
       "dependsOn": [],
-      "status": "blocked",
+      "status": "todo",
       "attempts": 0,
-      "notes": "Blocked by planning (2026-11-14), needs the owner: how the quiz gets its fluoro image. Zones may not import each other, and the X-ray renderer lives in the render zone. Recommended: a small shared 'image service' file in src/core/ (the render zone registers its renderer there; the quiz asks it for an image of a volume at a pose) — a shared-contract change made in an interactive session, like the shortcut list. Alternatives: the quiz reuses the simulator's fluoro panel (the learner's display settings, needle and contrast would leak into quiz images), or the quiz gets its own copy of the X-ray maths (duplicate code, slow on real regions). This story is in the render zone: while it runs, no other render-zone feature may loop."
+      "notes": "Owner decision 2026-11-14 (accepted all four planning recommendations and every default; docs/DECISIONS.md). The quiz gets its image through the shared image service, src/core/imageService.ts (added with tests/core/contract-2026-11-14.test.ts). Unblocked. This story is in the render zone: while it runs, no other render-zone feature may loop."
     },
     {
       "id": "F11-S13",
       "title": "Show a question with its image and four choices",
-      "description": "BLOCKED until F11-S12 is done. Planned: mount() in src/quiz/index.ts builds the quiz in the quiz screen's slot. A Start button (data-testid quiz-start) begins a session of the available questions (F11-S10, from store.regions and the loaded volume) with a seed: a fixed number in development and test builds, the time in milliseconds in the production build (the same rule as the sim zone, decision 2026-11-13). When no question is available it shows 'No quiz questions for this anatomy yet' and no Start button. For the question on show: wait for its region (F11-S11), ask the shared image service for the image at questionPose (F11-S3) and draw it on the quiz's own canvas (data-testid quiz-image, 512×512), with the prompt (quiz-prompt), 'Question 1 of 10' (quiz-progress) and four choice buttons (quiz-choice, in the file's order, each at least 44×44 px on the tablet). Register the debug getter 'quiz': { state ('idle' | 'question' | 'answered' | 'finished'), seed, questionIds, index, total, questionId, pose, arrowTip (null until F11-S14) }. Screen tests reach the quiz with Home → Quiz (own helper in tests/e2e/quiz/).",
+      "description": "Mount() in src/quiz/index.ts builds the quiz in the quiz screen's slot. A Start button (data-testid quiz-start) begins a session of the available questions (F11-S10, from store.regions and the loaded volume) with a seed: a fixed number in development and test builds, the time in milliseconds in the production build (the same rule as the sim zone, decision 2026-11-13). When no question is available it shows 'No quiz questions for this anatomy yet' and no Start button. For the question on show: wait for its region (F11-S11), ask the shared image service (imageService.render in src/core/imageService.ts, with the question's position in the session as noiseSeed) for the image of store.volume at questionPose (F11-S3) and draw it on the quiz's own canvas (data-testid quiz-image, 512×512), with the prompt (quiz-prompt), 'Question 1 of 10' (quiz-progress) and four choice buttons (quiz-choice, in the file's order, each at least 44×44 px on the tablet). Register the debug getter 'quiz': { state ('idle' | 'question' | 'answered' | 'finished'), seed, questionIds, index, total, questionId, pose, arrowTip (null until F11-S14) }. Screen tests reach the quiz with Home → Quiz (own helper in tests/e2e/quiz/).",
       "specRefs": [
         "F11.2",
         "F11.4"
@@ -304,14 +304,14 @@
         "F11-S11",
         "F11-S12"
       ],
-      "status": "blocked",
+      "status": "todo",
       "attempts": 0,
-      "notes": "Blocked by planning (2026-11-14): waits for F11-S12 (the quiz's image needs the owner's decision on the shared image service)."
+      "notes": "Unblocked 2026-11-14 (owner accepted the shared image service; runs after F11-S12)."
     },
     {
       "id": "F11-S14",
       "title": "Draw the arrow at the highlighted structure",
-      "description": "BLOCKED until F11-S13 is done. Planned: for a 'structure' question the quiz draws an arrow over the image (data-testid quiz-arrow; its tip marked with data-testid quiz-arrow-tip) from questionArrow (F11-S4), scaled with the image; a 'view' question shows no arrow. The debug getter's arrowTip is the tip in image pixels (null for a 'view' question).",
+      "description": "For a 'structure' question the quiz draws an arrow over the image (data-testid quiz-arrow; its tip marked with data-testid quiz-arrow-tip) from questionArrow (F11-S4), scaled with the image; a 'view' question shows no arrow. The debug getter's arrowTip is the tip in image pixels (null for a 'view' question).",
       "specRefs": [
         "F11.2"
       ],
@@ -327,14 +327,14 @@
       "dependsOn": [
         "F11-S13"
       ],
-      "status": "blocked",
+      "status": "todo",
       "attempts": 0,
-      "notes": "Blocked by planning (2026-11-14): waits for F11-S13."
+      "notes": "Unblocked 2026-11-14 (owner accepted the shared image service; runs after F11-S13)."
     },
     {
       "id": "F11-S15",
       "title": "Show correct or incorrect and the explanation after an answer",
-      "description": "BLOCKED until F11-S13 is done. Planned: picking a choice (click on desktop, tap on tablet) shows 'Correct' or 'Incorrect' (data-testid quiz-feedback) and the question's explanation (quiz-explanation), marks the correct choice (data-correct=\"true\") and the one picked, disables the four choices, and shows a Next button (quiz-next, at least 44×44 px on the tablet) that goes to the following question. The debug getter's state is 'answered' in between.",
+      "description": "Picking a choice (click on desktop, tap on tablet) shows 'Correct' or 'Incorrect' (data-testid quiz-feedback) and the question's explanation (quiz-explanation), marks the correct choice (data-correct=\"true\") and the one picked, disables the four choices, and shows a Next button (quiz-next, at least 44×44 px on the tablet) that goes to the following question. The debug getter's state is 'answered' in between.",
       "specRefs": [
         "F11.3"
       ],
@@ -350,14 +350,14 @@
       "dependsOn": [
         "F11-S13"
       ],
-      "status": "blocked",
+      "status": "todo",
       "attempts": 0,
-      "notes": "Blocked by planning (2026-11-14): waits for F11-S13."
+      "notes": "Unblocked 2026-11-14 (owner accepted the shared image service; runs after F11-S13)."
     },
     {
       "id": "F11-S16",
       "title": "End the session with a score saved in the history",
-      "description": "BLOCKED until F11-S14 and F11-S15 are done. Planned: after the last question's Next the quiz shows the result (data-testid quiz-result, e.g. '7 of 10 correct — 70') and emits one 'attemptFinished' on the bus with quizAttemptRecord (F11-S9) and the current date; the app shell saves it (docs/ARCHITECTURE.md → Procedures). A 'New quiz' button (quiz-restart) goes back to the Start state. Leaving for Home in the middle of a session saves nothing. This is the feature's last story: run the whole check.",
+      "description": "After the last question's Next the quiz shows the result (data-testid quiz-result, e.g. '7 of 10 correct — 70') and emits one 'attemptFinished' on the bus with quizAttemptRecord (F11-S9) and the current date; the app shell saves it (docs/ARCHITECTURE.md → Procedures). A 'New quiz' button (quiz-restart) goes back to the Start state. Leaving for Home in the middle of a session saves nothing. This is the feature's last story: run the whole check.",
       "specRefs": [
         "F11.4"
       ],
@@ -376,9 +376,9 @@
         "F11-S14",
         "F11-S15"
       ],
-      "status": "blocked",
+      "status": "todo",
       "attempts": 0,
-      "notes": "Blocked by planning (2026-11-14): waits for F11-S14 and F11-S15."
+      "notes": "Unblocked 2026-11-14 (owner accepted the shared image service; runs after F11-S14 and F11-S15)."
     }
   ]
 }

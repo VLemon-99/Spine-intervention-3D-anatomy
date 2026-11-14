@@ -39,9 +39,11 @@ if (root && !canUseWebgl2(() => document.createElement('canvas'))) {
     mountNeedle(layout.needle);
     // The sim zone's feedback (resistance, Aspirate, event log) sits in the needle panel's slot (decision 2026-11-13).
     mountSim(layout.needle);
+    // The contrast zone's Inject button sits beside the sim zone's Aspirate button (decision 2026-11-14).
+    mountContrast(layout.needle);
     mountView3d(layout.view3d);
     mountQuiz(layout.quiz);
-    for (const mountZone of [mountAnatomy, mountContrast, mountProcedures]) {
+    for (const mountZone of [mountAnatomy, mountProcedures]) {
       mountZone(layout.other);
     }
   }
