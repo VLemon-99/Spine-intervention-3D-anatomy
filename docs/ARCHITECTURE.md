@@ -8,7 +8,7 @@ A static website: TypeScript, built with Vite. It runs entirely in the browser, 
 ## Components
 | Component | What it does | Where it lives |
 |---|---|---|
-| Core (shared contracts) | Shared types (`Volume`, `Landmarks`, `Mode`, `CArmPose`, `NeedleState`, `TissueEvent`, `AttemptRecord`), tissue label list, C-arm projection geometry, central state store (pose, shot count, fluoro time, last image pose and kind, mode, volume, landmarks, needle state, contrast volume, list of regions on offer, list of procedures on offer) + event bus (`exposure`, `caseStart`, `tissueEvent`, `regionRequest`, `procedureRequest`, `attemptFinished`, `imageTap`), shared list of keyboard shortcuts for the help overlay, seeded random numbers, synthetic phantom (with landmarks), `window.__sim` test hook | `src/core/` |
+| Core (shared contracts) | Shared types (`Volume`, `Landmarks`, `Mode`, `CArmPose`, `NeedleState`, `TissueEvent`, `AttemptRecord`), tissue label list, C-arm projection geometry, central state store (pose, shot count, fluoro time, last image pose and kind, mode, volume, landmarks, needle state, contrast volume, list of regions on offer, list of procedures on offer) + event bus (`exposure`, `caseStart`, `tissueEvent`, `regionRequest`, `procedureRequest`, `attemptFinished`, `imageTap`), shared list of keyboard shortcuts for the help overlay, shared simulation clock, image service (ask the renderer for an image), seeded random numbers, synthetic phantom (with landmarks), `window.__sim` test hook | `src/core/` |
 | App shell | Disclaimer, home screen, modes (Practice / Exam / Quiz / Free play), layout, history (browser storage), About page, WebGL2 check. `main.ts` mounts every zone's panel | `src/app/` |
 | Anatomy | Converter script (NIfTI → web format), soft-tissue modeller, region loader, landmarks | `tools/anatomy/`, `src/anatomy/`, `public/data/` |
 | Renderer | GPU DRR shader, CPU reference DRR, display (invert, noise, collimation, magnification, flip), needle and contrast in the image, fluoro panel | `src/render/` |
@@ -57,6 +57,10 @@ The 3D view only reads the store; it never changes it.
 - **Bone contact:** `NeedleState.boneContact` (optional; absent = false) is set by the needle zone from its model; the sim zone turns a change to true into a `boneContact` event.
 - **Needle direction:** the skin entry is where the beam ray meets the skin on the detector side (the patient's back at pose 0°/0°); the needle points against the beam direction (detector → source). `unproject` rays start at the source, under the table, so walking along them from their start would find the belly.
 - **Sim in the needle panel:** `main.ts` mounts the sim zone into the needle panel's slot, after the needle zone, so its feedback (resistance, Aspirate, event log) shows inside the needle panel.
+- **Simulation clock:** `src/core/simClock.ts` gives simulation time: seconds since the last `caseStart`, or since the app started (Free play). The sim and contrast zones both read it.
+- **Contrast in the needle panel:** `main.ts` mounts the contrast zone into the needle panel's slot too, after the sim zone; its Inject button goes into the sim zone's Aspirate row. The contrast zone puts a **new** array in `store.contrast` at every change (the store and the renderer only notice a new array) and `null` when there is none.
+- **Image service:** `src/core/imageService.ts`. The render zone registers a renderer that draws a plain single-shot X-ray image of a volume at a pose off screen (no needle, no contrast, no display settings; the held fluoro image and the counters stay as they are). The quiz asks for its question images there.
+- **Quiz and regions:** the quiz asks for a question's region with `regionRequest`, like the region picker, so it changes the one loaded volume.
 - **Unit tests run without a browser page** (Vitest `node` environment, no jsdom/happy-dom). Logic that needs a unit test lives in plain functions; screens are checked by screen tests.
 
 ## Work zones (for parallel loops)
@@ -67,14 +71,14 @@ Each zone is a set of folders. Two loops can run at the same time only if their 
 | core | `src/core/`, `tests/core/` | F0 only | **Shared** — see below |
 | app | `src/app/`, `tests/app/`, `tests/e2e/app/` | F0, F12 | Owns `main.ts` |
 | anatomy | `src/anatomy/`, `tools/anatomy/`, `public/data/`, `tests/anatomy/`, `tests/e2e/anatomy/` | F1 | Real CT download/convert only in interactive sessions |
-| render | `src/render/`, `tests/render/`, `tests/e2e/render/` | F2, F7 | |
+| render | `src/render/`, `tests/render/`, `tests/e2e/render/` | F2, F7, one F11 story (F11-S12) | |
 | carm | `src/carm/`, `tests/carm/`, `tests/e2e/carm/` | F3 | |
 | needle | `src/needle/`, `tests/needle/`, `tests/e2e/needle/` | F4, F5 | |
 | sim | `src/sim/`, `tests/sim/`, `tests/e2e/sim/` | F6 | |
 | view3d | `src/view3d/`, `tests/view3d/`, `tests/e2e/view3d/` | F8 | |
 | contrast | `src/contrast/`, `tests/contrast/`, `tests/e2e/contrast/` | F9 | |
 | procedures | `src/procedures/`, `tests/procedures/`, `tests/e2e/procedures/` | F10 | |
-| quiz | `src/quiz/`, `tests/quiz/`, `tests/e2e/quiz/` | F11 | |
+| quiz | `src/quiz/`, `tests/quiz/`, `tests/e2e/quiz/` | F11 | F11-S12 is in the render zone |
 
 **Shared files.** Changes to these must not happen in parallel loops. Do them in F0, in a single loop, or interactively. A loop story that needs one of them changed must be marked `blocked` unless the story explicitly says it may:
 - `package.json`, `package-lock.json` (dependencies)
@@ -91,7 +95,7 @@ A zone may define its own internal types freely. `src/core/` holds only what cro
 - Wave 2: F5 (needs F3, F4), F6 (needs F4), F7 (needs F2, F4), F11 (needs F1, F2).
 - Wave 3: F9 (needs F2, F6).
 - Wave 4: F10 (needs F1, F3, F5, F6, F9).
-- F4 → F5 and F2 → F7 share a zone, so they always run one after the other.
+- F4 → F5 and F2 → F7 share a zone, so they always run one after the other. F11 has one render-zone story (F11-S12, the image service's renderer): no other render-zone feature may loop while F11 does.
 - F1 and F3 meet at the region picker. Each side is built and tested against the shared contract on its own, so they still run in parallel; one end-to-end test (F1-S27) is added after both are merged.
 - F5, F6 and F7 meet the same way: F5-S11 (canvas tap → entry, needs F7), F5-S14 (real needle → tissue events and the needle-panel layout, needs F6) and F5-S15 (real needle → image, needs F7) wait until both sides are merged.
 ## External services

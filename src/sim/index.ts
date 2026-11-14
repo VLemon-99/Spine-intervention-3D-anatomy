@@ -8,6 +8,7 @@
 
 import { registerDebugGetter } from '../core/debugRegistry';
 import { createRandom, type RandomFn } from '../core/random';
+import { simClock } from '../core/simClock';
 import { bus, store } from '../core/store';
 import { aspirate } from './aspirate';
 import { createFeedbackView } from './feedback';
@@ -29,7 +30,8 @@ export function mount(element: HTMLElement): void {
   marker.hidden = true;
   element.append(marker);
 
-  const sim = connectSim(store, bus);
+  // The shared simulation clock (decision 2026-11-14): it restarts at caseStart before the runner reads it.
+  const sim = connectSim(store, bus, simClock.time);
 
   // Made at mount (Free play sends no caseStart) and again at each caseStart.
   let seed = newSeed();
